@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/models/shipment.dart';
 import 'package:food_inventory/models/shipment_item.dart';
-import 'package:food_inventory/services/inventory_service.dart';
 import 'package:food_inventory/services/shipment_service.dart';
 import 'package:food_inventory/widgets/confirm_dialog.dart';
 import 'package:food_inventory/widgets/shipment_item_list.dart';
@@ -22,14 +21,12 @@ class ShipmentDetailScreen extends StatefulWidget {
 
 class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
   late ShipmentService _shipmentService;
-  late InventoryService _inventoryService;
   late Future<List<ShipmentItem>> _itemsFuture;
   bool _isUpdating = false;
 
   @override
   void initState() {
     super.initState();
-    _inventoryService = Provider.of<InventoryService>(context, listen: false);
     _shipmentService = Provider.of<ShipmentService>(context, listen: false);
     _loadItems();
   }
