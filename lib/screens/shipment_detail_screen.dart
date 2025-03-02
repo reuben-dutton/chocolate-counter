@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/models/shipment.dart';
 import 'package:food_inventory/models/shipment_item.dart';
+import 'package:food_inventory/services/image_service.dart';
+import 'package:food_inventory/services/service_locator.dart';
 import 'package:food_inventory/services/shipment_service.dart';
 import 'package:food_inventory/widgets/confirm_dialog.dart';
 import 'package:food_inventory/widgets/shipment_item_list.dart';
@@ -21,6 +23,7 @@ class ShipmentDetailScreen extends StatefulWidget {
 
 class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
   late ShipmentService _shipmentService;
+  late ImageService _imageService;
   late Future<List<ShipmentItem>> _itemsFuture;
   bool _isUpdating = false;
 
@@ -28,6 +31,7 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
   void initState() {
     super.initState();
     _shipmentService = Provider.of<ShipmentService>(context, listen: false);
+    _imageService = ServiceLocator.instance<ImageService>();
     _loadItems();
   }
 

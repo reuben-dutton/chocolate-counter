@@ -4,10 +4,12 @@ import 'package:food_inventory/models/shipment.dart';
 import 'package:food_inventory/models/shipment_item.dart';
 import 'package:food_inventory/services/inventory_service.dart';
 import 'package:food_inventory/services/shipment_service.dart';
+import 'package:food_inventory/services/image_service.dart';
+import 'package:food_inventory/services/service_locator.dart';
+import 'package:food_inventory/widgets/common/item_image_widget.dart';
 import 'package:food_inventory/widgets/shipment_item_selector.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'dart:io';
 
 class AddShipmentScreen extends StatefulWidget {
   const AddShipmentScreen({super.key});
@@ -19,6 +21,7 @@ class AddShipmentScreen extends StatefulWidget {
 class _AddShipmentScreenState extends State<AddShipmentScreen> {
   late ShipmentService _shipmentService;
   late InventoryService _inventoryService;
+  late ImageService _imageService;
   
   // Step 1: Select items
   List<ItemDefinition> _availableItems = [];
@@ -38,6 +41,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
     super.initState();
     _inventoryService = Provider.of<InventoryService>(context, listen: false);
     _shipmentService = Provider.of<ShipmentService>(context, listen: false);
+    _imageService = ServiceLocator.instance<ImageService>();
     _loadItems();
   }
 
@@ -353,22 +357,12 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                             return ListTile(
                               dense: true,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                              leading: item.itemDefinition?.imageUrl != null
-                                  ? CircleAvatar(
-                                      radius: 16,
-                                      backgroundImage: item.itemDefinition!.imageUrl!.startsWith('http')
-                                          ? NetworkImage(item.itemDefinition!.imageUrl!)
-                                          : FileImage(File(item.itemDefinition!.imageUrl!)) as ImageProvider,
-                                    )
-                                  : CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: theme.colorScheme.secondaryContainer,
-                                      child: Icon(
-                                        Icons.inventory_2, 
-                                        color: theme.colorScheme.onSecondaryContainer, 
-                                        size: 14
-                                      ),
-                                    ),
+                              leading: ItemImageWidget(
+                                imagePath: item.itemDefinition?.imageUrl,
+                                itemName: item.itemDefinition?.name ?? 'Unknown Item',
+                                radius: 16,
+                                imageService: _imageService,
+                              ),
                               title: Text(
                                 item.itemDefinition?.name ?? 'Unknown Item',
                                 overflow: TextOverflow.ellipsis,

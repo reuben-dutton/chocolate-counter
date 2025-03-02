@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/models/item_definition.dart';
 import 'package:food_inventory/services/inventory_service.dart';
+import 'package:food_inventory/services/image_service.dart';
+import 'package:food_inventory/services/service_locator.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 
 class AddItemDefinitionScreen extends StatefulWidget {
   const AddItemDefinitionScreen({super.key});
@@ -19,7 +19,13 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
   final _barcodeController = TextEditingController();
   File? _imageFile;
   bool _isCreating = false;
-  final ImagePicker _picker = ImagePicker();
+  late ImageService _imageService;
+
+  @override
+  void initState() {
+    super.initState();
+    _imageService = ServiceLocator.instance<ImageService>();
+  }
 
   @override
   void dispose() {
@@ -29,37 +35,20 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
   }
 
   Future<void> _takePhoto() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
-
+    final pickedFile = await _imageService.takePhoto();
     if (pickedFile != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
+        _imageFile = pickedFile;
       });
     }
   }
 
   Future<void> _pickPhoto() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-
+    final pickedFile = await _imageService.pickPhoto();
     if (pickedFile != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
+        _imageFile = pickedFile;
       });
-    }
-  }
-
-  Future<String?> _saveImage() async {
-    if (_imageFile == null) return null;
-
-    try {
-      // Get application documents directory
-      final appDir = await getApplicationDocumentsDirectory();
-      final fileName = 'item_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final savedImage = await _imageFile!.copy('${appDir.path}/$fileName');
-      return savedImage.path;
-    } catch (e) {
-      print('Error saving image: $e');
-      return null;
     }
   }
 
@@ -182,7 +171,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
       final inventoryService = Provider.of<InventoryService>(context, listen: false);
       
       // Save image to app directory and get the path
-      final imagePath = await _saveImage();
+      final imagePath = await _imageService.saveImage(_imageFile);
       
       final itemDefinition = ItemDefinition(
         name: _nameController.text,

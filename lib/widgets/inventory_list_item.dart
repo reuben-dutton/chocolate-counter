@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/models/item_definition.dart';
+import 'package:food_inventory/services/image_service.dart';
+import 'package:food_inventory/services/service_locator.dart';
 import 'package:food_inventory/widgets/common/count_chip_widget.dart';
 import 'package:food_inventory/widgets/common/item_image_widget.dart';
 
@@ -9,8 +11,9 @@ class InventoryListItem extends StatelessWidget {
   final int inventoryCount;
   final bool isEmptyItem;
   final VoidCallback onTap;
+  final ImageService _imageService = ServiceLocator.instance<ImageService>();
 
-  const InventoryListItem({
+  InventoryListItem({
     super.key,
     required this.itemDefinition,
     required this.stockCount,
@@ -41,6 +44,7 @@ class InventoryListItem extends StatelessWidget {
                   imagePath: itemDefinition.imageUrl,
                   itemName: itemDefinition.name,
                   radius: 24,
+                  imageService: _imageService,
                 ),
                 const SizedBox(width: 12),
                 Expanded(

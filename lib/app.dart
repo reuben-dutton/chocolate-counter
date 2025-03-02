@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/screens/home_screen.dart';
+import 'package:food_inventory/services/database_service.dart';
 import 'package:food_inventory/services/dialog_service.dart';
 import 'package:food_inventory/services/inventory_service.dart';
 import 'package:food_inventory/services/preferences_service.dart';
@@ -14,6 +15,7 @@ class FoodInventoryApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Get services from service locator
+    final databaseService = ServiceLocator.instance<DatabaseService>();
     final preferencesService = ServiceLocator.instance<PreferencesService>();
     final inventoryService = ServiceLocator.instance<InventoryService>();
     final shipmentService = ServiceLocator.instance<ShipmentService>();
@@ -23,6 +25,7 @@ class FoodInventoryApp extends StatelessWidget {
     
     return MultiProvider(
       providers: [
+        Provider<DatabaseService>.value(value: databaseService),
         ChangeNotifierProvider<PreferencesService>.value(value: preferencesService),
         Provider<InventoryService>.value(value: inventoryService),
         Provider<ShipmentService>.value(value: shipmentService),

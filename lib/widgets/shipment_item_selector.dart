@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/models/item_definition.dart';
 import 'package:food_inventory/models/shipment_item.dart';
 import 'package:food_inventory/services/dialog_service.dart';
+import 'package:food_inventory/services/image_service.dart';
+import 'package:food_inventory/services/service_locator.dart';
 import 'package:food_inventory/widgets/common/item_image_widget.dart';
 import 'package:food_inventory/widgets/common/section_header_widget.dart';
 import 'package:food_inventory/widgets/common/expiration_date_widget.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class ShipmentItemSelector extends StatefulWidget {
@@ -29,6 +30,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
   String _searchQuery = '';
   List<ShipmentItem> _selectedItems = [];
   late DialogService _dialogService;
+  late ImageService _imageService;
   
   @override
   void initState() {
@@ -40,6 +42,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
       });
     });
     _dialogService = Provider.of<DialogService>(context, listen: false);
+    _imageService = ServiceLocator.instance<ImageService>();
   }
   
   @override
@@ -115,6 +118,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                               imagePath: item.itemDefinition?.imageUrl,
                               itemName: item.itemDefinition?.name ?? 'Unknown Item',
                               radius: 16,
+                              imageService: _imageService,
                             ),
                             title: Text(
                               item.itemDefinition?.name ?? 'Unknown Item',
@@ -201,6 +205,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                                   imagePath: item.imageUrl,
                                   itemName: item.name,
                                   radius: 16,
+                                  imageService: _imageService,
                                 ),
                                 title: Text(
                                   item.name,

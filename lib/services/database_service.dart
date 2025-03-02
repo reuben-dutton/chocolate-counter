@@ -123,23 +123,20 @@ class DatabaseService {
   /// Completely resets the database - for development and debugging only
   Future<void> resetDatabase() async {
     try {
-      // Close the current database
-      await _database.close();
+      // Ensure database is closed
+      if (_database.isOpen) {
+        await _database.close();
+      }
       
-      // Delete the database file
+      // Get the full database path
       final databasePath = await getDatabasesPath();
       final path = join(databasePath, databaseName);
+      
+      // Delete the database file
       await deleteDatabase(path);
       
-      // Recreate the database
-      _database = await openDatabase(
-        path,
-        version: databaseVersion,
-        onCreate: _onCreate,
-        onConfigure: (db) async {
-          await db.execute('PRAGMA foreign_keys = ON');
-        },
-      );
+      // Reinitialize the database
+      await initialize();
     } catch (e) {
       print('Database reset error: $e');
       rethrow;
