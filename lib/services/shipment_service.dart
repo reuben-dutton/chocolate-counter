@@ -3,13 +3,12 @@ import 'package:food_inventory/models/item_instance.dart';
 import 'package:food_inventory/models/shipment.dart';
 import 'package:food_inventory/models/shipment_item.dart';
 import 'package:food_inventory/services/database_service.dart';
-import 'package:food_inventory/services/inventory_service.dart';
+
 
 class ShipmentService {
   final DatabaseService _databaseService;
-  final InventoryService _inventoryService;
   
-  ShipmentService(this._databaseService, this._inventoryService);
+  ShipmentService(this._databaseService, _inventoryService);
   
   /// Returns all shipments ordered by date (newest first)
   Future<List<Shipment>> getAllShipments() async {
