@@ -3,6 +3,7 @@ import 'package:food_inventory/models/item_instance.dart';
 import 'package:food_inventory/repositories/base_repository.dart';
 import 'package:food_inventory/repositories/item_definition_repository.dart';
 import 'package:food_inventory/services/database_service.dart';
+import 'package:sqflite/sqflite.dart';
 
 class ItemInstanceRepository extends BaseRepository<ItemInstance> {
   final ItemDefinitionRepository _itemDefinitionRepository;
@@ -28,19 +29,22 @@ class ItemInstanceRepository extends BaseRepository<ItemInstance> {
   }
 
   /// Get all instances for a specific item definition with their item details
-  Future<List<ItemInstance>> getInstancesForItem(int itemDefinitionId) async {
+  Future<List<ItemInstance>> getInstancesForItem(int itemDefinitionId, {Transaction? txn}) async {
+    // Get instances with the transaction
     final instances = await getWhere(
       where: 'itemDefinitionId = ?',
       whereArgs: [itemDefinitionId],
       orderBy: 'expirationDate ASC',
+      txn: txn,
     );
     
     if (instances.isEmpty) {
       return [];
     }
     
-    // Fetch the item definition
-    final itemDefinition = await _itemDefinitionRepository.getById(itemDefinitionId);
+    // Important: Fetch the item definition *outside* the transaction if possible
+    // or pass the transaction explicitly if the caller provided it
+    final itemDefinition = await _itemDefinitionRepository.getById(itemDefinitionId, txn: txn);
     
     // Attach the item definition to each instance
     return instances.map((instance) {
@@ -57,8 +61,8 @@ class ItemInstanceRepository extends BaseRepository<ItemInstance> {
   }
   
   /// Get item counts (stock and inventory) for a specific item definition
-  Future<Map<String, int>> getItemCounts(int itemDefinitionId) async {
-    final db = databaseService.database;
+  Future<Map<String, int>> getItemCounts(int itemDefinitionId, {Transaction? txn}) async {
+    final db = txn ?? databaseService.database;
     
     try {
       // Get stock count - items with isInStock = 1
@@ -86,26 +90,28 @@ class ItemInstanceRepository extends BaseRepository<ItemInstance> {
   }
   
   /// Get instances for an item sorted by expiration date (for stock operations)
-  Future<List<ItemInstance>> getStockInstances(int itemDefinitionId) async {
+  Future<List<ItemInstance>> getStockInstances(int itemDefinitionId, {Transaction? txn}) async {
     return getWhere(
       where: 'itemDefinitionId = ? AND isInStock = 1',
       whereArgs: [itemDefinitionId],
       orderBy: 'CASE WHEN expirationDate IS NULL THEN 1 ELSE 0 END, expirationDate ASC',
+      txn: txn,
     );
   }
   
   /// Get instances for an item sorted by expiration date (for inventory operations)
-  Future<List<ItemInstance>> getInventoryInstances(int itemDefinitionId) async {
+  Future<List<ItemInstance>> getInventoryInstances(int itemDefinitionId, {Transaction? txn}) async {
     return getWhere(
       where: 'itemDefinitionId = ? AND isInStock = 0',
       whereArgs: [itemDefinitionId],
       orderBy: 'CASE WHEN expirationDate IS NULL THEN 1 ELSE 0 END, expirationDate ASC',
+      txn: txn,
     );
   }
   
   /// Update the expiration date for instances linked to a shipment item
-  Future<int> updateExpirationForShipmentItem(int shipmentItemId, DateTime? expirationDate) async {
-    final db = databaseService.database;
+  Future<int> updateExpirationForShipmentItem(int shipmentItemId, DateTime? expirationDate, {Transaction? txn}) async {
+    final db = txn ?? databaseService.database;
     
     return await db.update(
       tableName,

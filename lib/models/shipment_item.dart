@@ -19,6 +19,25 @@ class ShipmentItem {
     this.itemDefinition,
   });
 
+  // Factory method for creating a shipment item
+  static ShipmentItem create({
+    int? id,
+    required int shipmentId,
+    required int itemDefinitionId,
+    required int quantity,
+    DateTime? expirationDate,
+    ItemDefinition? itemDefinition,
+  }) {
+    return ShipmentItem(
+      id: id,
+      shipmentId: shipmentId,
+      itemDefinitionId: itemDefinitionId,
+      quantity: quantity,
+      expirationDate: expirationDate,
+      itemDefinition: itemDefinition,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,

@@ -1,4 +1,5 @@
 import 'package:food_inventory/models/item_definition.dart';
+import 'package:food_inventory/models/shipment_item.dart';
 
 class ItemInstance {
   final int? id;
@@ -20,6 +21,58 @@ class ItemInstance {
     this.shipmentItemId,
     this.itemDefinition,
   });
+
+  // Factory method for creating a stock item
+  static ItemInstance createStockItem({
+    int? id,
+    required int itemDefinitionId,
+    required int quantity,
+    DateTime? expirationDate,
+    int? shipmentItemId,
+    ItemDefinition? itemDefinition,
+  }) {
+    return ItemInstance(
+      id: id,
+      itemDefinitionId: itemDefinitionId,
+      quantity: quantity,
+      expirationDate: expirationDate,
+      isInStock: true,
+      shipmentItemId: shipmentItemId,
+      itemDefinition: itemDefinition,
+    );
+  }
+
+  // Factory method for creating an inventory item
+  static ItemInstance createInventoryItem({
+    int? id,
+    required int itemDefinitionId,
+    required int quantity,
+    DateTime? expirationDate,
+    int? shipmentItemId,
+    ItemDefinition? itemDefinition,
+  }) {
+    return ItemInstance(
+      id: id,
+      itemDefinitionId: itemDefinitionId,
+      quantity: quantity,
+      expirationDate: expirationDate,
+      isInStock: false,
+      shipmentItemId: shipmentItemId,
+      itemDefinition: itemDefinition,
+    );
+  }
+
+  // Factory method to create an item from a shipment item
+  static ItemInstance fromShipmentItem(ShipmentItem shipmentItem, {bool isInStock = false}) {
+    return ItemInstance(
+      itemDefinitionId: shipmentItem.itemDefinitionId,
+      quantity: shipmentItem.quantity,
+      expirationDate: shipmentItem.expirationDate,
+      isInStock: isInStock,
+      shipmentItemId: shipmentItem.id,
+      itemDefinition: shipmentItem.itemDefinition,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {

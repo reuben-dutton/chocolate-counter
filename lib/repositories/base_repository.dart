@@ -1,4 +1,5 @@
 import 'package:food_inventory/services/database_service.dart';
+import 'package:sqflite/sqflite.dart';
 
 /// Generic repository interface for CRUD operations
 abstract class BaseRepository<T> {
@@ -21,8 +22,8 @@ abstract class BaseRepository<T> {
   int? getId(T entity);
 
   /// Get all entities
-  Future<List<T>> getAll({String? orderBy}) async {
-    final db = databaseService.database;
+  Future<List<T>> getAll({String? orderBy, Transaction? txn}) async {
+    final db = txn ?? databaseService.database;
     final List<Map<String, dynamic>> maps = await db.query(
       tableName,
       orderBy: orderBy,
@@ -32,8 +33,8 @@ abstract class BaseRepository<T> {
   }
 
   /// Get entity by ID
-  Future<T?> getById(int id) async {
-    final db = databaseService.database;
+  Future<T?> getById(int id, {Transaction? txn}) async {
+    final db = txn ?? databaseService.database;
     
     final List<Map<String, dynamic>> maps = await db.query(
       tableName,
@@ -49,9 +50,9 @@ abstract class BaseRepository<T> {
     return fromMap(maps.first);
   }
 
-  /// Create new entity
-  Future<int> create(T entity) async {
-    final db = databaseService.database;
+  /// Create new entity with optional transaction
+  Future<int> create(T entity, {Transaction? txn}) async {
+    final db = txn ?? databaseService.database;
     final map = toMap(entity);
     
     // Remove ID field if it's null (for auto-increment)
@@ -62,9 +63,9 @@ abstract class BaseRepository<T> {
     return await db.insert(tableName, map);
   }
 
-  /// Update existing entity
-  Future<int> update(T entity) async {
-    final db = databaseService.database;
+  /// Update existing entity with optional transaction
+  Future<int> update(T entity, {Transaction? txn}) async {
+    final db = txn ?? databaseService.database;
     final id = getId(entity);
     
     if (id == null) {
@@ -79,9 +80,9 @@ abstract class BaseRepository<T> {
     );
   }
 
-  /// Delete entity by ID
-  Future<int> delete(int id) async {
-    final db = databaseService.database;
+  /// Delete entity by ID with optional transaction
+  Future<int> delete(int id, {Transaction? txn}) async {
+    final db = txn ?? databaseService.database;
     
     return await db.delete(
       tableName,
@@ -90,13 +91,14 @@ abstract class BaseRepository<T> {
     );
   }
   
-  /// Get all entities with custom where clause
+  /// Get all entities with custom where clause and optional transaction
   Future<List<T>> getWhere({
     required String where,
     required List<dynamic> whereArgs,
     String? orderBy,
+    Transaction? txn,
   }) async {
-    final db = databaseService.database;
+    final db = txn ?? databaseService.database;
     
     final List<Map<String, dynamic>> maps = await db.query(
       tableName,
@@ -108,12 +110,18 @@ abstract class BaseRepository<T> {
     return List.generate(maps.length, (i) => fromMap(maps[i]));
   }
 
-  /// Execute a raw query
-  Future<List<T>> rawQuery(String query, [List<dynamic>? arguments]) async {
-    final db = databaseService.database;
+  /// Execute a raw query with optional transaction
+  Future<List<T>> rawQuery(String query, [List<dynamic>? arguments, Transaction? txn]) async {
+    final db = txn ?? databaseService.database;
     
     final List<Map<String, dynamic>> maps = await db.rawQuery(query, arguments);
     
     return List.generate(maps.length, (i) => fromMap(maps[i]));
+  }
+  
+  /// Run a function within a transaction
+  Future<R> withTransaction<R>(Future<R> Function(Transaction txn) action) async {
+    final db = databaseService.database;
+    return await db.transaction(action);
   }
 }

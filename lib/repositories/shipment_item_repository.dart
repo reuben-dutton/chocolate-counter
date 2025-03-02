@@ -3,6 +3,7 @@ import 'package:food_inventory/models/shipment_item.dart';
 import 'package:food_inventory/repositories/base_repository.dart';
 import 'package:food_inventory/repositories/item_definition_repository.dart';
 import 'package:food_inventory/services/database_service.dart';
+import 'package:sqflite/sqflite.dart';
 
 class ShipmentItemRepository extends BaseRepository<ShipmentItem> {
   final ItemDefinitionRepository _itemDefinitionRepository;
@@ -28,10 +29,11 @@ class ShipmentItemRepository extends BaseRepository<ShipmentItem> {
   }
   
   /// Get all shipment items for a specific shipment with their item definitions
-  Future<List<ShipmentItem>> getItemsForShipment(int shipmentId) async {
+  Future<List<ShipmentItem>> getItemsForShipment(int shipmentId, {Transaction? txn}) async {
     final items = await getWhere(
       where: 'shipmentId = ?',
       whereArgs: [shipmentId],
+      txn: txn,
     );
     
     if (items.isEmpty) {
@@ -44,10 +46,10 @@ class ShipmentItemRepository extends BaseRepository<ShipmentItem> {
         .toSet()
         .toList();
     
-    // Fetch all item definitions in a single operation
+    // Fetch all item definitions with the transaction if provided
     final Map<int, ItemDefinition> itemDefinitions = {};
     for (final id in itemDefinitionIds) {
-      final def = await _itemDefinitionRepository.getById(id);
+      final def = await _itemDefinitionRepository.getById(id, txn: txn);
       if (def != null) {
         itemDefinitions[id] = def;
       }
@@ -67,8 +69,8 @@ class ShipmentItemRepository extends BaseRepository<ShipmentItem> {
   }
   
   /// Update the expiration date for a shipment item
-  Future<int> updateExpirationDate(int id, DateTime? expirationDate) async {
-    final db = databaseService.database;
+  Future<int> updateExpirationDate(int id, DateTime? expirationDate, {Transaction? txn}) async {
+    final db = txn ?? databaseService.database;
     
     return await db.update(
       tableName,

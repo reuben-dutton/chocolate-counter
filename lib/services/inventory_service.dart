@@ -1,3 +1,5 @@
+import 'package:food_inventory/factories/inventory_movement_factory.dart';
+import 'package:food_inventory/factories/item_instance_factory.dart';
 import 'package:food_inventory/models/inventory_movement.dart';
 import 'package:food_inventory/models/item_definition.dart';
 import 'package:food_inventory/models/item_instance.dart';
@@ -5,17 +7,22 @@ import 'package:food_inventory/repositories/inventory_movement_repository.dart';
 import 'package:food_inventory/repositories/item_definition_repository.dart';
 import 'package:food_inventory/repositories/item_instance_repository.dart';
 
+
 /// Service for managing inventory-related operations
 class InventoryService {
   final ItemDefinitionRepository _itemDefinitionRepository;
   final ItemInstanceRepository _itemInstanceRepository;
   final InventoryMovementRepository _inventoryMovementRepository;
+  final ItemInstanceFactory _itemInstanceFactory;
+  final InventoryMovementFactory _movementFactory;
 
   InventoryService(
     this._itemDefinitionRepository,
     this._itemInstanceRepository,
     this._inventoryMovementRepository,
-  );
+  ) : 
+    _itemInstanceFactory = ItemInstanceFactory(_itemInstanceRepository, _itemDefinitionRepository),
+    _movementFactory = InventoryMovementFactory(_inventoryMovementRepository);
 
   /// Get all item definitions with their current counts
   Future<List<ItemDefinition>> getAllItemDefinitions() async {
@@ -59,15 +66,12 @@ class InventoryService {
     DateTime? expirationDate, {
     int? shipmentItemId,
   }) async {
-    final itemInstance = ItemInstance(
+    return _itemInstanceFactory.addToInventory(
       itemDefinitionId: itemDefinitionId,
       quantity: quantity,
       expirationDate: expirationDate,
-      isInStock: false, // Add to inventory, not stock
       shipmentItemId: shipmentItemId,
     );
-    
-    return _itemInstanceRepository.create(itemInstance);
   }
   
   /// Update stock count (record sale)
@@ -76,12 +80,12 @@ class InventoryService {
     int decreaseAmount, {
     DateTime? timestamp,
   }) async {
-    final db = _itemInstanceRepository.databaseService.database;
     final actualTimestamp = timestamp ?? DateTime.now();
     
-    await db.transaction((txn) async {
-      // Get current stock items sorted by expiration date (earliest first)
-      final stockItems = await _itemInstanceRepository.getStockInstances(itemDefinitionId);
+    // IMPORTANT: Get stock items BEFORE starting the transaction
+    final stockItems = await _itemInstanceRepository.getStockInstances(itemDefinitionId);
+    
+    await _itemInstanceRepository.withTransaction((txn) async {
       var remainingDecrease = decreaseAmount;
       
       // Loop through stock items and decrease quantities
@@ -90,29 +94,25 @@ class InventoryService {
         
         if (instance.quantity <= remainingDecrease) {
           // Remove the entire item instance
-          await _itemInstanceRepository.delete(instance.id!);
+          await _itemInstanceRepository.delete(instance.id!, txn: txn);
           remainingDecrease -= instance.quantity;
         } else {
           // Partially decrease the item instance
-          final updatedInstance = ItemInstance(
-            id: instance.id,
-            itemDefinitionId: instance.itemDefinitionId,
+          final updatedInstance = instance.copyWith(
             quantity: instance.quantity - remainingDecrease,
-            expirationDate: instance.expirationDate,
-            isInStock: instance.isInStock,
-            shipmentItemId: instance.shipmentItemId,
           );
           
-          await _itemInstanceRepository.update(updatedInstance);
+          await _itemInstanceRepository.update(updatedInstance, txn: txn);
           remainingDecrease = 0;
         }
       }
       
       // Record the movement
-      await _inventoryMovementRepository.recordStockSale(
-        itemDefinitionId, 
-        decreaseAmount, 
-        actualTimestamp
+      await _movementFactory.recordStockSale(
+        itemDefinitionId: itemDefinitionId,
+        quantity: decreaseAmount,
+        timestamp: actualTimestamp,
+        txn: txn
       );
     });
   }
@@ -123,12 +123,12 @@ class InventoryService {
     int moveAmount, {
     DateTime? timestamp,
   }) async {
-    final db = _itemInstanceRepository.databaseService.database;
     final actualTimestamp = timestamp ?? DateTime.now();
     
-    await db.transaction((txn) async {
-      // Get current inventory items sorted by expiration date (earliest first)
-      final inventoryItems = await _itemInstanceRepository.getInventoryInstances(itemDefinitionId);
+    // IMPORTANT: Get inventory items BEFORE starting the transaction
+    final inventoryItems = await _itemInstanceRepository.getInventoryInstances(itemDefinitionId);
+    
+    await _itemInstanceRepository.withTransaction((txn) async {
       var remainingMove = moveAmount;
       
       // Loop through inventory items and move quantities to stock
@@ -137,51 +137,40 @@ class InventoryService {
         
         if (instance.quantity <= remainingMove) {
           // Move the entire item instance to stock
-          final updatedInstance = ItemInstance(
-            id: instance.id,
-            itemDefinitionId: instance.itemDefinitionId,
-            quantity: instance.quantity,
-            expirationDate: instance.expirationDate,
+          final updatedInstance = instance.copyWith(
             isInStock: true, // Now in stock
-            shipmentItemId: instance.shipmentItemId,
           );
           
-          await _itemInstanceRepository.update(updatedInstance);
+          await _itemInstanceRepository.update(updatedInstance, txn: txn);
           remainingMove -= instance.quantity;
         } else {
           // Split the item instance
           // First, reduce the inventory instance quantity
-          final updatedInventoryInstance = ItemInstance(
-            id: instance.id,
-            itemDefinitionId: instance.itemDefinitionId,
+          final updatedInventoryInstance = instance.copyWith(
             quantity: instance.quantity - remainingMove,
-            expirationDate: instance.expirationDate,
-            isInStock: false,
-            shipmentItemId: instance.shipmentItemId,
           );
           
-          await _itemInstanceRepository.update(updatedInventoryInstance);
+          await _itemInstanceRepository.update(updatedInventoryInstance, txn: txn);
           
           // Then create a new stock instance for the moved quantity
-          final newStockInstance = ItemInstance(
+          await _itemInstanceFactory.addToStock(
             itemDefinitionId: instance.itemDefinitionId,
             quantity: remainingMove,
             expirationDate: instance.expirationDate,
-            isInStock: true,
             shipmentItemId: instance.shipmentItemId,
+            txn: txn
           );
-          
-          await _itemInstanceRepository.create(newStockInstance);
           
           remainingMove = 0;
         }
       }
       
       // Record the inventory-to-stock movement
-      await _inventoryMovementRepository.recordInventoryToStock(
-        itemDefinitionId, 
-        moveAmount, 
-        actualTimestamp
+      await _movementFactory.recordInventoryToStock(
+        itemDefinitionId: itemDefinitionId,
+        quantity: moveAmount,
+        timestamp: actualTimestamp,
+        txn: txn
       );
     });
   }

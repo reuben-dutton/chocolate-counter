@@ -2,6 +2,7 @@ import 'package:food_inventory/models/shipment.dart';
 import 'package:food_inventory/repositories/base_repository.dart';
 import 'package:food_inventory/repositories/shipment_item_repository.dart';
 import 'package:food_inventory/services/database_service.dart';
+import 'package:sqflite/sqflite.dart';
 
 class ShipmentRepository extends BaseRepository<Shipment> {
   final ShipmentItemRepository _shipmentItemRepository;
@@ -62,29 +63,38 @@ class ShipmentRepository extends BaseRepository<Shipment> {
   }
   
   /// Create a shipment with its items
-  Future<int> createWithItems(Shipment shipment) async {
-    final db = databaseService.database;
+  Future<int> createWithItems(Shipment shipment, {Transaction? txn}) async {
+    // If no transaction provided, create one from the database
+    if (txn == null) {
+      return await databaseService.database.transaction((newTxn) async {
+        return _createWithItemsInternal(shipment, newTxn);
+      });
+    }
     
-    return await db.transaction((txn) async {
-      // Create shipment
-      final shipmentMap = toMap(shipment);
-      shipmentMap.remove('id');
+    // Otherwise use the provided transaction
+    return _createWithItemsInternal(shipment, txn);
+  }
+  
+  /// Internal method to create shipment with items using transaction
+  Future<int> _createWithItemsInternal(Shipment shipment, Transaction txn) async {
+    // Create shipment
+    final shipmentMap = toMap(shipment);
+    shipmentMap.remove('id');
+    
+    final shipmentId = await txn.insert(tableName, shipmentMap);
+    
+    // Create shipment items
+    for (final item in shipment.items) {
+      final itemMap = _shipmentItemRepository.toMap(item);
+      itemMap.remove('id');
+      itemMap['shipmentId'] = shipmentId;
       
-      final shipmentId = await txn.insert(tableName, shipmentMap);
-      
-      // Create shipment items
-      for (final item in shipment.items) {
-        final itemMap = _shipmentItemRepository.toMap(item);
-        itemMap.remove('id');
-        itemMap['shipmentId'] = shipmentId;
-        
-        await txn.insert(
-          DatabaseService.tableShipmentItems,
-          itemMap,
-        );
-      }
-      
-      return shipmentId;
-    });
+      await txn.insert(
+        DatabaseService.tableShipmentItems,
+        itemMap,
+      );
+    }
+    
+    return shipmentId;
   }
 }

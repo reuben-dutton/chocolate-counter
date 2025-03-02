@@ -1,3 +1,5 @@
+import 'package:food_inventory/factories/inventory_movement_factory.dart';
+import 'package:food_inventory/factories/item_instance_factory.dart';
 import 'package:food_inventory/repositories/inventory_movement_repository.dart';
 import 'package:food_inventory/repositories/item_definition_repository.dart';
 import 'package:food_inventory/repositories/item_instance_repository.dart';
@@ -60,6 +62,20 @@ class ServiceLocator {
       ShipmentRepository(
         databaseService,
         instance<ShipmentItemRepository>(),
+      ),
+    );
+    
+    // Register factory classes
+    instance.registerSingleton<ItemInstanceFactory>(
+      ItemInstanceFactory(
+        instance<ItemInstanceRepository>(),
+        instance<ItemDefinitionRepository>(),
+      ),
+    );
+    
+    instance.registerSingleton<InventoryMovementFactory>(
+      InventoryMovementFactory(
+        instance<InventoryMovementRepository>(),
       ),
     );
     

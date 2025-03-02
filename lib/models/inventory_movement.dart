@@ -19,6 +19,42 @@ class InventoryMovement {
     this.itemDefinition,
   });
 
+  // Factory method for creating a stock sale movement
+  static InventoryMovement createStockSale({
+    int? id,
+    required int itemDefinitionId,
+    required int quantity,
+    DateTime? timestamp,
+    ItemDefinition? itemDefinition,
+  }) {
+    return InventoryMovement(
+      id: id,
+      itemDefinitionId: itemDefinitionId,
+      quantity: quantity,
+      timestamp: timestamp ?? DateTime.now(),
+      type: MovementType.stockSale,
+      itemDefinition: itemDefinition,
+    );
+  }
+
+  // Factory method for creating an inventory-to-stock movement
+  static InventoryMovement createInventoryToStock({
+    int? id,
+    required int itemDefinitionId,
+    required int quantity,
+    DateTime? timestamp,
+    ItemDefinition? itemDefinition,
+  }) {
+    return InventoryMovement(
+      id: id,
+      itemDefinitionId: itemDefinitionId,
+      quantity: quantity,
+      timestamp: timestamp ?? DateTime.now(),
+      type: MovementType.inventoryToStock,
+      itemDefinition: itemDefinition,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
