@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/models/item_definition.dart';
 import 'package:food_inventory/models/shipment_item.dart';
-import 'package:food_inventory/utils/item_visualization.dart';
+import 'package:food_inventory/services/dialog_service.dart';
+import 'package:food_inventory/widgets/common/item_image_widget.dart';
+import 'package:food_inventory/widgets/common/section_header_widget.dart';
+import 'package:food_inventory/widgets/common/expiration_date_widget.dart';
 import 'package:intl/intl.dart';
-import 'dart:io';
+import 'package:provider/provider.dart';
 
 class ShipmentItemSelector extends StatefulWidget {
   final List<ItemDefinition> availableItems;
@@ -25,6 +28,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   List<ShipmentItem> _selectedItems = [];
+  late DialogService _dialogService;
   
   @override
   void initState() {
@@ -35,6 +39,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
         _searchQuery = _searchController.text.toLowerCase();
       });
     });
+    _dialogService = Provider.of<DialogService>(context, listen: false);
   }
   
   @override
@@ -85,15 +90,10 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.check_circle, size: 16),
-                      SizedBox(width: 4),
-                      Text(
-                        'Selected Items',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                    ],
+                  SectionHeaderWidget(
+                    title: 'Selected Items',
+                    icon: Icons.check_circle,
+                    iconColor: theme.colorScheme.primary,
                   ),
                   const SizedBox(height: 4),
                   Container(
@@ -111,22 +111,21 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                           child: ListTile(
                             dense: true,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                            leading: _buildItemImage(item.itemDefinition),
+                            leading: ItemImageWidget(
+                              imagePath: item.itemDefinition?.imageUrl,
+                              itemName: item.itemDefinition?.name ?? 'Unknown Item',
+                              radius: 16,
+                            ),
                             title: Text(
                               item.itemDefinition?.name ?? 'Unknown Item',
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(fontSize: 14),
                             ),
                             subtitle: item.expirationDate != null
-                                ? Row(
-                                    children: [
-                                      const Icon(Icons.event, size: 12),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        DateFormat('yyyy-MM-dd').format(item.expirationDate!),
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                    ],
+                                ? ExpirationDateWidget(
+                                    expirationDate: item.expirationDate,
+                                    fontSize: 12,
+                                    iconSize: 12,
                                   )
                                 : null,
                             trailing: Row(
@@ -135,7 +134,6 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    // color: Theme.of(context).primaryColor.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
@@ -143,7 +141,6 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
-                                      // color: Theme.of(context).primaryColor,
                                     ),
                                   ),
                                 ),
@@ -184,15 +181,10 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.list, size: 16),
-                      SizedBox(width: 4),
-                      Text(
-                        'Available Items',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                    ],
+                  SectionHeaderWidget(
+                    title: 'Available Items',
+                    icon: Icons.list,
+                    iconColor: theme.colorScheme.secondary,
                   ),
                   const SizedBox(height: 4),
                   Expanded(
@@ -205,7 +197,11 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                               return ListTile(
                                 dense: true,
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                                leading: _buildItemImage(item),
+                                leading: ItemImageWidget(
+                                  imagePath: item.imageUrl,
+                                  itemName: item.name,
+                                  radius: 16,
+                                ),
                                 title: Text(
                                   item.name,
                                   overflow: TextOverflow.ellipsis,
@@ -229,51 +225,12 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
       ],
     );
   }
-  
-  Widget _buildItemImage(ItemDefinition? item) {
-    if (item == null || item.imageUrl == null) {
-      final color = ItemVisualization.getColorForItem(item!.name, context);
-      final icon = ItemVisualization.getIconForItem(item.name);
 
-      return CircleAvatar(
-        radius: 16,
-        backgroundColor: color,
-        child: Icon(icon, color: Colors.white, size: 12),
-      );
-    }
-    
-    final String imagePath = item.imageUrl!;
-    
-    try {
-      if (imagePath.startsWith('http')) {
-        // Remote URL
-        return CircleAvatar(
-          radius: 16,
-          backgroundImage: NetworkImage(imagePath),
-        );
-      } else {
-        // Local file path
-        return CircleAvatar(
-          radius: 16,
-          backgroundImage: FileImage(File(imagePath)),
-        );
-      }
-    } catch (e) {
-      // Fallback in case of any image loading errors
-      print('Error loading image: $e');
-      return const CircleAvatar(
-        radius: 16,
-        backgroundColor: Colors.grey,
-        child: Icon(Icons.image_not_supported, color: Colors.white, size: 12),
-      );
-    }
-  }
-  
-  void _showAddItemDialog(ItemDefinition item) {
+  void _showAddItemDialog(ItemDefinition item) async {
     int quantity = 1;
     DateTime? expirationDate;
     
-    showDialog(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
@@ -328,17 +285,19 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Expiration Date (Optional)'),
-                  subtitle: Text(expirationDate != null
-                      ? DateFormat('yyyy-MM-dd').format(expirationDate!)
-                      : 'No expiration date'),
+                  subtitle: ExpirationDateWidget(
+                    expirationDate: expirationDate,
+                    showIcon: false,
+                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.calendar_today, size: 20),
                     onPressed: () async {
-                      final DateTime? picked = await showDatePicker(
+                      final DateTime? picked = await _dialogService.showDatePicker(
                         context: context,
                         initialDate: expirationDate ?? DateTime.now().add(const Duration(days: 30)),
                         firstDate: DateTime.now(),
                         lastDate: DateTime(2101),
+                        helpText: 'Select Expiration Date',
                       );
                       if (picked != null) {
                         setState(() {
@@ -359,8 +318,10 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                 icon: const Icon(Icons.add, size: 16),
                 label: const Text('Add'),
                 onPressed: () {
-                  _addItem(item, quantity, expirationDate);
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop({
+                    'quantity': quantity,
+                    'expirationDate': expirationDate,
+                  });
                 },
               ),
             ],
@@ -368,14 +329,18 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
         },
       ),
     );
+    
+    if (result != null) {
+      _addItem(item, result['quantity'], result['expirationDate']);
+    }
   }
   
-  void _showItemEditDialog(int index) {
+  void _showItemEditDialog(int index) async {
     final item = _selectedItems[index];
     int quantity = item.quantity;
     DateTime? expirationDate = item.expirationDate;
     
-    showDialog(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
@@ -429,17 +394,19 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Expiration Date (Optional)'),
-                  subtitle: Text(expirationDate != null
-                      ? DateFormat('yyyy-MM-dd').format(expirationDate!)
-                      : 'No expiration date'),
+                  subtitle: ExpirationDateWidget(
+                    expirationDate: expirationDate,
+                    showIcon: false,
+                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.calendar_today, size: 20),
                     onPressed: () async {
-                      final DateTime? picked = await showDatePicker(
+                      final DateTime? picked = await _dialogService.showDatePicker(
                         context: context,
                         initialDate: expirationDate ?? DateTime.now().add(const Duration(days: 30)),
                         firstDate: DateTime.now(),
                         lastDate: DateTime(2101),
+                        helpText: 'Select Expiration Date',
                       );
                       if (picked != null) {
                         setState(() {
@@ -460,8 +427,10 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                 icon: const Icon(Icons.check, size: 16),
                 label: const Text('Update'),
                 onPressed: () {
-                  _updateItem(index, quantity, expirationDate);
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop({
+                    'quantity': quantity,
+                    'expirationDate': expirationDate,
+                  });
                 },
               ),
             ],
@@ -469,6 +438,10 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
         },
       ),
     );
+    
+    if (result != null) {
+      _updateItem(index, result['quantity'], result['expirationDate']);
+    }
   }
   
   void _addItem(ItemDefinition item, int quantity, DateTime? expirationDate) {

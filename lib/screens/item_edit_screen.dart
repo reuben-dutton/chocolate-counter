@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/models/item_definition.dart';
 import 'package:food_inventory/services/inventory_service.dart';
+import 'package:food_inventory/services/image_service.dart';
+import 'package:food_inventory/services/error_handler.dart';
+import 'package:food_inventory/services/service_locator.dart';
+import 'package:food_inventory/widgets/common/full_item_image_widget.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 
 class ItemEditScreen extends StatefulWidget {
   final ItemDefinition itemDefinition;
@@ -25,7 +27,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   File? _imageFile;
   String? _existingImagePath;
   bool _isUpdating = false;
-  final ImagePicker _picker = ImagePicker();
+  late ImageService _imageService;
 
   @override
   void initState() {
@@ -33,6 +35,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     _nameController = TextEditingController(text: widget.itemDefinition.name);
     _barcodeController = TextEditingController(text: widget.itemDefinition.barcode ?? '');
     _existingImagePath = widget.itemDefinition.imageUrl;
+    _imageService = ServiceLocator.instance<ImageService>();
     
     // If there's an existing local image, initialize _imageFile
     if (_existingImagePath != null && !_existingImagePath!.startsWith('http')) {
@@ -48,52 +51,43 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   }
 
   Future<void> _takePhoto() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
-
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-        _existingImagePath = null; // Clear existing image path
-      });
+    try {
+      final pickedFile = await _imageService.takePhoto();
+      if (pickedFile != null) {
+        setState(() {
+          _imageFile = pickedFile;
+          _existingImagePath = null; // Clear existing image path
+        });
+      }
+    } catch (e) {
+      ErrorHandler.showErrorSnackBar(context, 'Failed to take photo', error: e);
     }
   }
 
   Future<void> _pickPhoto() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-        _existingImagePath = null; // Clear existing image path
-      });
+    try {
+      final pickedFile = await _imageService.pickPhoto();
+      if (pickedFile != null) {
+        setState(() {
+          _imageFile = pickedFile;
+          _existingImagePath = null; // Clear existing image path
+        });
+      }
+    } catch (e) {
+      ErrorHandler.showErrorSnackBar(context, 'Failed to pick photo', error: e);
     }
   }
   
   Future<void> _removePhoto() async {
+    // Delete the existing image if it's a local file
+    if (_existingImagePath != null && !_existingImagePath!.startsWith('http')) {
+      await _imageService.deleteImage(_existingImagePath);
+    }
+    
     setState(() {
       _imageFile = null;
       _existingImagePath = null;
     });
-  }
-
-  Future<String?> _saveImage() async {
-    if (_imageFile == null) return null;
-    
-    // If the image path is the same as the existing one, don't save again
-    if (_existingImagePath != null && _existingImagePath == _imageFile!.path) {
-      return _existingImagePath;
-    }
-
-    try {
-      // Get application documents directory
-      final appDir = await getApplicationDocumentsDirectory();
-      final fileName = 'item_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final savedImage = await _imageFile!.copy('${appDir.path}/$fileName');
-      return savedImage.path;
-    } catch (e) {
-      print('Error saving image: $e');
-      return null;
-    }
   }
 
   @override
@@ -191,7 +185,6 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   }
   
   Widget _buildImagePreview() {
-    // New image selected
     if (_imageFile != null) {
       return Image.file(
         _imageFile!,
@@ -199,68 +192,26 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
         height: 200,
         fit: BoxFit.cover,
       );
+    } else if (_existingImagePath != null) {
+      return FullItemImageWidget(
+        imagePath: _existingImagePath,
+        itemName: widget.itemDefinition.name,
+        imageService: _imageService,
+        height: 200,
+      );
+    } else {
+      // No image
+      return Container(
+        width: double.infinity,
+        height: 200,
+        color: Colors.grey.shade300,
+        child: const Icon(
+          Icons.camera_alt,
+          size: 60,
+          color: Colors.white,
+        ),
+      );
     }
-    
-    // Existing image path
-    if (_existingImagePath != null) {
-      try {
-        if (_existingImagePath!.startsWith('http')) {
-          // Remote URL
-          return Image.network(
-            _existingImagePath!,
-            width: double.infinity,
-            height: 200,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                width: double.infinity,
-                height: 200,
-                color: Colors.grey.shade300,
-                child: const Icon(
-                  Icons.image_not_supported,
-                  size: 60,
-                  color: Colors.white,
-                ),
-              );
-            },
-          );
-        } else {
-          // Local file path
-          return Image.file(
-            File(_existingImagePath!),
-            width: double.infinity,
-            height: 200,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                width: double.infinity,
-                height: 200,
-                color: Colors.grey.shade300,
-                child: const Icon(
-                  Icons.image_not_supported,
-                  size: 60,
-                  color: Colors.white,
-                ),
-              );
-            },
-          );
-        }
-      } catch (e) {
-        print('Error loading existing image: $e');
-      }
-    }
-    
-    // No image
-    return Container(
-      width: double.infinity,
-      height: 200,
-      color: Colors.grey.shade300,
-      child: const Icon(
-        Icons.camera_alt,
-        size: 60,
-        color: Colors.white,
-      ),
-    );
   }
 
   Future<void> _updateItem() async {
@@ -273,10 +224,10 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     try {
       final inventoryService = Provider.of<InventoryService>(context, listen: false);
       
-      // Determine the image path to save
+      // Save image and get the path
       String? imagePath;
       if (_imageFile != null) {
-        imagePath = await _saveImage();
+        imagePath = await _imageService.saveImage(_imageFile);
       } else {
         imagePath = _existingImagePath;
       }
@@ -289,15 +240,11 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
       
       await inventoryService.updateItemDefinition(updatedItem);
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item updated')),
-      );
+      ErrorHandler.showSuccessSnackBar(context, 'Item updated');
       
       Navigator.pop(context, updatedItem);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating item: $e')),
-      );
+      ErrorHandler.showErrorSnackBar(context, 'Error updating item', error: e);
     } finally {
       setState(() {
         _isUpdating = false;

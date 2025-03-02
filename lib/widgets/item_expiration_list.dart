@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/models/item_instance.dart';
+import 'package:food_inventory/widgets/common/expiration_date_widget.dart';
 import 'package:intl/intl.dart';
 
 class ItemExpirationList extends StatelessWidget {
@@ -29,32 +30,19 @@ class ItemExpirationList extends StatelessWidget {
       itemCount: expirationCounts.length,
       itemBuilder: (context, index) {
         final entry = expirationCounts.entries.toList()[index];
-        Color iconColor = Colors.grey;
+        DateTime? expDate;
         
         if (entry.key != 'No expiration date') {
-          final expDate = DateFormat('yyyy-MM-dd').parse(entry.key);
-          final daysUntil = expDate.difference(DateTime.now()).inDays;
-          
-          if (daysUntil < 0) {
-            iconColor = Colors.red;
-          } else if (daysUntil < 7) {
-            iconColor = Colors.orange;
-          } else {
-            iconColor = Colors.green;
-          }
+          expDate = DateFormat('yyyy-MM-dd').parse(entry.key);
         }
         
         return ListTile(
           dense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-          leading: Icon(
-            Icons.calendar_today, 
-            color: iconColor,
-            size: 18,
-          ),
-          title: Text(
-            entry.key,
-            style: const TextStyle(fontSize: 14),
+          leading: const Icon(Icons.calendar_today, size: 18),
+          title: ExpirationDateWidget(
+            expirationDate: expDate,
+            showIcon: false,
           ),
           trailing: Chip(
             padding: const EdgeInsets.all(0),

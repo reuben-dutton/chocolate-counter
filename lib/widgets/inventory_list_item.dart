@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/models/item_definition.dart';
-import 'package:food_inventory/utils/item_visualization.dart';
-import 'dart:io';
+import 'package:food_inventory/widgets/common/count_chip_widget.dart';
+import 'package:food_inventory/widgets/common/item_image_widget.dart';
 
 class InventoryListItem extends StatelessWidget {
   final ItemDefinition itemDefinition;
@@ -37,7 +37,11 @@ class InventoryListItem extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                _buildItemImage(context),
+                ItemImageWidget(
+                  imagePath: itemDefinition.imageUrl,
+                  itemName: itemDefinition.name,
+                  radius: 24,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -52,18 +56,16 @@ class InventoryListItem extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          _buildCountChip(
-                            context, 
-                            Icons.shopping_cart, 
-                            stockCount, 
-                            theme.colorScheme.secondary
+                          CountChipWidget(
+                            icon: Icons.shopping_cart,
+                            count: stockCount,
+                            color: theme.colorScheme.secondary,
                           ),
                           const SizedBox(width: 8),
-                          _buildCountChip(
-                            context, 
-                            Icons.inventory_2, 
-                            inventoryCount, 
-                            theme.colorScheme.secondary
+                          CountChipWidget(
+                            icon: Icons.inventory_2,
+                            count: inventoryCount,
+                            color: theme.colorScheme.secondary,
                           ),
                         ],
                       ),
@@ -81,69 +83,5 @@ class InventoryListItem extends StatelessWidget {
         ),
       ),
     );
-  }
-  
-  Widget _buildCountChip(BuildContext context, IconData icon, int count, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            '$count',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildItemImage(BuildContext context) {
-    if (itemDefinition.imageUrl == null) {
-      final color = ItemVisualization.getColorForItem(itemDefinition.name, context);
-      final icon = ItemVisualization.getIconForItem(itemDefinition.name);
-
-      return CircleAvatar(
-        radius: 24,
-        backgroundColor: color,
-        child: Icon(icon, color: Colors.white, size: 20),
-      );
-    }
-    
-    final String imagePath = itemDefinition.imageUrl!;
-    
-    try {
-      if (imagePath.startsWith('http')) {
-        // Remote URL
-        return CircleAvatar(
-          radius: 24,
-          backgroundImage: NetworkImage(imagePath),
-        );
-      } else {
-        // Local file path
-        return CircleAvatar(
-          radius: 24,
-          backgroundImage: FileImage(File(imagePath)),
-        );
-      }
-    } catch (e) {
-      // Fallback in case of any image loading errors
-      print('Error loading image: $e');
-      return CircleAvatar(
-        radius: 24,
-        backgroundColor: Colors.grey,
-        child: Icon(Icons.image_not_supported, color: Colors.white, size: 20),
-      );
-    }
   }
 }

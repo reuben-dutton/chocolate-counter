@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/models/shipment.dart';
+import 'package:food_inventory/widgets/common/count_chip_widget.dart';
 import 'package:intl/intl.dart';
 
 class ShipmentListItem extends StatelessWidget {
@@ -62,18 +63,22 @@ class ShipmentListItem extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        _buildInfoChip(
-                          context,
-                          Icons.event,
-                          formattedDate,
-                          theme.colorScheme.secondary
+                        CountChipWidget(
+                          icon: Icons.event,
+                          count: -1, // Special case: use -1 to display text instead of count
+                          color: theme.colorScheme.secondary,
+                          iconSize: 14,
+                          fontSize: 12,
+                          text: formattedDate,
                         ),
                         const SizedBox(width: 8),
-                        _buildInfoChip(
-                          context,
-                          Icons.inventory_2,
-                          '${shipment.items.length} items',
-                          theme.colorScheme.secondary
+                        CountChipWidget(
+                          icon: Icons.inventory_2,
+                          count: shipment.items.length,
+                          color: theme.colorScheme.secondary,
+                          iconSize: 14,
+                          fontSize: 12,
+                          text: shipment.items.length == 1 ? '1 item' : '${shipment.items.length} items',
                         ),
                       ],
                     ),
@@ -91,31 +96,6 @@ class ShipmentListItem extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-  
-  Widget _buildInfoChip(BuildContext context, IconData icon, String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }

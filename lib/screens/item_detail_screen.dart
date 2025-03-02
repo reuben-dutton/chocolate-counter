@@ -4,14 +4,18 @@ import 'package:food_inventory/models/item_definition.dart';
 import 'package:food_inventory/models/item_instance.dart';
 import 'package:food_inventory/screens/item_edit_screen.dart';
 import 'package:food_inventory/services/inventory_service.dart';
-import 'package:food_inventory/utils/item_visualization.dart';
-import 'package:food_inventory/widgets/confirm_dialog.dart';
+import 'package:food_inventory/services/image_service.dart';
+import 'package:food_inventory/services/dialog_service.dart';
+import 'package:food_inventory/services/error_handler.dart';
+import 'package:food_inventory/services/service_locator.dart';
+import 'package:food_inventory/widgets/common/count_display_widget.dart';
+import 'package:food_inventory/widgets/common/full_item_image_widget.dart';
+import 'package:food_inventory/widgets/common/section_header_widget.dart';
 import 'package:food_inventory/widgets/inventory_movement_list.dart';
 import 'package:food_inventory/widgets/item_expiration_list.dart';
 import 'package:food_inventory/widgets/stock_update_dialog.dart';
 import 'package:food_inventory/widgets/inventory_to_stock_dialog.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
 
 class ItemDetailScreen extends StatefulWidget {
   final ItemDefinition itemDefinition;
@@ -27,6 +31,8 @@ class ItemDetailScreen extends StatefulWidget {
 
 class _ItemDetailScreenState extends State<ItemDetailScreen> {
   late InventoryService _inventoryService;
+  late DialogService _dialogService;
+  late ImageService _imageService;
   late Future<Map<String, int>> _countsFuture;
   late Future<List<ItemInstance>> _itemInstancesFuture;
   late Future<List<InventoryMovement>> _movementsFuture;
@@ -35,6 +41,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   void initState() {
     super.initState();
     _inventoryService = Provider.of<InventoryService>(context, listen: false);
+    _dialogService = ServiceLocator.instance<DialogService>();
+    _imageService = ServiceLocator.instance<ImageService>();
     _refreshData();
   }
 
@@ -77,7 +85,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Item image at the top
-              _buildHeroImage(),
+              FullItemImageWidget(
+                imagePath: widget.itemDefinition.imageUrl,
+                itemName: widget.itemDefinition.name,
+                imageService: _imageService,
+              ),
               
               Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -140,67 +152,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  Widget _buildHeroImage() {
-    if (widget.itemDefinition.imageUrl == null) {
-        final color = ItemVisualization.getColorForItem(widget.itemDefinition.name, context);
-        final icon = ItemVisualization.getIconForItem(widget.itemDefinition.name);
-
-        return Container(
-          width: double.infinity,
-          height: 180,
-          color: color,
-          child: Icon(icon, size: 80, color: Colors.white),
-        );
-      }
-
-    final String imagePath = widget.itemDefinition.imageUrl!;
-    
-    try {
-      if (imagePath.startsWith('http')) {
-        // Remote URL
-        return Image.network(
-          imagePath,
-          width: double.infinity,
-          height: 220,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: double.infinity,
-              height: 220,
-              color: Colors.grey.shade300,
-              child: const Icon(Icons.image_not_supported, size: 80, color: Colors.white),
-            );
-          },
-        );
-      } else {
-        // Local file path
-        return Image.file(
-          File(imagePath),
-          width: double.infinity,
-          height: 220,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: double.infinity,
-              height: 220,
-              color: Colors.grey.shade300,
-              child: const Icon(Icons.image_not_supported, size: 80, color: Colors.white),
-            );
-          },
-        );
-      }
-    } catch (e) {
-      // Fallback in case of any image loading errors
-      print('Error loading image: $e');
-      return Container(
-        width: double.infinity,
-        height: 220,
-        color: Colors.grey.shade300,
-        child: const Icon(Icons.image_not_supported, size: 80, color: Colors.white),
-      );
-    }
-  }
-
   Widget _buildCounts(ThemeData theme) {
     return FutureBuilder<Map<String, int>>(
       future: _countsFuture,
@@ -220,57 +171,25 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 // Stock count
-                _buildCountItem(
-                  theme,
-                  Icons.shopping_cart,
-                  'Stock',
-                  stockCount,
-                  theme.colorScheme.primary,
+                CountDisplayWidget(
+                  icon: Icons.shopping_cart,
+                  label: 'Stock',
+                  count: stockCount,
+                  color: theme.colorScheme.primary,
                 ),
                 
                 // Inventory count
-                _buildCountItem(
-                  theme,
-                  Icons.inventory_2,
-                  'Inventory',
-                  inventoryCount,
-                  theme.colorScheme.secondary,
+                CountDisplayWidget(
+                  icon: Icons.inventory_2,
+                  label: 'Inventory',
+                  count: inventoryCount,
+                  color: theme.colorScheme.secondary,
                 ),
               ],
             ),
           ],
         );
       },
-    );
-  }
-
-  Widget _buildCountItem(ThemeData theme, IconData icon, String label, int count, Color color) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color.withAlpha(25),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, size: 24, color: color),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withAlpha(175),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '$count',
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
     );
   }
 
@@ -340,17 +259,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(Icons.event_available, size: 18, color: theme.colorScheme.secondary),
-                const SizedBox(width: 8),
-                Text(
-                  'Expiration Dates',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+            SectionHeaderWidget(
+              title: 'Expiration Dates',
+              icon: Icons.event_available,
+              iconColor: theme.colorScheme.secondary,
             ),
             const SizedBox(height: 12),
             ItemExpirationList(instances: instances),
@@ -374,17 +286,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.history, size: 18, color: theme.colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Movement History',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              SectionHeaderWidget(
+                title: 'Movement History',
+                icon: Icons.history,
+                iconColor: theme.colorScheme.primary,
               ),
               const SizedBox(height: 16),
               Center(
@@ -412,22 +317,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.history, size: 18, color: theme.colorScheme.secondary),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Movement History',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            SectionHeaderWidget(
+              title: 'Movement History',
+              icon: Icons.history,
+              iconColor: theme.colorScheme.secondary,
             ),
             const SizedBox(height: 12),
             InventoryMovementList(movements: movements),
@@ -438,77 +331,92 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   void _editItem() async {
-    final result = await Navigator.push<ItemDefinition>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ItemEditScreen(
-          itemDefinition: widget.itemDefinition,
+    try {
+      final result = await Navigator.push<ItemDefinition>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ItemEditScreen(
+            itemDefinition: widget.itemDefinition,
+          ),
         ),
-      ),
-    );
+      );
 
-    if (result != null) {
-      // The item was updated in the edit screen, just refresh the UI
-      setState(() {
-        _refreshData();
-      });
+      if (result != null) {
+        // The item was updated in the edit screen, just refresh the UI
+        setState(() {
+          _refreshData();
+        });
+      }
+    } catch (e) {
+      ErrorHandler.showErrorSnackBar(context, 'Failed to edit item', error: e);
     }
   }
 
   void _deleteItem() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => ConfirmDialog(
+    try {
+      final confirm = await _dialogService.showConfirmDialog(
+        context: context,
         title: 'Delete Item',
         content: 'Are you sure you want to delete this item? This will also remove it from shipments, and delete all stock and inventory counts.',
         icon: Icons.delete_forever,
-      ),
-    );
-
-    if (confirm == true) {
-      await _inventoryService.deleteItemDefinition(widget.itemDefinition.id!);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item deleted')),
       );
-      Navigator.pop(context);
+
+      if (confirm == true) {
+        await _inventoryService.deleteItemDefinition(widget.itemDefinition.id!);
+        ErrorHandler.showSuccessSnackBar(context, 'Item deleted');
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      ErrorHandler.showErrorSnackBar(context, 'Failed to delete item', error: e);
     }
   }
 
   void _updateStock(int currentStock) async {
-    final result = await showDialog<int>(
-      context: context,
-      builder: (context) => StockUpdateDialog(
-        currentStock: currentStock,
-      ),
-    );
-
-    if (result != null) {
-      await _inventoryService.updateStockCount(
-        widget.itemDefinition.id!,
-        result,
+    try {
+      final result = await _dialogService.showQuantityDialog(
+        context: context,
+        title: 'Record Sale',
+        currentQuantity: 1,
+        maxQuantity: currentStock,
+        icon: Icons.remove_shopping_cart,
       );
-      setState(() {
-        _refreshData();
-      });
+
+      if (result != null) {
+        await _inventoryService.updateStockCount(
+          widget.itemDefinition.id!,
+          result,
+        );
+        setState(() {
+          _refreshData();
+        });
+        ErrorHandler.showSuccessSnackBar(context, 'Stock updated');
+      }
+    } catch (e) {
+      ErrorHandler.showErrorSnackBar(context, 'Failed to update stock', error: e);
     }
   }
 
   void _moveToStock(int currentInventory) async {
-    final result = await showDialog<int>(
-      context: context,
-      builder: (context) => InventoryToStockDialog(
-        currentInventory: currentInventory,
-      ),
-    );
-
-    if (result != null) {
-      await _inventoryService.moveInventoryToStock(
-        widget.itemDefinition.id!,
-        result,
+    try {
+      final result = await showDialog<int>(
+        context: context,
+        builder: (context) => InventoryToStockDialog(
+          currentInventory: currentInventory,
+        ),
       );
-      setState(() {
-        _refreshData();
-      });
+
+      if (result != null) {
+        await _inventoryService.moveInventoryToStock(
+          widget.itemDefinition.id!,
+          result,
+        );
+        setState(() {
+          _refreshData();
+        });
+        ErrorHandler.showSuccessSnackBar(context, 'Items moved to stock');
+      }
+    } catch (e) {
+      ErrorHandler.showErrorSnackBar(context, 'Failed to move items to stock', error: e);
     }
   }
 }

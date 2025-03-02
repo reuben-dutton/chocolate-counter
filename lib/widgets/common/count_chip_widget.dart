@@ -6,6 +6,7 @@ class CountChipWidget extends StatelessWidget {
   final Color color;
   final double iconSize;
   final double fontSize;
+  final String? text;
 
   const CountChipWidget({
     super.key,
@@ -14,6 +15,7 @@ class CountChipWidget extends StatelessWidget {
     required this.color,
     this.iconSize = 14,
     this.fontSize = 13,
+    this.text, // Optional text to display instead of count
   });
 
   @override
@@ -30,7 +32,7 @@ class CountChipWidget extends StatelessWidget {
           Icon(icon, size: iconSize, color: color),
           const SizedBox(width: 4),
           Text(
-            '$count',
+            text ?? '$count',
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,

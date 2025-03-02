@@ -7,6 +7,7 @@ import 'package:food_inventory/repositories/shipment_item_repository.dart';
 import 'package:food_inventory/repositories/shipment_repository.dart';
 import 'package:food_inventory/services/database_service.dart';
 import 'package:food_inventory/services/dialog_service.dart';
+import 'package:food_inventory/services/error_handler.dart';
 import 'package:food_inventory/services/image_service.dart';
 import 'package:food_inventory/services/inventory_service.dart';
 import 'package:food_inventory/services/preferences_service.dart';
