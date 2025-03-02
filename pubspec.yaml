@@ -1,0 +1,51 @@
+name: food_inventory
+description: A comprehensive app for tracking food inventory and stock.
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.1.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI components
+  cupertino_icons: ^1.0.5
+  flutter_slidable: ^4.0.0
+  intl: ^0.20.2
+  flutter_datetime_picker_plus: ^2.1.0
+  
+  # Database
+  sqflite: ^2.3.0        # SQLite database
+  path_provider: ^2.1.1  # File system paths
+  path: ^1.8.3           # Path manipulation
+  shared_preferences: ^2.2.2  # Settings storage
+  
+  # Barcode scanning
+  mobile_scanner: ^6.0.6 # Modern barcode scanner
+  
+  # Image handling
+  image_picker: ^1.0.7   # For taking photos
+  
+  # Export functionality
+  csv: ^6.0.0            # CSV generation
+  share_plus: ^10.1.4    # Sharing files
+  file_picker: ^9.0.2    # File picker
+  permission_handler: ^11.4.0  # Handle permissions
+
+  provider: ^6.0.0
+
+  # More icons
+  font_awesome_flutter: ^10.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
