@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/models/item_definition.dart';
 import 'package:food_inventory/models/shipment.dart';
 import 'package:food_inventory/models/shipment_item.dart';
+import 'package:food_inventory/services/dialog_service.dart';
 import 'package:food_inventory/services/inventory_service.dart';
 import 'package:food_inventory/services/shipment_service.dart';
 import 'package:food_inventory/services/image_service.dart';
@@ -22,6 +23,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
   late ShipmentService _shipmentService;
   late InventoryService _inventoryService;
   late ImageService _imageService;
+  late DialogService _dialogService;
   
   // Step 1: Select items
   List<ItemDefinition> _availableItems = [];
@@ -42,6 +44,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
     _inventoryService = Provider.of<InventoryService>(context, listen: false);
     _shipmentService = Provider.of<ShipmentService>(context, listen: false);
     _imageService = ServiceLocator.instance<ImageService>();
+    _dialogService = ServiceLocator.instance<DialogService>();
     _loadItems();
   }
 
@@ -415,7 +418,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
   }
   
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    final DateTime? picked = await _dialogService.showCustomDatePicker(
       context: context,
       initialDate: _shipmentDate,
       firstDate: DateTime(2000),

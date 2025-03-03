@@ -297,7 +297,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                   trailing: IconButton(
                     icon: const Icon(Icons.calendar_today, size: 20),
                     onPressed: () async {
-                      final DateTime? picked = await _dialogService.showDatePicker(
+                      final DateTime? picked = await _dialogService.showCustomDatePicker(
                         context: context,
                         initialDate: expirationDate ?? DateTime.now().add(const Duration(days: 30)),
                         firstDate: DateTime.now(),
@@ -406,7 +406,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                   trailing: IconButton(
                     icon: const Icon(Icons.calendar_today, size: 20),
                     onPressed: () async {
-                      final DateTime? picked = await _dialogService.showDatePicker(
+                      final DateTime? picked = await _dialogService.showCustomDatePicker(
                         context: context,
                         initialDate: expirationDate ?? DateTime.now().add(const Duration(days: 30)),
                         firstDate: DateTime.now(),

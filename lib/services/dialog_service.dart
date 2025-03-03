@@ -22,7 +22,7 @@ class DialogService {
   }
   
   /// Show a dialog to select a date
-  Future<DateTime?> showDatePicker({
+  Future<DateTime?> showCustomDatePicker({
     required BuildContext context,
     DateTime? initialDate,
     DateTime? firstDate,
