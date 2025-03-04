@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/app.dart';
-import 'package:food_inventory/services/service_locator.dart';
+import 'package:food_inventory/common/services/service_locator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

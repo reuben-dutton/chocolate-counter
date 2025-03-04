@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:food_inventory/screens/home_screen.dart';
-import 'package:food_inventory/services/database_service.dart';
-import 'package:food_inventory/services/dialog_service.dart';
-import 'package:food_inventory/services/inventory_service.dart';
-import 'package:food_inventory/services/preferences_service.dart';
-import 'package:food_inventory/services/service_locator.dart';
-import 'package:food_inventory/services/shipment_service.dart';
+import 'package:food_inventory/common/screens/home_screen.dart';
+import 'package:food_inventory/common/services/database_service.dart';
+import 'package:food_inventory/common/services/dialog_service.dart';
+import 'package:food_inventory/features/inventory/services/inventory_service.dart';
+import 'package:food_inventory/common/services/preferences_service.dart';
+import 'package:food_inventory/common/services/service_locator.dart';
+import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:food_inventory/theme.dart';
 import 'package:provider/provider.dart';
 

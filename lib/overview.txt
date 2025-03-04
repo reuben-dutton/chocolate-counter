@@ -1,8 +1,0 @@
-lib/
-├── main.dart                  # App entry point
-├── app.dart                   # App configuration and theme setup
-├── models/                    # Data models
-├── screens/                   # UI screens
-├── services/                  # Business logic
-├── widgets/                   # Reusable UI components
-└── utils/                     # Helper functions and constants
