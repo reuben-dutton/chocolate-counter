@@ -74,7 +74,7 @@ class InventoryService {
     );
   }
   
-  /// Update stock count (record sale)
+  // Update stock count (record sale)
   Future<void> updateStockCount(
     int itemDefinitionId, 
     int decreaseAmount, {
@@ -82,10 +82,10 @@ class InventoryService {
   }) async {
     final actualTimestamp = timestamp ?? DateTime.now();
     
-    // IMPORTANT: Get stock items BEFORE starting the transaction
-    final stockItems = await _itemInstanceRepository.getStockInstances(itemDefinitionId);
-    
     await _itemInstanceRepository.withTransaction((txn) async {
+      // Fetch stock items INSIDE the transaction
+      final stockItems = await _itemInstanceRepository.getStockInstances(itemDefinitionId, txn: txn);
+      
       var remainingDecrease = decreaseAmount;
       
       // Loop through stock items and decrease quantities
@@ -117,7 +117,7 @@ class InventoryService {
     });
   }
   
-  /// Move items from inventory to stock
+  // Move items from inventory to stock
   Future<void> moveInventoryToStock(
     int itemDefinitionId,
     int moveAmount, {
@@ -125,10 +125,10 @@ class InventoryService {
   }) async {
     final actualTimestamp = timestamp ?? DateTime.now();
     
-    // IMPORTANT: Get inventory items BEFORE starting the transaction
-    final inventoryItems = await _itemInstanceRepository.getInventoryInstances(itemDefinitionId);
-    
     await _itemInstanceRepository.withTransaction((txn) async {
+      // Fetch inventory items INSIDE the transaction
+      final inventoryItems = await _itemInstanceRepository.getInventoryInstances(itemDefinitionId, txn: txn);
+      
       var remainingMove = moveAmount;
       
       // Loop through inventory items and move quantities to stock

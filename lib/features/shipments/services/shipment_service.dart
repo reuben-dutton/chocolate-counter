@@ -101,6 +101,12 @@ class ShipmentService {
   /// Update the expiration date of a shipment item and linked inventory items
   Future<void> updateShipmentItemExpiration(int shipmentItemId, DateTime? expirationDate) async {
     await _shipmentItemRepository.databaseService.database.transaction((txn) async {
+      // First check if the shipment item exists within the transaction
+      final shipmentItem = await _shipmentItemRepository.getById(shipmentItemId, txn: txn);
+      if (shipmentItem == null) {
+        throw Exception('Shipment item not found');
+      }
+      
       // Update the shipment item
       await _shipmentItemRepository.updateExpirationDate(shipmentItemId, expirationDate, txn: txn);
       
