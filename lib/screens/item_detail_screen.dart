@@ -47,9 +47,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   void _refreshData() {
-    _countsFuture = _inventoryService.getItemCounts(widget.itemDefinition.id!);
-    _itemInstancesFuture = _inventoryService.getItemInstances(widget.itemDefinition.id!);
-    _movementsFuture = _inventoryService.getItemMovements(widget.itemDefinition.id!);
+    setState(() {
+      _countsFuture = _inventoryService.getItemCounts(widget.itemDefinition.id!);
+      _itemInstancesFuture = _inventoryService.getItemInstances(widget.itemDefinition.id!);
+      _movementsFuture = _inventoryService.getItemMovements(widget.itemDefinition.id!);
+    });
   }
 
   @override
@@ -75,9 +77,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          setState(() {
-            _refreshData();
-          });
+          _refreshData();
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -343,9 +343,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
       if (result != null) {
         // The item was updated in the edit screen, just refresh the UI
-        setState(() {
-          _refreshData();
-        });
+        _refreshData();
       }
     } catch (e) {
       ErrorHandler.showErrorSnackBar(context, 'Failed to edit item', error: e);
@@ -386,9 +384,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           widget.itemDefinition.id!,
           result,
         );
-        setState(() {
-          _refreshData();
-        });
+        _refreshData();
         ErrorHandler.showSuccessSnackBar(context, 'Stock updated');
       }
     } catch (e) {
@@ -410,9 +406,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           widget.itemDefinition.id!,
           result,
         );
-        setState(() {
-          _refreshData();
-        });
+        _refreshData();
         ErrorHandler.showSuccessSnackBar(context, 'Items moved to stock');
       }
     } catch (e) {

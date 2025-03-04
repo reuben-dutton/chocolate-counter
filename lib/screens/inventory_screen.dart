@@ -37,7 +37,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   void _loadItems() {
-    _itemsFuture = _inventoryService.getAllItemDefinitions();
+    setState(() {
+      _itemsFuture = _inventoryService.getAllItemDefinitions();
+    });
   }
 
   @override
@@ -125,9 +127,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
                 return RefreshIndicator(
                   onRefresh: () async {
-                    setState(() {
-                      _loadItems();
-                    });
+                    _loadItems();
                   },
                   child: ListView.builder(
                     itemCount: items.length,
@@ -155,9 +155,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 ),
                               ).then((_) {
                                 // Refresh data when returning from details
-                                setState(() {
-                                  _loadItems();
-                                });
+                                _loadItems();
                               });
                             },
                           );

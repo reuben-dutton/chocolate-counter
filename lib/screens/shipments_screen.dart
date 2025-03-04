@@ -26,7 +26,9 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
   }
 
   void _loadShipments() {
-    _shipmentsFuture = _shipmentService.getAllShipments();
+    setState(() {
+      _shipmentsFuture = _shipmentService.getAllShipments();
+    });
   }
 
   @override
@@ -81,16 +83,12 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
                     ),
                   ).then((_) {
                     // Refresh data when returning from details
-                    setState(() {
-                      _loadShipments();
-                    });
+                    _loadShipments();
                   });
                 },
                 onDelete: () async {
                   await _shipmentService.deleteShipment(shipment.id!);
-                  setState(() {
-                    _loadShipments();
-                  });
+                  _loadShipments();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Shipment deleted')),
                   );
@@ -128,9 +126,7 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
         builder: (context) => const AddShipmentScreen(),
       ),
     ).then((_) {
-      setState(() {
-        _loadShipments();
-      });
+      _loadShipments();
     });
   }
 

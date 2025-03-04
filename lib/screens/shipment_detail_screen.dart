@@ -36,7 +36,9 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
   }
 
   void _loadItems() {
-    _itemsFuture = _shipmentService.getShipmentItems(widget.shipment.id!);
+    setState(() {
+      _itemsFuture = _shipmentService.getShipmentItems(widget.shipment.id!);
+    });
   }
 
   Future<void> _updateItemExpirationDate(int shipmentItemId, DateTime? newExpirationDate) async {
@@ -55,9 +57,7 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
       );
       
       // Refresh the list
-      setState(() {
-        _loadItems();
-      });
+      _loadItems();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating expiration date: $e')),
