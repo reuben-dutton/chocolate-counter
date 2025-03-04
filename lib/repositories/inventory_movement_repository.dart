@@ -1,5 +1,4 @@
 import 'package:food_inventory/models/inventory_movement.dart';
-import 'package:food_inventory/models/item_definition.dart';
 import 'package:food_inventory/repositories/base_repository.dart';
 import 'package:food_inventory/repositories/item_definition_repository.dart';
 import 'package:food_inventory/services/database_service.dart';

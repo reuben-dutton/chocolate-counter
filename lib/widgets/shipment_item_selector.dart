@@ -4,9 +4,10 @@ import 'package:food_inventory/models/shipment_item.dart';
 import 'package:food_inventory/services/dialog_service.dart';
 import 'package:food_inventory/services/image_service.dart';
 import 'package:food_inventory/services/service_locator.dart';
-import 'package:food_inventory/widgets/common/item_image_widget.dart';
+import 'package:food_inventory/widgets/selected_shipment_item_tile.dart';
+import 'package:food_inventory/widgets/available_item_tile.dart';
+import 'package:food_inventory/widgets/add_item_dialog.dart';
 import 'package:food_inventory/widgets/common/section_header_widget.dart';
-import 'package:food_inventory/widgets/common/expiration_date_widget.dart';
 import 'package:provider/provider.dart';
 
 class ShipmentItemSelector extends StatefulWidget {
@@ -28,13 +29,14 @@ class ShipmentItemSelector extends StatefulWidget {
 class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  List<ShipmentItem> _selectedItems = [];
+  late List<ShipmentItem> _selectedItems;
   late DialogService _dialogService;
   late ImageService _imageService;
   
   @override
   void initState() {
     super.initState();
+    // Create a new list to avoid modifying the original
     _selectedItems = List.from(widget.selectedItems);
     _searchController.addListener(() {
       setState(() {
@@ -53,6 +55,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
 
   @override
   Widget build(BuildContext context) {
+    // Filter items only when building - avoid doing this during callbacks
     final filteredItems = widget.availableItems
         .where((item) => item.name.toLowerCase().contains(_searchQuery))
         .toList();
@@ -107,64 +110,13 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                       shrinkWrap: true,
                       itemCount: _selectedItems.length,
                       itemBuilder: (context, index) {
-                        final item = _selectedItems[index];
-                        return Card(
-                          color: theme.colorScheme.surface,
-                          margin: const EdgeInsets.symmetric(vertical: 1),
-                          child: ListTile(
-                            dense: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                            leading: ItemImageWidget(
-                              imagePath: item.itemDefinition?.imageUrl,
-                              itemName: item.itemDefinition?.name ?? 'Unknown Item',
-                              radius: 16,
-                              imageService: _imageService,
-                            ),
-                            title: Text(
-                              item.itemDefinition?.name ?? 'Unknown Item',
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            subtitle: item.expirationDate != null
-                                ? ExpirationDateWidget(
-                                    expirationDate: item.expirationDate,
-                                    fontSize: 12,
-                                    iconSize: 12,
-                                  )
-                                : null,
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    '${item.quantity}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                IconButton(
-                                  icon: const Icon(Icons.edit, size: 16),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  onPressed: () => _showItemEditDialog(index),
-                                ),
-                                const SizedBox(width: 4),
-                                IconButton(
-                                  icon: const Icon(Icons.delete, size: 16),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  onPressed: () => _removeItem(index),
-                                ),
-                              ],
-                            ),
-                          ),
+                        // Extract each item into its own stateful widget to prevent entire list rebuilds
+                        return SelectedShipmentItemTile(
+                          key: ValueKey(_selectedItems[index].itemDefinitionId),
+                          item: _selectedItems[index],
+                          onEdit: (quantity, expirationDate) => _updateItem(index, quantity, expirationDate),
+                          onRemove: () => _removeItem(index),
+                          imageService: _imageService,
                         );
                       },
                     ),
@@ -197,27 +149,11 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                         : ListView.builder(
                             itemCount: filteredItems.length,
                             itemBuilder: (context, index) {
-                              final item = filteredItems[index];
-                              return ListTile(
-                                dense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                                leading: ItemImageWidget(
-                                  imagePath: item.imageUrl,
-                                  itemName: item.name,
-                                  radius: 16,
-                                  imageService: _imageService,
-                                ),
-                                title: Text(
-                                  item.name,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.add_circle, size: 20),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  onPressed: () => _showAddItemDialog(item),
-                                ),
+                              // Extract each available item into a separate widget
+                              return AvailableItemTile(
+                                item: filteredItems[index],
+                                onAdd: _showAddItemDialog,
+                                imageService: _imageService,
                               );
                             },
                           ),
@@ -237,215 +173,14 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
     
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            title: Row(
-              children: [
-                const Icon(Icons.add_circle, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Add ${item.name}',
-                    style: const TextStyle(fontSize: 16),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Quantity selector
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Quantity: '),
-                    IconButton(
-                      icon: const Icon(Icons.remove_circle_outline, size: 20),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: quantity > 1
-                          ? () => setState(() => quantity--)
-                          : null,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '$quantity',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.add_circle_outline, size: 20),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () => setState(() => quantity++),
-                    ),
-                  ],
-                ),
-                
-                // Expiration date selector
-                ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Expiration Date (Optional)'),
-                  subtitle: ExpirationDateWidget(
-                    expirationDate: expirationDate,
-                    showIcon: false,
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.calendar_today, size: 20),
-                    onPressed: () async {
-                      final DateTime? picked = await _dialogService.showCustomDatePicker(
-                        context: context,
-                        initialDate: expirationDate ?? DateTime.now().add(const Duration(days: 30)),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2101),
-                        helpText: 'Select Expiration Date',
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          expirationDate = picked;
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add'),
-                onPressed: () {
-                  Navigator.of(context).pop({
-                    'quantity': quantity,
-                    'expirationDate': expirationDate,
-                  });
-                },
-              ),
-            ],
-          );
-        },
+      builder: (context) => AddItemDialog(
+        item: item,
+        dialogService: _dialogService,
       ),
     );
     
     if (result != null) {
       _addItem(item, result['quantity'], result['expirationDate']);
-    }
-  }
-  
-  void _showItemEditDialog(int index) async {
-    final item = _selectedItems[index];
-    int quantity = item.quantity;
-    DateTime? expirationDate = item.expirationDate;
-    
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: Row(
-              children: [
-                const Icon(Icons.edit, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Edit ${item.itemDefinition?.name ?? 'Item'}',
-                    style: const TextStyle(fontSize: 16),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Quantity selector
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Quantity: '),
-                    IconButton(
-                      icon: const Icon(Icons.remove_circle_outline, size: 20),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: quantity > 1
-                          ? () => setState(() => quantity--)
-                          : null,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '$quantity',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.add_circle_outline, size: 20),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () => setState(() => quantity++),
-                    ),
-                  ],
-                ),
-                
-                // Expiration date selector
-                ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Expiration Date (Optional)'),
-                  subtitle: ExpirationDateWidget(
-                    expirationDate: expirationDate,
-                    showIcon: false,
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.calendar_today, size: 20),
-                    onPressed: () async {
-                      final DateTime? picked = await _dialogService.showCustomDatePicker(
-                        context: context,
-                        initialDate: expirationDate ?? DateTime.now().add(const Duration(days: 30)),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2101),
-                        helpText: 'Select Expiration Date',
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          expirationDate = picked;
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.check, size: 16),
-                label: const Text('Update'),
-                onPressed: () {
-                  Navigator.of(context).pop({
-                    'quantity': quantity,
-                    'expirationDate': expirationDate,
-                  });
-                },
-              ),
-            ],
-          );
-        },
-      ),
-    );
-    
-    if (result != null) {
-      _updateItem(index, result['quantity'], result['expirationDate']);
     }
   }
   
@@ -459,41 +194,53 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
       // Update quantity if already selected
       _updateItem(existingIndex, _selectedItems[existingIndex].quantity + quantity, expirationDate);
     } else {
-      // Add new item
+      // Create a new list instead of modifying the existing one in place
+      final newItems = List<ShipmentItem>.from(_selectedItems);
+      newItems.add(
+        ShipmentItem(
+          shipmentId: -1, // Temporary ID, will be set when saving
+          itemDefinitionId: item.id!,
+          quantity: quantity,
+          expirationDate: expirationDate,
+          itemDefinition: item,
+        ),
+      );
+      
       setState(() {
-        _selectedItems.add(
-          ShipmentItem(
-            shipmentId: -1, // Temporary ID, will be set when saving
-            itemDefinitionId: item.id!,
-            quantity: quantity,
-            expirationDate: expirationDate,
-            itemDefinition: item,
-          ),
-        );
-        widget.onItemsChanged(_selectedItems);
+        _selectedItems = newItems;
       });
+      widget.onItemsChanged(_selectedItems);
     }
   }
   
   void _updateItem(int index, int quantity, DateTime? expirationDate) {
+    // Create a new list with the updated item instead of modifying in place
+    final updatedItem = ShipmentItem(
+      id: _selectedItems[index].id,
+      shipmentId: _selectedItems[index].shipmentId,
+      itemDefinitionId: _selectedItems[index].itemDefinitionId,
+      quantity: quantity,
+      expirationDate: expirationDate,
+      itemDefinition: _selectedItems[index].itemDefinition,
+    );
+    
+    final newItems = List<ShipmentItem>.from(_selectedItems);
+    newItems[index] = updatedItem;
+    
     setState(() {
-      final updatedItem = ShipmentItem(
-        id: _selectedItems[index].id,
-        shipmentId: _selectedItems[index].shipmentId,
-        itemDefinitionId: _selectedItems[index].itemDefinitionId,
-        quantity: quantity,
-        expirationDate: expirationDate,
-        itemDefinition: _selectedItems[index].itemDefinition,
-      );
-      _selectedItems[index] = updatedItem;
-      widget.onItemsChanged(_selectedItems);
+      _selectedItems = newItems;
     });
+    widget.onItemsChanged(_selectedItems);
   }
   
   void _removeItem(int index) {
+    // Create a new list without the removed item
+    final newItems = List<ShipmentItem>.from(_selectedItems);
+    newItems.removeAt(index);
+    
     setState(() {
-      _selectedItems.removeAt(index);
-      widget.onItemsChanged(_selectedItems);
+      _selectedItems = newItems;
     });
+    widget.onItemsChanged(_selectedItems);
   }
 }

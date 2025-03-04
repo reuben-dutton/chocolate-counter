@@ -1,4 +1,3 @@
-import 'package:food_inventory/models/item_definition.dart';
 import 'package:food_inventory/models/item_instance.dart';
 import 'package:food_inventory/models/shipment_item.dart';
 import 'package:food_inventory/repositories/item_definition_repository.dart';

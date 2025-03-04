@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/widgets/confirm_dialog.dart';
-import 'package:intl/intl.dart';
 
 /// Service for handling dialogs throughout the application
 class DialogService {

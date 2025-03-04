@@ -109,7 +109,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                     height: 4,
                     color: _currentStep == 1 
                         ? theme.colorScheme.primary 
-                        : theme.colorScheme.surfaceVariant,
+                        : theme.colorScheme.surfaceContainerHighest,
                   ),
                 ),
               ],

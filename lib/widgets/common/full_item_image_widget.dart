@@ -19,7 +19,7 @@ class FullItemImageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final ImageService service = imageService ?? ImageService();
     
-    return Container(
+    return SizedBox(
       height: height,
       width: double.infinity,
       child: service.buildFullItemImage(imagePath, itemName, context),

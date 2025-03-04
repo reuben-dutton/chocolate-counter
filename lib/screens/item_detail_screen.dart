@@ -13,7 +13,6 @@ import 'package:food_inventory/widgets/common/full_item_image_widget.dart';
 import 'package:food_inventory/widgets/common/section_header_widget.dart';
 import 'package:food_inventory/widgets/inventory_movement_list.dart';
 import 'package:food_inventory/widgets/item_expiration_list.dart';
-import 'package:food_inventory/widgets/stock_update_dialog.dart';
 import 'package:food_inventory/widgets/inventory_to_stock_dialog.dart';
 import 'package:provider/provider.dart';
 

@@ -83,7 +83,7 @@ class _ExpirationEditDialogState extends State<ExpirationEditDialog> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant,
+              color: theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -136,10 +136,10 @@ class _ExpirationEditDialogState extends State<ExpirationEditDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
           style: TextButton.styleFrom(
             foregroundColor: theme.colorScheme.onSurface,
           ),
+          child: const Text('Cancel'),
         ),
         ElevatedButton.icon(
           icon: const Icon(Icons.save, size: 16),

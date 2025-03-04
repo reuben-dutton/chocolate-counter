@@ -1,13 +1,11 @@
 import 'package:food_inventory/factories/inventory_movement_factory.dart';
 import 'package:food_inventory/factories/item_instance_factory.dart';
-import 'package:food_inventory/models/item_instance.dart';
 import 'package:food_inventory/models/shipment.dart';
 import 'package:food_inventory/models/shipment_item.dart';
 import 'package:food_inventory/repositories/item_instance_repository.dart';
 import 'package:food_inventory/repositories/shipment_item_repository.dart';
 import 'package:food_inventory/repositories/shipment_repository.dart';
 import 'package:food_inventory/services/inventory_service.dart';
-import 'package:sqflite/sqflite.dart';
 
 /// Service for managing shipments and related operations
 class ShipmentService {
