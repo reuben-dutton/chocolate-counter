@@ -42,8 +42,6 @@ class ItemInstanceRepository extends BaseRepository<ItemInstance> {
       return [];
     }
     
-    // Important: Fetch the item definition *outside* the transaction if possible
-    // or pass the transaction explicitly if the caller provided it
     final itemDefinition = await _itemDefinitionRepository.getById(itemDefinitionId, txn: txn);
     
     // Attach the item definition to each instance
