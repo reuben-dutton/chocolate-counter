@@ -3,7 +3,6 @@ import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
-import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/common/widgets/full_item_image_widget.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
@@ -28,6 +27,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   String? _existingImagePath;
   bool _isUpdating = false;
   late ImageService _imageService;
+  bool _initialized = false;
 
   @override
   void initState() {
@@ -35,11 +35,19 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     _nameController = TextEditingController(text: widget.itemDefinition.name);
     _barcodeController = TextEditingController(text: widget.itemDefinition.barcode ?? '');
     _existingImagePath = widget.itemDefinition.imageUrl;
-    _imageService = ServiceLocator.instance<ImageService>();
     
     // If there's an existing local image, initialize _imageFile
     if (_existingImagePath != null && !_existingImagePath!.startsWith('http')) {
       _imageFile = File(_existingImagePath!);
+    }
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _imageService = Provider.of<ImageService>(context, listen: false);
+      _initialized = true;
     }
   }
 

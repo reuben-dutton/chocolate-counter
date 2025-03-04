@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 
@@ -20,11 +19,15 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
   File? _imageFile;
   bool _isCreating = false;
   late ImageService _imageService;
+  bool _initialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    _imageService = ServiceLocator.instance<ImageService>();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _imageService = Provider.of<ImageService>(context, listen: false);
+      _initialized = true;
+    }
   }
 
   @override

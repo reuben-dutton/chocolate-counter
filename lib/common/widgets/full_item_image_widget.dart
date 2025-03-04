@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
+import 'package:provider/provider.dart';
 
 class FullItemImageWidget extends StatelessWidget {
   final String? imagePath;
@@ -17,7 +18,7 @@ class FullItemImageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ImageService service = imageService ?? ImageService();
+    final service = imageService ?? Provider.of<ImageService>(context);
     
     return SizedBox(
       height: height,

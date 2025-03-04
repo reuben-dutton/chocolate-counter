@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:food_inventory/features/settings/widgets/confirm_dialog.dart';
 import 'package:food_inventory/features/shipments/widgets/shipment_item_list.dart';
@@ -26,13 +25,17 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
   late ImageService _imageService;
   late Future<List<ShipmentItem>> _itemsFuture;
   bool _isUpdating = false;
+  bool _initialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    _shipmentService = Provider.of<ShipmentService>(context, listen: false);
-    _imageService = ServiceLocator.instance<ImageService>();
-    _loadItems();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _shipmentService = Provider.of<ShipmentService>(context, listen: false);
+      _imageService = Provider.of<ImageService>(context, listen: false);
+      _loadItems();
+      _initialized = true;
+    }
   }
 
   void _loadItems() {

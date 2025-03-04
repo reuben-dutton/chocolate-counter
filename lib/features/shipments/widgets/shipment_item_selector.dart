@@ -3,7 +3,6 @@ import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/features/shipments/widgets/selected_shipment_item_tile.dart';
 import 'package:food_inventory/features/shipments/widgets/available_item_tile.dart';
 import 'package:food_inventory/features/shipments/widgets/add_item_dialog.dart';
@@ -30,8 +29,9 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   late List<ShipmentItem> _selectedItems;
-  late DialogService _dialogService;
-  late ImageService _imageService;
+  DialogService? _dialogService;
+  ImageService? _imageService;
+  bool _initialized = false;
   
   @override
   void initState() {
@@ -43,8 +43,17 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
         _searchQuery = _searchController.text.toLowerCase();
       });
     });
-    _dialogService = Provider.of<DialogService>(context, listen: false);
-    _imageService = ServiceLocator.instance<ImageService>();
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // This is the safe place to access inherited widgets
+    if (!_initialized) {
+      _dialogService = Provider.of<DialogService>(context, listen: false);
+      _imageService = Provider.of<ImageService>(context, listen: false);
+      _initialized = true;
+    }
   }
   
   @override
@@ -82,7 +91,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
               borderSide: BorderSide.none,
             ),
             filled: true,
-            fillColor: Colors.grey.withAlpha(128),
+            fillColor: Colors.grey.withAlpha(25),
           ),
         ),
         const SizedBox(height: 12),
@@ -116,7 +125,6 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                           item: _selectedItems[index],
                           onEdit: (quantity, expirationDate) => _updateItem(index, quantity, expirationDate),
                           onRemove: () => _removeItem(index),
-                          imageService: _imageService,
                         );
                       },
                     ),
@@ -153,7 +161,6 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                               return AvailableItemTile(
                                 item: filteredItems[index],
                                 onAdd: _showAddItemDialog,
-                                imageService: _imageService,
                               );
                             },
                           ),
@@ -168,14 +175,14 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
   }
 
   void _showAddItemDialog(ItemDefinition item) async {
-    int quantity = 1;
-    DateTime? expirationDate;
+    // Make sure dependencies are initialized
+    if (_dialogService == null) return;
     
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => AddItemDialog(
         item: item,
-        dialogService: _dialogService,
+        dialogService: _dialogService!,
       ),
     );
     

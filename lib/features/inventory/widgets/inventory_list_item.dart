@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/common/widgets/count_chip_widget.dart';
 import 'package:food_inventory/common/widgets/item_image_widget.dart';
+import 'package:provider/provider.dart';
 
 class InventoryListItem extends StatelessWidget {
   final ItemDefinition itemDefinition;
@@ -11,9 +11,8 @@ class InventoryListItem extends StatelessWidget {
   final int inventoryCount;
   final bool isEmptyItem;
   final VoidCallback onTap;
-  final ImageService _imageService = ServiceLocator.instance<ImageService>();
 
-  InventoryListItem({
+  const InventoryListItem({
     super.key,
     required this.itemDefinition,
     required this.stockCount,
@@ -25,6 +24,7 @@ class InventoryListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final imageService = Provider.of<ImageService>(context, listen: false);
     
     return Opacity(
       opacity: isEmptyItem ? 0.5 : 1.0,
@@ -44,7 +44,7 @@ class InventoryListItem extends StatelessWidget {
                   imagePath: itemDefinition.imageUrl,
                   itemName: itemDefinition.name,
                   radius: 24,
-                  imageService: _imageService,
+                  imageService: imageService,
                 ),
                 const SizedBox(width: 12),
                 Expanded(

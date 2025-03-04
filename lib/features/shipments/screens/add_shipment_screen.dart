@@ -6,7 +6,6 @@ import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/common/widgets/item_image_widget.dart';
 import 'package:food_inventory/features/shipments/widgets/shipment_item_selector.dart';
 import 'package:provider/provider.dart';
@@ -35,17 +34,21 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
   final _nameController = TextEditingController();
   DateTime _shipmentDate = DateTime.now();
   bool _isProcessing = false;
+  bool _initialized = false;
   
   int _currentStep = 0;
 
   @override
-  void initState() {
-    super.initState();
-    _inventoryService = Provider.of<InventoryService>(context, listen: false);
-    _shipmentService = Provider.of<ShipmentService>(context, listen: false);
-    _imageService = ServiceLocator.instance<ImageService>();
-    _dialogService = ServiceLocator.instance<DialogService>();
-    _loadItems();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _inventoryService = Provider.of<InventoryService>(context, listen: false);
+      _shipmentService = Provider.of<ShipmentService>(context, listen: false);
+      _imageService = Provider.of<ImageService>(context, listen: false);
+      _dialogService = Provider.of<DialogService>(context, listen: false);
+      _loadItems();
+      _initialized = true;
+    }
   }
 
   Future<void> _loadItems() async {
@@ -448,7 +451,6 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
       );
       
       // Use the shipment service to create the shipment
-      // This now handles creating inventory items with references
       await _shipmentService.createShipment(shipment);
       
       if (mounted) {

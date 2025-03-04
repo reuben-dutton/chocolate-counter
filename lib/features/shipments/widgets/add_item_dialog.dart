@@ -3,7 +3,6 @@ import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/widgets/expiration_date_widget.dart';
 
-
 // Dialog for adding a new item
 class AddItemDialog extends StatefulWidget {
   final ItemDefinition item;

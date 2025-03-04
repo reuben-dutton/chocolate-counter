@@ -7,7 +7,6 @@ import 'package:food_inventory/features/inventory/services/inventory_service.dar
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
-import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/common/widgets/count_display_widget.dart';
 import 'package:food_inventory/common/widgets/full_item_image_widget.dart';
 import 'package:food_inventory/common/widgets/section_header_widget.dart';
@@ -35,14 +34,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   late Future<Map<String, int>> _countsFuture;
   late Future<List<ItemInstance>> _itemInstancesFuture;
   late Future<List<InventoryMovement>> _movementsFuture;
+  bool _initialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    _inventoryService = Provider.of<InventoryService>(context, listen: false);
-    _dialogService = ServiceLocator.instance<DialogService>();
-    _imageService = ServiceLocator.instance<ImageService>();
-    _refreshData();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _inventoryService = Provider.of<InventoryService>(context, listen: false);
+      _dialogService = Provider.of<DialogService>(context, listen: false);
+      _imageService = Provider.of<ImageService>(context, listen: false);
+      _refreshData();
+      _initialized = true;
+    }
   }
 
   void _refreshData() {

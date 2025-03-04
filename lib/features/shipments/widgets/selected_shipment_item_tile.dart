@@ -2,30 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/features/shipments/widgets/edit_item_dialog.dart';
 import 'package:food_inventory/common/widgets/item_image_widget.dart';
 import 'package:food_inventory/common/widgets/expiration_date_widget.dart';
-
+import 'package:provider/provider.dart';
 
 // Extracted widget for selected items to prevent parent rebuilds
 class SelectedShipmentItemTile extends StatelessWidget {
   final ShipmentItem item;
   final Function(int quantity, DateTime? expirationDate) onEdit;
   final VoidCallback onRemove;
-  final ImageService imageService;
 
   const SelectedShipmentItemTile({
     super.key,
     required this.item,
     required this.onEdit,
     required this.onRemove,
-    required this.imageService,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final imageService = Provider.of<ImageService>(context, listen: false);
     
     return Card(
       color: theme.colorScheme.surface,
@@ -88,9 +86,7 @@ class SelectedShipmentItemTile extends StatelessWidget {
   }
 
   Future<void> _showEditDialog(BuildContext context) async {
-    final dialogService = ServiceLocator.instance<DialogService>();
-    int quantity = item.quantity;
-    DateTime? expirationDate = item.expirationDate;
+    final dialogService = Provider.of<DialogService>(context, listen: false);
     
     final result = await showDialog<Map<String, dynamic>>(
       context: context,

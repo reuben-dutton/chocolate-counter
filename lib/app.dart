@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/common/screens/home_screen.dart';
 import 'package:food_inventory/common/services/database_service.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
+import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/common/services/preferences_service.dart';
 import 'package:food_inventory/common/services/service_locator.dart';
@@ -20,6 +21,7 @@ class FoodInventoryApp extends StatelessWidget {
     final inventoryService = ServiceLocator.instance<InventoryService>();
     final shipmentService = ServiceLocator.instance<ShipmentService>();
     final dialogService = ServiceLocator.instance<DialogService>();
+    final imageService = ServiceLocator.instance<ImageService>();
 
     final theme = MaterialTheme(Theme.of(context).textTheme);
     
@@ -30,6 +32,7 @@ class FoodInventoryApp extends StatelessWidget {
         Provider<InventoryService>.value(value: inventoryService),
         Provider<ShipmentService>.value(value: shipmentService),
         Provider<DialogService>.value(value: dialogService),
+        Provider<ImageService>.value(value: imageService),
       ],
       child: Consumer<PreferencesService>(
         builder: (context, preferences, _) {
