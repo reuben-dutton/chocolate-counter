@@ -95,6 +95,7 @@ class ServiceLocator {
         instance<ShipmentItemRepository>(),
         instance<ItemInstanceRepository>(),
         instance<InventoryService>(),
+        instance<InventoryMovementFactory>(),
       ),
     );
   }

@@ -45,19 +45,15 @@ class InventoryMovementList extends StatelessWidget {
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: movement.type == MovementType.stockSale 
-                ? theme.colorScheme.secondary.withAlpha(25)
-                : theme.colorScheme.tertiary.withAlpha(25),
+              color: theme.colorScheme.secondary,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
-              '${movement.type == MovementType.stockSale ? '-' : '+'} ${movement.quantity}',
+              '${movement.quantity}',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: movement.type == MovementType.stockSale 
-                  ? theme.colorScheme.secondary
-                  : theme.colorScheme.tertiary,
+                fontSize: 14,
+                color: theme.colorScheme.onSecondary,
               ),
             ),
           ),
@@ -65,7 +61,18 @@ class InventoryMovementList extends StatelessWidget {
       },
     );
   }
-  
+
+  String _getMovementSign(MovementType type) {
+    switch (type) {
+      case MovementType.stockSale:
+        return '';
+      case MovementType.inventoryToStock:
+        return '';
+      case MovementType.shipmentToInventory:
+        return '';
+    }
+  }
+      
   Widget _getMovementIcon(MovementType type, ThemeData theme) {
     switch (type) {
       case MovementType.stockSale:
@@ -85,12 +92,25 @@ class InventoryMovementList extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: theme.colorScheme.tertiary.withAlpha(25),
+            color: theme.colorScheme.secondary.withAlpha(25),
             shape: BoxShape.circle,
           ),
           child: Icon(
             Icons.move_up, 
-            color: theme.colorScheme.tertiary, 
+            color: theme.colorScheme.secondary, 
+            size: 18
+          ),
+        );
+      case MovementType.shipmentToInventory:
+        return Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.secondary.withAlpha(25),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.move_to_inbox, 
+            color: theme.colorScheme.secondary, 
             size: 18
           ),
         );
@@ -103,6 +123,8 @@ class InventoryMovementList extends StatelessWidget {
         return 'Stock Sale';
       case MovementType.inventoryToStock:
         return 'Moved to Stock';
+      case MovementType.shipmentToInventory:
+        return 'Purchased';
     }
   }
 }

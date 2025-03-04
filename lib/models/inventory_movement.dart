@@ -54,6 +54,24 @@ class InventoryMovement {
       itemDefinition: itemDefinition,
     );
   }
+  
+  // Factory method for creating an inventory-to-stock movement
+  static InventoryMovement createShipmentToInventory({
+    int? id,
+    required int itemDefinitionId,
+    required int quantity,
+    DateTime? timestamp,
+    ItemDefinition? itemDefinition,
+  }) {
+    return InventoryMovement(
+      id: id,
+      itemDefinitionId: itemDefinitionId,
+      quantity: quantity,
+      timestamp: timestamp ?? DateTime.now(),
+      type: MovementType.shipmentToInventory,
+      itemDefinition: itemDefinition,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -80,4 +98,5 @@ class InventoryMovement {
 enum MovementType {
   stockSale,           // Decrease in stock (customer purchase)
   inventoryToStock,    // Move from inventory to stock
+  shipmentToInventory, // Addition from a new shipment
 }

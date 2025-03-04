@@ -1,3 +1,4 @@
+import 'package:food_inventory/factories/inventory_movement_factory.dart';
 import 'package:food_inventory/factories/item_instance_factory.dart';
 import 'package:food_inventory/models/item_instance.dart';
 import 'package:food_inventory/models/shipment.dart';
@@ -15,12 +16,14 @@ class ShipmentService {
   final ItemInstanceRepository _itemInstanceRepository;
   final InventoryService _inventoryService;
   final ItemInstanceFactory _itemInstanceFactory;
+  final InventoryMovementFactory _movementFactory; // Add this line
 
   ShipmentService(
     this._shipmentRepository,
     this._shipmentItemRepository,
     this._itemInstanceRepository,
     this._inventoryService,
+    this._movementFactory,
   ) : _itemInstanceFactory = ItemInstanceFactory(_itemInstanceRepository, null);
 
   /// Get all shipments with their items
@@ -76,6 +79,14 @@ class ShipmentService {
           quantity: item.quantity,
           expirationDate: item.expirationDate,
           shipmentItemId: shipmentItemId,
+          txn: txn
+        );
+
+        // Record inventory movement for this item
+        await _movementFactory.recordShipmentToInventory(
+          itemDefinitionId: item.itemDefinitionId,
+          quantity: item.quantity,
+          timestamp: shipment.date,
           txn: txn
         );
       }

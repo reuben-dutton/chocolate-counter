@@ -49,6 +49,16 @@ class InventoryMovementRepository extends BaseRepository<InventoryMovement> {
     
     return create(movement, txn: txn);
   }
+
+  Future<int> recordShipmentToInventory(int itemDefinitionId, int quantity, DateTime timestamp, {Transaction? txn}) async {
+    final movement = InventoryMovement.createShipmentToInventory(
+      itemDefinitionId: itemDefinitionId,
+      quantity: quantity,
+      timestamp: timestamp,
+    );
+
+    return create(movement, txn: txn);
+  }
   
   /// Get all movements for a specific item with item definitions
   Future<List<InventoryMovement>> getMovementsForItem(int itemDefinitionId, {Transaction? txn}) async {
