@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:food_inventory/data/models/item_definition.dart';
-import 'package:food_inventory/features/inventory/services/inventory_service.dart';
-import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
+import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/common/widgets/full_item_image_widget.dart';
+import 'package:food_inventory/data/models/item_definition.dart';
+import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
+import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 
@@ -27,6 +28,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   String? _existingImagePath;
   bool _isUpdating = false;
   late ImageService _imageService;
+  late InventoryBloc _inventoryBloc;
   bool _initialized = false;
 
   @override
@@ -47,6 +49,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     super.didChangeDependencies();
     if (!_initialized) {
       _imageService = Provider.of<ImageService>(context, listen: false);
+      _inventoryBloc = ServiceLocator.instance<InventoryBloc>();
       _initialized = true;
     }
   }
@@ -238,13 +241,6 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     });
 
     try {
-      final inventoryService = Provider.of<InventoryService>(context, listen: false);
-      
-      // Print the current image path
-      print('BEFORE UPDATE - Current imageUrl: ${widget.itemDefinition.imageUrl}');
-      print('BEFORE UPDATE - Existing path: $_existingImagePath');
-      print('BEFORE UPDATE - Image file: ${_imageFile?.path}');
-      
       // Save image and get the path
       String? imagePath;
       if (_imageFile != null) {
@@ -253,22 +249,20 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
         imagePath = _existingImagePath; // This will be null when removed
       }
       
-      print('UPDATE - New image path: $imagePath');
-      
       final updatedItem = widget.itemDefinition.copyWith(
         name: _nameController.text,
         barcode: _barcodeController.text.isEmpty ? null : _barcodeController.text,
         imageUrl: imagePath, // This should explicitly be null when image is removed
       );
       
-      print('AFTER UPDATE - Updated imageUrl: ${updatedItem.imageUrl}');
+      final success = await _inventoryBloc.updateItemDefinition(updatedItem);
       
-      // Check what's being sent to the database
-      await inventoryService.updateItemDefinition(updatedItem);
-      
-      ErrorHandler.showSuccessSnackBar(context, 'Item updated');
-      
-      Navigator.pop(context, updatedItem);
+      if (success) {
+        ErrorHandler.showSuccessSnackBar(context, 'Item updated');
+        Navigator.pop(context, updatedItem);
+      } else {
+        ErrorHandler.showErrorSnackBar(context, 'Error updating item');
+      }
     } catch (e) {
       ErrorHandler.showErrorSnackBar(context, 'Error updating item', error: e);
     } finally {

@@ -24,7 +24,7 @@ class InventoryListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final imageService = Provider.of<ImageService>(context, listen: false);
+    final imageService = Provider.of<ImageService>(context);
     
     return Opacity(
       opacity: isEmptyItem ? 0.5 : 1.0,

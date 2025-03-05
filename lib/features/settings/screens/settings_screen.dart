@@ -1,31 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/common/services/database_service.dart';
-import 'package:food_inventory/common/services/preferences_service.dart';
+import 'package:food_inventory/common/services/service_locator.dart';
+import 'package:food_inventory/features/settings/bloc/preferences_bloc.dart';
 import 'package:food_inventory/features/settings/widgets/database_reset_dialog.dart';
-import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final preferencesBloc = ServiceLocator.instance<PreferencesBloc>();
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: Consumer<PreferencesService>(
-        builder: (context, preferences, _) {
+      body: StreamBuilder<ThemeMode>(
+        stream: preferencesBloc.themeMode,
+        builder: (context, snapshot) {
+          final currentThemeMode = snapshot.data ?? ThemeMode.system;
+          
           return ListView(
             children: [
               ListTile(
                 leading: const Icon(Icons.palette, size: 20),
                 title: const Text('Theme'),
-                subtitle: _getThemeSubtitle(preferences.themeMode),
+                subtitle: _getThemeSubtitle(currentThemeMode),
                 trailing: DropdownButton<ThemeMode>(
-                  value: preferences.themeMode,
+                  value: currentThemeMode,
                   onChanged: (ThemeMode? newValue) {
                     if (newValue != null) {
-                      preferences.setThemeMode(newValue);
+                      preferencesBloc.setThemeMode(newValue);
                     }
                   },
                   underline: const SizedBox.shrink(),
@@ -63,7 +68,7 @@ class SettingsScreen extends StatelessWidget {
               ListTile(
                 leading: Icon(Icons.delete_forever, 
                   size: 20, 
-                  color: Theme.of(context).colorScheme.error
+                  color: Colors.red
                 ),
                 title: const Text('Reset Database'),
                 subtitle: const Text('Delete all data and restart app'),
@@ -93,10 +98,13 @@ class SettingsScreen extends StatelessWidget {
     switch (mode) {
       case ThemeMode.system:
         text = 'Follow system settings';
+        break;
       case ThemeMode.light:
         text = 'Light mode';
+        break;
       case ThemeMode.dark:
         text = 'Dark mode';
+        break;
     }
     return Text(text, style: const TextStyle(fontSize: 12));
   }
@@ -108,24 +116,26 @@ class SettingsScreen extends StatelessWidget {
     );
     
     if (confirmed == true) {
-      final databaseService = Provider.of<DatabaseService>(context, listen: false);
+      final databaseService = ServiceLocator.instance<DatabaseService>();
       
       // Show a loading dialog while resetting
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          title: Text('Resetting Database'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Please wait...'),
-            ],
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            title: Text('Resetting Database'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Please wait...'),
+              ],
+            ),
           ),
-        ),
-      );
+        );
+      }
       
       // Reset the database
       await databaseService.resetDatabase();

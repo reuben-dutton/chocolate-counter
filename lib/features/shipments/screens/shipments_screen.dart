@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/features/inventory/screens/add_item_definition_screen.dart';
+import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
 import 'package:food_inventory/features/shipments/screens/add_shipment_screen.dart';
 import 'package:food_inventory/features/shipments/screens/shipment_detail_screen.dart';
-import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:food_inventory/features/shipments/widgets/shipment_list_item.dart';
-import 'package:provider/provider.dart';
 
 class ShipmentsScreen extends StatefulWidget {
   const ShipmentsScreen({super.key});
@@ -15,20 +15,17 @@ class ShipmentsScreen extends StatefulWidget {
 }
 
 class _ShipmentsScreenState extends State<ShipmentsScreen> {
-  late ShipmentService _shipmentService;
-  late Future<List<Shipment>> _shipmentsFuture;
+  late ShipmentBloc _shipmentBloc;
 
   @override
   void initState() {
     super.initState();
-    _shipmentService = Provider.of<ShipmentService>(context, listen: false);
+    _shipmentBloc = ServiceLocator.instance<ShipmentBloc>();
     _loadShipments();
   }
 
   void _loadShipments() {
-    setState(() {
-      _shipmentsFuture = _shipmentService.getAllShipments();
-    });
+    _shipmentBloc.loadShipments();
   }
 
   @override
@@ -37,15 +34,11 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
       appBar: AppBar(
         title: const Text('Shipments'),
       ),
-      body: FutureBuilder<List<Shipment>>(
-        future: _shipmentsFuture,
+      body: StreamBuilder<List<Shipment>>(
+        stream: _shipmentBloc.shipments,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
           }
 
           final shipments = snapshot.data ?? [];
@@ -87,11 +80,16 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
                   });
                 },
                 onDelete: () async {
-                  await _shipmentService.deleteShipment(shipment.id!);
-                  _loadShipments();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Shipment deleted')),
-                  );
+                  final success = await _shipmentBloc.deleteShipment(shipment.id!);
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Shipment deleted')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Failed to delete shipment')),
+                    );
+                  }
                 },
               );
             },

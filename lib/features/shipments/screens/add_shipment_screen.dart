@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/dialog_service.dart';
+import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
-import 'package:food_inventory/common/services/dialog_service.dart';
-import 'package:food_inventory/features/inventory/services/inventory_service.dart';
-import 'package:food_inventory/features/shipments/services/shipment_service.dart';
+import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/common/widgets/item_image_widget.dart';
+import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
 import 'package:food_inventory/features/shipments/widgets/shipment_item_selector.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 class AddShipmentScreen extends StatefulWidget {
@@ -19,8 +18,8 @@ class AddShipmentScreen extends StatefulWidget {
 }
 
 class _AddShipmentScreenState extends State<AddShipmentScreen> {
-  late ShipmentService _shipmentService;
-  late InventoryService _inventoryService;
+  late InventoryBloc _inventoryBloc;
+  late ShipmentBloc _shipmentBloc;
   late ImageService _imageService;
   late DialogService _dialogService;
   
@@ -39,44 +38,43 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
   int _currentStep = 0;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_initialized) {
-      _inventoryService = Provider.of<InventoryService>(context, listen: false);
-      _shipmentService = Provider.of<ShipmentService>(context, listen: false);
-      _imageService = Provider.of<ImageService>(context, listen: false);
-      _dialogService = Provider.of<DialogService>(context, listen: false);
-      _loadItems();
-      _initialized = true;
-    }
-  }
-
-  Future<void> _loadItems() async {
-    setState(() {
-      _isLoading = true;
-    });
+  void initState() {
+    super.initState();
+    _inventoryBloc = ServiceLocator.instance<InventoryBloc>();
+    _shipmentBloc = ServiceLocator.instance<ShipmentBloc>();
+    _imageService = ServiceLocator.instance<ImageService>();
+    _dialogService = ServiceLocator.instance<DialogService>();
     
-    try {
-      _availableItems = await _inventoryService.getAllItemDefinitions();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading items: $e')),
-        );
-      }
-    } finally {
+    // Listen for inventory items
+    _inventoryBloc.inventoryItems.listen((items) {
       if (mounted) {
         setState(() {
+          _availableItems = items.map((item) => item.itemDefinition).toList();
           _isLoading = false;
         });
       }
-    }
+    });
+    
+    // Listen for loading state
+    _inventoryBloc.isLoading.listen((loading) {
+      if (mounted) {
+        setState(() {
+          _isLoading = loading;
+        });
+      }
+    });
+    
+    _loadItems();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     super.dispose();
+  }
+
+  void _loadItems() {
+    _inventoryBloc.loadInventoryItems();
   }
 
   @override
@@ -363,11 +361,10 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                             return ListTile(
                               dense: true,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                              leading: ItemImageWidget(
-                                imagePath: item.itemDefinition?.imageUrl,
-                                itemName: item.itemDefinition?.name ?? 'Unknown Item',
-                                radius: 16,
-                                imageService: _imageService,
+                              leading: Icon(
+                                Icons.inventory_2,
+                                size: 20,
+                                color: theme.colorScheme.primary,
                               ),
                               title: Text(
                                 item.itemDefinition?.name ?? 'Unknown Item',
@@ -450,14 +447,22 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
         items: _selectedItems,
       );
       
-      // Use the shipment service to create the shipment
-      await _shipmentService.createShipment(shipment);
+      // Use the shipment bloc to create the shipment
+      final success = await _shipmentBloc.createShipment(shipment);
       
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Shipment added successfully')),
-        );
-        Navigator.pop(context);
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Shipment added successfully')),
+          );
+          Navigator.pop(context);
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error creating shipment')),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

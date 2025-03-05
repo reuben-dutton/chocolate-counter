@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:food_inventory/data/models/item_definition.dart';
+import 'package:food_inventory/common/bloc/bloc_provider.dart';
+import 'package:food_inventory/common/services/service_locator.dart';
+import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/screens/item_detail_screen.dart';
-import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/inventory/widgets/inventory_list_item.dart';
-import 'package:provider/provider.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -13,15 +13,14 @@ class InventoryScreen extends StatefulWidget {
 }
 
 class _InventoryScreenState extends State<InventoryScreen> {
-  late InventoryService _inventoryService;
-  late Future<List<ItemDefinition>> _itemsFuture;
+  late InventoryBloc _inventoryBloc;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _inventoryService = Provider.of<InventoryService>(context, listen: false);
+    _inventoryBloc = ServiceLocator.instance<InventoryBloc>();
     _loadItems();
     _searchController.addListener(() {
       setState(() {
@@ -37,9 +36,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   void _loadItems() {
-    setState(() {
-      _itemsFuture = _inventoryService.getAllItemDefinitions();
-    });
+    _inventoryBloc.loadInventoryItems();
   }
 
   @override
@@ -78,15 +75,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
           
           // Items list
           Expanded(
-            child: FutureBuilder<List<ItemDefinition>>(
-              future: _itemsFuture,
+            child: StreamBuilder<List<InventoryItemWithCounts>>(
+              stream: _inventoryBloc.inventoryItems,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
                 }
 
                 final allItems = snapshot.data ?? [];
@@ -104,12 +97,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   );
                 }
                 
-                // Filter items by search query
+                // Filter items by search query (in memory)
                 final items = _searchQuery.isEmpty
                     ? allItems
                     : allItems.where((item) => 
-                        item.name.toLowerCase().contains(_searchQuery) ||
-                        (item.barcode?.toLowerCase().contains(_searchQuery) ?? false)
+                        item.itemDefinition.name.toLowerCase().contains(_searchQuery) ||
+                        (item.itemDefinition.barcode?.toLowerCase().contains(_searchQuery) ?? false)
                       ).toList();
                 
                 if (items.isEmpty) {
@@ -133,32 +126,22 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     itemCount: items.length,
                     itemBuilder: (context, index) {
                       final item = items[index];
-                      return FutureBuilder<Map<String, int>>(
-                        future: _inventoryService.getItemCounts(item.id!),
-                        builder: (context, countsSnapshot) {
-                          final stockCount = countsSnapshot.data?['stock'] ?? 0;
-                          final inventoryCount = countsSnapshot.data?['inventory'] ?? 0;
-                          
-                          // Check if item should be displayed with reduced opacity
-                          final isEmptyItem = stockCount == 0 && inventoryCount == 0;
-                          
-                          return InventoryListItem(
-                            itemDefinition: item,
-                            stockCount: stockCount,
-                            inventoryCount: inventoryCount,
-                            isEmptyItem: isEmptyItem,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ItemDetailScreen(itemDefinition: item),
-                                ),
-                              ).then((_) {
-                                // Refresh data when returning from details
-                                _loadItems();
-                              });
-                            },
-                          );
+                      
+                      return InventoryListItem(
+                        itemDefinition: item.itemDefinition,
+                        stockCount: item.stockCount,
+                        inventoryCount: item.inventoryCount,
+                        isEmptyItem: item.isEmptyItem,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ItemDetailScreen(itemDefinition: item.itemDefinition),
+                            ),
+                          ).then((_) {
+                            // Refresh data when returning from details
+                            _loadItems();
+                          });
                         },
                       );
                     },

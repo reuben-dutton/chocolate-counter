@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
-import 'package:food_inventory/features/inventory/services/inventory_service.dart';
+import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
@@ -19,6 +20,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
   File? _imageFile;
   bool _isCreating = false;
   late ImageService _imageService;
+  late InventoryBloc _inventoryBloc;
   bool _initialized = false;
 
   @override
@@ -26,6 +28,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
     super.didChangeDependencies();
     if (!_initialized) {
       _imageService = Provider.of<ImageService>(context, listen: false);
+      _inventoryBloc = ServiceLocator.instance<InventoryBloc>();
       _initialized = true;
     }
   }
@@ -171,8 +174,6 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
     });
 
     try {
-      final inventoryService = Provider.of<InventoryService>(context, listen: false);
-      
       // Save image to app directory and get the path
       final imagePath = await _imageService.saveImage(_imageFile);
       
@@ -182,13 +183,19 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
         imageUrl: imagePath, // Now stores local file path instead of URL
       );
       
-      await inventoryService.createItemDefinition(itemDefinition);
+      final success = await _inventoryBloc.createItemDefinition(itemDefinition);
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item added successfully')),
-      );
-      
-      Navigator.pop(context);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Item added successfully')),
+        );
+        
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error creating item')),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error creating item: $e')),

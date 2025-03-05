@@ -5,7 +5,7 @@ import 'package:food_inventory/common/services/service_locator.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize services
+  // Initialize services and BLoCs
   await ServiceLocator.init();
   
   runApp(const FoodInventoryApp());
