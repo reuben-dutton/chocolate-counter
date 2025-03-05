@@ -51,8 +51,10 @@ class ImageService {
       final file = File(imagePath);
       if (await file.exists()) {
         await file.delete();
+        print('Successfully deleted file: $imagePath');
         return true;
       }
+      print('File does not exist: $imagePath');
       return false;
     } catch (e) {
       print('Error deleting image: $e');

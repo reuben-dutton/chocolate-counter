@@ -33,13 +33,13 @@ class ItemDefinition {
     int? id,
     String? name,
     String? barcode,
-    String? imageUrl,
+    Object? imageUrl = const Object(),
   }) {
     return ItemDefinition(
       id: id ?? this.id,
       name: name ?? this.name,
       barcode: barcode ?? this.barcode,
-      imageUrl: imageUrl ?? this.imageUrl,
+      imageUrl: imageUrl != const Object() ? (imageUrl as String?) : this.imageUrl,
     );
   }
 }

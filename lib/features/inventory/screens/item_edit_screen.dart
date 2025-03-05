@@ -87,15 +87,23 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   }
   
   Future<void> _removePhoto() async {
-    // Delete the existing image if it's a local file
-    if (_existingImagePath != null && !_existingImagePath!.startsWith('http')) {
-      await _imageService.deleteImage(_existingImagePath);
+    try {
+      // Delete the existing image if it's a local file
+      if (_existingImagePath != null && !_existingImagePath!.startsWith('http')) {
+        final deleted = await _imageService.deleteImage(_existingImagePath);
+        if (!deleted) {
+          print('Failed to delete image file: $_existingImagePath');
+        }
+      }
+    } catch (e) {
+      print('Error during image deletion: $e');
+    } finally {
+      // Always update the state even if deletion fails
+      setState(() {
+        _imageFile = null;
+        _existingImagePath = null;
+      });
     }
-    
-    setState(() {
-      _imageFile = null;
-      _existingImagePath = null;
-    });
   }
 
   @override
@@ -232,20 +240,30 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     try {
       final inventoryService = Provider.of<InventoryService>(context, listen: false);
       
+      // Print the current image path
+      print('BEFORE UPDATE - Current imageUrl: ${widget.itemDefinition.imageUrl}');
+      print('BEFORE UPDATE - Existing path: $_existingImagePath');
+      print('BEFORE UPDATE - Image file: ${_imageFile?.path}');
+      
       // Save image and get the path
       String? imagePath;
       if (_imageFile != null) {
         imagePath = await _imageService.saveImage(_imageFile);
       } else {
-        imagePath = _existingImagePath;
+        imagePath = _existingImagePath; // This will be null when removed
       }
+      
+      print('UPDATE - New image path: $imagePath');
       
       final updatedItem = widget.itemDefinition.copyWith(
         name: _nameController.text,
         barcode: _barcodeController.text.isEmpty ? null : _barcodeController.text,
-        imageUrl: imagePath,
+        imageUrl: imagePath, // This should explicitly be null when image is removed
       );
       
+      print('AFTER UPDATE - Updated imageUrl: ${updatedItem.imageUrl}');
+      
+      // Check what's being sent to the database
       await inventoryService.updateItemDefinition(updatedItem);
       
       ErrorHandler.showSuccessSnackBar(context, 'Item updated');
