@@ -34,6 +34,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   late Future<Map<String, int>> _countsFuture;
   late Future<List<ItemInstance>> _itemInstancesFuture;
   late Future<List<InventoryMovement>> _movementsFuture;
+  // Initialize directly from the widget property to avoid LateInitializationError
+  late ItemDefinition _currentItemDefinition = widget.itemDefinition;
   bool _initialized = false;
 
   @override
@@ -43,6 +45,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       _inventoryService = Provider.of<InventoryService>(context, listen: false);
       _dialogService = Provider.of<DialogService>(context, listen: false);
       _imageService = Provider.of<ImageService>(context, listen: false);
+      // _currentItemDefinition is already initialized in declaration
       _refreshData();
       _initialized = true;
     }
@@ -50,9 +53,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   void _refreshData() {
     setState(() {
-      _countsFuture = _inventoryService.getItemCounts(widget.itemDefinition.id!);
-      _itemInstancesFuture = _inventoryService.getItemInstances(widget.itemDefinition.id!);
-      _movementsFuture = _inventoryService.getItemMovements(widget.itemDefinition.id!);
+      _countsFuture = _inventoryService.getItemCounts(_currentItemDefinition.id!);
+      _itemInstancesFuture = _inventoryService.getItemInstances(_currentItemDefinition.id!);
+      _movementsFuture = _inventoryService.getItemMovements(_currentItemDefinition.id!);
     });
   }
 
@@ -88,8 +91,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             children: [
               // Item image at the top
               FullItemImageWidget(
-                imagePath: widget.itemDefinition.imageUrl,
-                itemName: widget.itemDefinition.name,
+                imagePath: _currentItemDefinition.imageUrl,
+                itemName: _currentItemDefinition.name,
                 imageService: _imageService,
               ),
               
@@ -102,7 +105,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: Text(
-                        widget.itemDefinition.name,
+                        _currentItemDefinition.name,
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -110,7 +113,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     ),
                     
                     // Barcode (if available)
-                    if (widget.itemDefinition.barcode != null)
+                    if (_currentItemDefinition.barcode != null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 16.0),
                         child: Row(
@@ -118,7 +121,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                             Icon(Icons.qr_code, size: 18, color: theme.colorScheme.primary),
                             const SizedBox(width: 8),
                             Text(
-                              widget.itemDefinition.barcode!,
+                              _currentItemDefinition.barcode!,
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.colorScheme.onSurface.withAlpha(175),
                               ),
@@ -338,13 +341,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         context,
         MaterialPageRoute(
           builder: (context) => ItemEditScreen(
-            itemDefinition: widget.itemDefinition,
+            itemDefinition: _currentItemDefinition,
           ),
         ),
       );
 
       if (result != null) {
-        // The item was updated in the edit screen, just refresh the UI
+        // Update the current item definition with the edited one
+        setState(() {
+          _currentItemDefinition = result;
+        });
         _refreshData();
       }
     } catch (e) {
@@ -362,7 +368,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       );
 
       if (confirm == true) {
-        await _inventoryService.deleteItemDefinition(widget.itemDefinition.id!);
+        await _inventoryService.deleteItemDefinition(_currentItemDefinition.id!);
         ErrorHandler.showSuccessSnackBar(context, 'Item deleted');
         Navigator.pop(context);
       }
@@ -383,7 +389,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
       if (result != null) {
         await _inventoryService.updateStockCount(
-          widget.itemDefinition.id!,
+          _currentItemDefinition.id!,
           result,
         );
         _refreshData();
@@ -405,7 +411,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
       if (result != null) {
         await _inventoryService.moveInventoryToStock(
-          widget.itemDefinition.id!,
+          _currentItemDefinition.id!,
           result,
         );
         _refreshData();
