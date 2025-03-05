@@ -88,8 +88,6 @@ class ServiceLocator {
         instance<ItemDefinitionRepository>(),
         instance<ItemInstanceRepository>(),
         instance<InventoryMovementRepository>(),
-        instance<ItemInstanceFactory>(),
-        instance<InventoryMovementFactory>(),
       ),
     );
     
@@ -97,7 +95,8 @@ class ServiceLocator {
       ShipmentService(
         instance<ShipmentRepository>(),
         instance<ShipmentItemRepository>(),
-        instance<InventoryService>(),
+        instance<ItemInstanceRepository>(),
+        instance<InventoryMovementFactory>(),
       ),
     );
     

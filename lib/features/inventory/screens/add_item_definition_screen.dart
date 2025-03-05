@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
@@ -41,20 +42,40 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
   }
 
   Future<void> _takePhoto() async {
-    final pickedFile = await _imageService.takePhoto();
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = pickedFile;
-      });
+    try {
+      final pickedFile = await _imageService.takePhoto();
+      if (pickedFile != null) {
+        setState(() {
+          _imageFile = pickedFile;
+        });
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleServiceError(
+        context, 
+        e, 
+        service: 'Image',
+        operation: 'taking photo',
+        stackTrace: stackTrace
+      );
     }
   }
 
   Future<void> _pickPhoto() async {
-    final pickedFile = await _imageService.pickPhoto();
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = pickedFile;
-      });
+    try {
+      final pickedFile = await _imageService.pickPhoto();
+      if (pickedFile != null) {
+        setState(() {
+          _imageFile = pickedFile;
+        });
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleServiceError(
+        context, 
+        e, 
+        service: 'Image',
+        operation: 'picking photo',
+        stackTrace: stackTrace
+      );
     }
   }
 
@@ -186,19 +207,18 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
       final success = await _inventoryBloc.createItemDefinition(itemDefinition);
       
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item added successfully')),
-        );
-        
+        ErrorHandler.showSuccessSnackBar(context, 'Item added successfully');
         Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error creating item')),
-        );
+        ErrorHandler.showErrorSnackBar(context, 'Error creating item');
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating item: $e')),
+    } catch (e, stackTrace) {
+      ErrorHandler.handleServiceError(
+        context, 
+        e, 
+        service: 'Item',
+        operation: 'creation',
+        stackTrace: stackTrace
       );
     } finally {
       setState(() {

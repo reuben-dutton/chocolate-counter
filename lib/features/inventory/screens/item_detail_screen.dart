@@ -363,7 +363,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       );
 
       if (result != null) {
-        final success = await _inventoryBloc.updateStockCount(
+        final success = await _inventoryBloc.recordStockSale(
           _currentItemDefinition.id!,
           result,
         );

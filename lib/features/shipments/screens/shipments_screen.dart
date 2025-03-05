@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/features/inventory/screens/add_item_definition_screen.dart';
@@ -21,6 +22,14 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
   void initState() {
     super.initState();
     _shipmentBloc = ServiceLocator.instance<ShipmentBloc>();
+    
+    // Listen for errors
+    _shipmentBloc.errors.listen((error) {
+      if (mounted) {
+        ErrorHandler.showErrorSnackBar(context, error.message, error: error.error);
+      }
+    });
+    
     _loadShipments();
   }
 
@@ -80,14 +89,20 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
                   });
                 },
                 onDelete: () async {
-                  final success = await _shipmentBloc.deleteShipment(shipment.id!);
-                  if (success) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Shipment deleted')),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Failed to delete shipment')),
+                  try {
+                    final success = await _shipmentBloc.deleteShipment(shipment.id!);
+                    if (success) {
+                      ErrorHandler.showSuccessSnackBar(context, 'Shipment deleted');
+                    } else {
+                      ErrorHandler.showErrorSnackBar(context, 'Failed to delete shipment');
+                    }
+                  } catch (e, stackTrace) {
+                    ErrorHandler.handleServiceError(
+                      context, 
+                      e,
+                      service: 'Shipment',
+                      operation: 'deletion',
+                      stackTrace: stackTrace
                     );
                   }
                 },

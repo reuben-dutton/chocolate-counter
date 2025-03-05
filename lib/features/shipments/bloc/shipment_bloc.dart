@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:food_inventory/common/bloc/bloc_base.dart';
+import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
@@ -22,8 +24,9 @@ class ShipmentBloc extends BlocBase {
   final _loadingController = StreamController<bool>.broadcast();
   Stream<bool> get isLoading => _loadingController.stream;
 
-  // Keep track of last loaded shipment ID
-  int? _lastLoadedShipmentId;
+  // Stream for errors
+  final _errorController = StreamController<AppError>.broadcast();
+  Stream<AppError> get errors => _errorController.stream;
 
   ShipmentBloc(this._shipmentService);
 
@@ -37,9 +40,15 @@ class ShipmentBloc extends BlocBase {
     try {
       final shipmentList = await _shipmentService.getAllShipments();
       _shipmentsController.add(shipmentList);
-    } catch (e) {
-      print('Error loading shipments: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error loading shipments', e, stackTrace, 'ShipmentBloc');
       _shipmentsController.add([]);
+      _errorController.add(AppError(
+        message: 'Failed to load shipments',
+        error: e,
+        stackTrace: stackTrace,
+        source: 'ShipmentBloc'
+      ));
     } finally {
       _isLoading = false;
       _loadingController.add(false);
@@ -52,14 +61,19 @@ class ShipmentBloc extends BlocBase {
     
     _isLoading = true;
     _loadingController.add(true);
-    _lastLoadedShipmentId = shipmentId;
     
     try {
       final items = await _shipmentService.getShipmentItems(shipmentId);
       _shipmentItemsController.add(items);
-    } catch (e) {
-      print('Error loading shipment items: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error loading shipment items', e, stackTrace, 'ShipmentBloc');
       _shipmentItemsController.add([]);
+      _errorController.add(AppError(
+        message: 'Failed to load shipment items',
+        error: e,
+        stackTrace: stackTrace,
+        source: 'ShipmentBloc'
+      ));
     } finally {
       _isLoading = false;
       _loadingController.add(false);
@@ -72,8 +86,14 @@ class ShipmentBloc extends BlocBase {
       await _shipmentService.createShipment(shipment);
       await loadShipments(); // Refresh the list
       return true;
-    } catch (e) {
-      print('Error creating shipment: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error creating shipment', e, stackTrace, 'ShipmentBloc');
+      _errorController.add(AppError(
+        message: 'Failed to create shipment',
+        error: e,
+        stackTrace: stackTrace,
+        source: 'ShipmentBloc'
+      ));
       return false;
     }
   }
@@ -84,8 +104,14 @@ class ShipmentBloc extends BlocBase {
       await _shipmentService.deleteShipment(id);
       await loadShipments(); // Refresh the list
       return true;
-    } catch (e) {
-      print('Error deleting shipment: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error deleting shipment', e, stackTrace, 'ShipmentBloc');
+      _errorController.add(AppError(
+        message: 'Failed to delete shipment',
+        error: e,
+        stackTrace: stackTrace,
+        source: 'ShipmentBloc'
+      ));
       return false;
     }
   }
@@ -94,17 +120,28 @@ class ShipmentBloc extends BlocBase {
   Future<bool> updateShipmentItemExpiration(int shipmentItemId, DateTime? expirationDate) async {
     try {
       await _shipmentService.updateShipmentItemExpiration(shipmentItemId, expirationDate);
-      
-      // Refresh the items list if we have a shipment ID
-      if (_lastLoadedShipmentId != null) {
-        await loadShipmentItems(_lastLoadedShipmentId!);
-      }
-      
+      // We need to know the shipment ID to refresh the items list
+      // For simplicity, let's assume the parent shipment will reload the items
       return true;
-    } catch (e) {
-      print('Error updating shipment item expiration: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error updating shipment item expiration', e, stackTrace, 'ShipmentBloc');
+      _errorController.add(AppError(
+        message: 'Failed to update expiration date',
+        error: e,
+        stackTrace: stackTrace,
+        source: 'ShipmentBloc'
+      ));
       return false;
     }
+  }
+
+  /// Handle an error with a BuildContext for UI feedback
+  void handleError(BuildContext context, AppError error) {
+    ErrorHandler.showErrorSnackBar(
+      context, 
+      error.message,
+      error: error.error
+    );
   }
 
   @override
@@ -112,5 +149,6 @@ class ShipmentBloc extends BlocBase {
     _shipmentsController.close();
     _shipmentItemsController.close();
     _loadingController.close();
+    _errorController.close();
   }
 }

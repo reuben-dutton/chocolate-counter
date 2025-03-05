@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:food_inventory/common/bloc/bloc_base.dart';
+import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/data/models/inventory_movement.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/item_instance.dart';
@@ -50,9 +52,13 @@ class InventoryBloc extends BlocBase {
   final _itemDetailController = StreamController<ItemDetailData>.broadcast();
   Stream<ItemDetailData> get itemDetailData => _itemDetailController.stream;
 
+  // Stream for errors
+  final _errorController = StreamController<AppError>.broadcast();
+  Stream<AppError> get errors => _errorController.stream;
+
   InventoryBloc(this._inventoryService);
 
-  /// Load all inventory items with counts
+  // Load all inventory items with counts
   Future<void> loadInventoryItems() async {
     if (_isLoading) return;
     
@@ -72,9 +78,29 @@ class InventoryBloc extends BlocBase {
         ));
       }
       
+      // Sort items - push items with 0 stock and 0 inventory to the bottom
+      itemsWithCounts.sort((a, b) {
+        // If both items have zero counts or both have non-zero counts, sort alphabetically
+        bool aIsEmpty = a.stockCount == 0 && a.inventoryCount == 0;
+        bool bIsEmpty = b.stockCount == 0 && b.inventoryCount == 0;
+        
+        if (aIsEmpty == bIsEmpty) {
+          return a.itemDefinition.name.compareTo(b.itemDefinition.name);
+        }
+        
+        // Empty items go to the bottom
+        return aIsEmpty ? 1 : -1;
+      });
+      
       _inventoryItemsController.add(itemsWithCounts);
-    } catch (e) {
-      print('Error loading inventory items: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error loading item list', e, stackTrace, 'InventoryBloc');
+      _errorController.add(AppError(
+        message: 'Failed to load item list',
+        error: e,
+        stackTrace: stackTrace,
+        source: 'InventoryBloc'
+      ));
       _inventoryItemsController.add([]);
     } finally {
       _isLoading = false;
@@ -99,8 +125,14 @@ class InventoryBloc extends BlocBase {
         instances: instances,
         movements: movements,
       ));
-    } catch (e) {
-      print('Error loading item detail: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error loading item detail', e, stackTrace, 'InventoryBloc');
+      _errorController.add(AppError(
+        message: 'Failed to load item details',
+        error: e,
+        stackTrace: stackTrace,
+        source: 'InventoryBloc'
+      ));
     } finally {
       _isLoading = false;
       _loadingController.add(false);
@@ -113,8 +145,14 @@ class InventoryBloc extends BlocBase {
       await _inventoryService.createItemDefinition(itemDefinition);
       await loadInventoryItems(); // Refresh the list
       return true;
-    } catch (e) {
-      print('Error creating item definition: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error creating item definition', e, stackTrace, 'InventoryBloc');
+      _errorController.add(AppError(
+        message: 'Failed to create item',
+        error: e,
+        stackTrace: stackTrace,
+        source: 'InventoryBloc'
+      ));
       return false;
     }
   }
@@ -125,8 +163,14 @@ class InventoryBloc extends BlocBase {
       await _inventoryService.updateItemDefinition(itemDefinition);
       await loadInventoryItems(); // Refresh the list
       return true;
-    } catch (e) {
-      print('Error updating item definition: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error updating item definition', e, stackTrace, 'InventoryBloc');
+      _errorController.add(AppError(
+        message: 'Failed to update item',
+        error: e,
+        stackTrace: stackTrace,
+        source: 'InventoryBloc'
+      ));
       return false;
     }
   }
@@ -137,20 +181,32 @@ class InventoryBloc extends BlocBase {
       await _inventoryService.deleteItemDefinition(id);
       await loadInventoryItems(); // Refresh the list
       return true;
-    } catch (e) {
-      print('Error deleting item definition: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error deleting item definition', e, stackTrace, 'InventoryBloc');
+      _errorController.add(AppError(
+        message: 'Failed to delete item',
+        error: e,
+        stackTrace: stackTrace,
+        source: 'InventoryBloc'
+      ));
       return false;
     }
   }
 
   /// Update stock count (record sale)
-  Future<bool> updateStockCount(int itemDefinitionId, int decreaseAmount) async {
+  Future<bool> recordStockSale(int itemDefinitionId, int decreaseAmount) async {
     try {
-      await _inventoryService.recordStockSale(itemDefinitionId, decreaseAmount);
+      await _inventoryService.updateStockCount(itemDefinitionId, decreaseAmount);
       await loadItemDetail(itemDefinitionId); // Refresh the item detail
       return true;
-    } catch (e) {
-      print('Error updating stock count: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error updating stock count', e, stackTrace, 'InventoryBloc');
+      _errorController.add(AppError(
+        message: 'Failed to update stock count',
+        error: e,
+        stackTrace: stackTrace,
+        source: 'InventoryBloc'
+      ));
       return false;
     }
   }
@@ -161,10 +217,25 @@ class InventoryBloc extends BlocBase {
       await _inventoryService.moveInventoryToStock(itemDefinitionId, moveAmount);
       await loadItemDetail(itemDefinitionId); // Refresh the item detail
       return true;
-    } catch (e) {
-      print('Error moving inventory to stock: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error moving inventory to stock', e, stackTrace, 'InventoryBloc');
+      _errorController.add(AppError(
+        message: 'Failed to move items to stock',
+        error: e,
+        stackTrace: stackTrace,
+        source: 'InventoryBloc'
+      ));
       return false;
     }
+  }
+
+  /// Handle an error with a BuildContext for UI feedback
+  void handleError(BuildContext context, AppError error) {
+    ErrorHandler.showErrorSnackBar(
+      context, 
+      error.message,
+      error: error.error
+    );
   }
 
   @override
@@ -172,5 +243,6 @@ class InventoryBloc extends BlocBase {
     _inventoryItemsController.close();
     _loadingController.close();
     _itemDetailController.close();
+    _errorController.close();
   }
 }

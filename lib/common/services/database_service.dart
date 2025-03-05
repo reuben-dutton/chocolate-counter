@@ -1,5 +1,6 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:food_inventory/common/services/error_handler.dart';
 
 class DatabaseService {
   static const String databaseName = 'food_inventory.db';
@@ -29,8 +30,8 @@ class DatabaseService {
           await db.execute('PRAGMA foreign_keys = ON');
         },
       );
-    } catch (e) {
-      print('Database initialization error: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Database initialization error', e, stackTrace, 'DatabaseService');
       rethrow;
     }
   }
@@ -96,8 +97,8 @@ class DatabaseService {
           FOREIGN KEY (itemDefinitionId) REFERENCES $tableItemDefinitions (id) ON DELETE CASCADE
         )
       ''');
-    } catch (e) {
-      print('Database creation error: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Database creation error', e, stackTrace, 'DatabaseService');
       rethrow;
     }
   }
@@ -112,8 +113,8 @@ class DatabaseService {
             REFERENCES $tableShipmentItems (id) ON DELETE SET NULL
         ''');
       }
-    } catch (e) {
-      print('Database upgrade error: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Database upgrade error', e, stackTrace, 'DatabaseService');
       rethrow;
     }
   }
@@ -137,8 +138,8 @@ class DatabaseService {
       
       // Reinitialize the database
       await initialize();
-    } catch (e) {
-      print('Database reset error: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Database reset error', e, stackTrace, 'DatabaseService');
       rethrow;
     }
   }

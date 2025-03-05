@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/utils/item_visualization.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -38,30 +39,45 @@ class ImageService {
   Future<void> _initThumbnailCache() async {
     if (_thumbnailCacheDir != null) return;
     
-    final appDir = await getApplicationDocumentsDirectory();
-    final cacheDir = Directory('${appDir.path}/thumbnails');
-    if (!await cacheDir.exists()) {
-      await cacheDir.create(recursive: true);
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final cacheDir = Directory('${appDir.path}/thumbnails');
+      if (!await cacheDir.exists()) {
+        await cacheDir.create(recursive: true);
+      }
+      _thumbnailCacheDir = cacheDir;
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error initializing thumbnail cache', e, stackTrace, 'ImageService');
+      // Don't rethrow, try to continue without cache
     }
-    _thumbnailCacheDir = cacheDir;
   }
   
   /// Take a photo using the device camera
   Future<File?> takePhoto() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.camera);
-    if (pickedFile != null) {
-      return File(pickedFile.path);
+    try {
+      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.camera);
+      if (pickedFile != null) {
+        return File(pickedFile.path);
+      }
+      return null;
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error taking photo', e, stackTrace, 'ImageService');
+      return null;
     }
-    return null;
   }
   
   /// Select a photo from the device gallery
   Future<File?> pickPhoto() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      return File(pickedFile.path);
+    try {
+      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        return File(pickedFile.path);
+      }
+      return null;
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error picking photo', e, stackTrace, 'ImageService');
+      return null;
     }
-    return null;
   }
   
   /// Save an image to the application documents directory
@@ -74,8 +90,8 @@ class ImageService {
       final fileName = 'item_${DateTime.now().millisecondsSinceEpoch}${path.extension(imageFile.path)}';
       final savedImage = await imageFile.copy('${appDir.path}/$fileName');
       return savedImage.path;
-    } catch (e) {
-      print('Error saving image: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error saving image', e, stackTrace, 'ImageService');
       return null;
     }
   }
@@ -98,13 +114,12 @@ class ImageService {
         // Also remove thumbnail if it exists
         await _deleteThumbnail(imagePath);
         
-        print('Successfully deleted file: $imagePath');
         return true;
       }
-      print('File does not exist: $imagePath');
+      ErrorHandler.logError('File does not exist', Exception('Path: $imagePath'), null, 'ImageService');
       return false;
-    } catch (e) {
-      print('Error deleting image: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error deleting image', e, stackTrace, 'ImageService');
       return false;
     }
   }
@@ -124,8 +139,8 @@ class ImageService {
         _imageCache.remove(thumbCacheKey);
         _cacheOrder.remove(thumbCacheKey);
       }
-    } catch (e) {
-      print('Error deleting thumbnail: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error deleting thumbnail', e, stackTrace, 'ImageService');
     }
   }
 
@@ -171,8 +186,8 @@ class ImageService {
             }
           }
         }
-      } catch (e) {
-        print('Error validating cache entry: $e');
+      } catch (e, stackTrace) {
+        ErrorHandler.logError('Error validating cache entry', e, stackTrace, 'ImageService');
       }
     }
     
@@ -229,8 +244,8 @@ class ImageService {
         }
         
         return file; // Return original on error
-      } catch (e) {
-        print('Error resizing image: $e');
+      } catch (e, stackTrace) {
+        ErrorHandler.logError('Error resizing image', e, stackTrace, 'ImageService');
         return file; // Return original on error
       } finally {
         // Remove from pending operations in all cases
@@ -265,8 +280,8 @@ class ImageService {
           }
         }
       }
-    } catch (e) {
-      print('Error cleaning up thumbnail cache: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error cleaning up thumbnail cache', e, stackTrace, 'ImageService');
     }
   }
   
@@ -292,8 +307,8 @@ class ImageService {
           if (file.existsSync()) {
             fileTimestamp = file.lastModifiedSync().millisecondsSinceEpoch;
           }
-        } catch (e) {
-          print('Error getting file timestamp: $e');
+        } catch (e, stackTrace) {
+          ErrorHandler.logError('Error getting file timestamp', e, stackTrace, 'ImageService');
         }
       }
       
@@ -349,9 +364,9 @@ class ImageService {
           _cacheOrder.remove(cacheKey);
         },
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Fallback in case of any image loading errors
-      print('Error loading image: $e');
+      ErrorHandler.logError('Error loading image', e, stackTrace, 'ImageService');
       return CircleAvatar(
         radius: radius,
         backgroundColor: Colors.grey,
@@ -383,8 +398,8 @@ class ImageService {
           if (file.existsSync()) {
             fileTimestamp = file.lastModifiedSync().millisecondsSinceEpoch;
           }
-        } catch (e) {
-          print('Error getting file timestamp: $e');
+        } catch (e, stackTrace) {
+          ErrorHandler.logError('Error getting file timestamp', e, stackTrace, 'ImageService');
         }
       }
       
@@ -426,6 +441,7 @@ class ImageService {
           // On error, remove from cache
           _imageCache.remove(imagePath);
           _cacheOrder.remove(imagePath);
+          ErrorHandler.logError('Error displaying image', error, stackTrace, 'ImageService');
           
           return Container(
             width: double.infinity,
@@ -435,9 +451,9 @@ class ImageService {
           );
         },
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Fallback in case of any image loading errors
-      print('Error loading image: $e');
+      ErrorHandler.logError('Error loading image', e, stackTrace, 'ImageService');
       return Container(
         width: double.infinity,
         height: height,
@@ -461,8 +477,8 @@ class ImageService {
           await file.delete();
         }
       }
-    } catch (e) {
-      print('Error clearing thumbnail cache: $e');
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error clearing thumbnail cache', e, stackTrace, 'ImageService');
     }
   }
 }

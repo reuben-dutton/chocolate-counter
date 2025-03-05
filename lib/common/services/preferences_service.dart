@@ -2,32 +2,53 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PreferencesService extends ChangeNotifier {
-  static const String themeKey = 'theme_mode';
+  // Consistent key for theme preference
+  static const String _themeKey = 'app_theme_mode';
   
+  // Private instance of SharedPreferences
   late SharedPreferences _prefs;
-  late ThemeMode _themeMode;
   
+  // Store the current theme mode
+  ThemeMode _themeMode = ThemeMode.system;
+  
+  // Getter for theme mode
   ThemeMode get themeMode => _themeMode;
   
+  // Initialize the preferences service
   Future<void> initialize() async {
-    _prefs = await SharedPreferences.getInstance();
-    
-    // Load theme preference with a safety check
-    int themeIndex;
     try {
-      themeIndex = _prefs.getInt(themeKey) ?? ThemeMode.system.index;
+      // Ensure SharedPreferences is initialized
+      _prefs = await SharedPreferences.getInstance();
+      
+      // Retrieve the saved theme mode
+      final savedThemeIndex = _prefs.getInt(_themeKey);
+      
+      // Set theme mode, defaulting to system if not previously set
+      if (savedThemeIndex != null) {
+        _themeMode = ThemeMode.values[savedThemeIndex];
+      } else {
+        _themeMode = ThemeMode.system;
+      }
     } catch (e) {
-      // If there's an error, reset to default and clear the problematic value
-      themeIndex = ThemeMode.system.index;
-      await _prefs.remove(themeKey);
+      // Log error and fall back to system theme
+      print('Error initializing preferences: $e');
+      _themeMode = ThemeMode.system;
     }
-    
-    _themeMode = ThemeMode.values[themeIndex];
   }
   
+  // Method to change and persist theme mode
   Future<void> setThemeMode(ThemeMode mode) async {
-    _themeMode = mode;
-    await _prefs.setInt(themeKey, mode.index);
-    notifyListeners();
+    try {
+      // Update the current theme mode
+      _themeMode = mode;
+      
+      // Persist the theme mode
+      await _prefs.setInt(_themeKey, mode.index);
+      
+      // Notify listeners of the change
+      notifyListeners();
+    } catch (e) {
+      print('Error saving theme mode: $e');
+    }
   }
 }

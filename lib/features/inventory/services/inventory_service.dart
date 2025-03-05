@@ -1,3 +1,4 @@
+import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/data/factories/inventory_movement_factory.dart';
 import 'package:food_inventory/data/factories/item_instance_factory.dart';
 import 'package:food_inventory/data/models/inventory_movement.dart';
@@ -6,7 +7,7 @@ import 'package:food_inventory/data/models/item_instance.dart';
 import 'package:food_inventory/data/repositories/inventory_movement_repository.dart';
 import 'package:food_inventory/data/repositories/item_definition_repository.dart';
 import 'package:food_inventory/data/repositories/item_instance_repository.dart';
-import 'package:sqflite/sqflite.dart';
+
 
 /// Service for managing inventory-related operations
 class InventoryService {
@@ -20,43 +21,78 @@ class InventoryService {
     this._itemDefinitionRepository,
     this._itemInstanceRepository,
     this._inventoryMovementRepository,
-    this._itemInstanceFactory,
-    this._movementFactory,
-  );
+  ) : 
+    _itemInstanceFactory = ItemInstanceFactory(_itemInstanceRepository, _itemDefinitionRepository),
+    _movementFactory = InventoryMovementFactory(_inventoryMovementRepository);
 
   /// Get all item definitions with their current counts
   Future<List<ItemDefinition>> getAllItemDefinitions() async {
-    return _itemDefinitionRepository.getAllSorted();
+    try {
+      return _itemDefinitionRepository.getAllSorted();
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to get all item definitions', e, stackTrace, 'InventoryService');
+      rethrow;
+    }
   }
   
   /// Get a specific item definition
   Future<ItemDefinition?> getItemDefinition(int id) async {
-    return _itemDefinitionRepository.getById(id);
+    try {
+      return _itemDefinitionRepository.getById(id);
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to get item definition', e, stackTrace, 'InventoryService');
+      rethrow;
+    }
   }
   
   /// Create a new item definition
   Future<int> createItemDefinition(ItemDefinition item) async {
-    return _itemDefinitionRepository.create(item);
+    try {
+      return _itemDefinitionRepository.create(item);
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to create item definition', e, stackTrace, 'InventoryService');
+      rethrow;
+    }
   }
   
   /// Update an existing item definition
   Future<int> updateItemDefinition(ItemDefinition item) async {
-    return _itemDefinitionRepository.update(item);
+    try {
+      return _itemDefinitionRepository.update(item);
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to update item definition', e, stackTrace, 'InventoryService');
+      rethrow;
+    }
   }
   
   /// Delete an item definition and all related data
   Future<int> deleteItemDefinition(int id) async {
-    return _itemDefinitionRepository.delete(id);
+    try {
+      return _itemDefinitionRepository.delete(id);
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to delete item definition', e, stackTrace, 'InventoryService');
+      rethrow;
+    }
   }
   
   /// Get all item instances for a specific item definition
   Future<List<ItemInstance>> getItemInstances(int itemDefinitionId) async {
-    return _itemInstanceRepository.getInstancesForItem(itemDefinitionId);
+    try {
+      return _itemInstanceRepository.getInstancesForItem(itemDefinitionId);
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to get item instances', e, stackTrace, 'InventoryService');
+      rethrow;
+    }
   }
   
   /// Get current counts for an item (stock and inventory)
   Future<Map<String, int>> getItemCounts(int itemDefinitionId) async {
-    return _itemInstanceRepository.getItemCounts(itemDefinitionId);
+    try {
+      return _itemInstanceRepository.getItemCounts(itemDefinitionId);
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to get item counts', e, stackTrace, 'InventoryService');
+      rethrow;
+    }
   }
   
   /// Add a new item to inventory
@@ -66,59 +102,70 @@ class InventoryService {
     DateTime? expirationDate, {
     int? shipmentItemId,
   }) async {
-    return _itemInstanceFactory.addToInventory(
-      itemDefinitionId: itemDefinitionId,
-      quantity: quantity,
-      expirationDate: expirationDate,
-      shipmentItemId: shipmentItemId,
-    );
+    try {
+      return _itemInstanceFactory.addToInventory(
+        itemDefinitionId: itemDefinitionId,
+        quantity: quantity,
+        expirationDate: expirationDate,
+        shipmentItemId: shipmentItemId,
+      );
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to add item to inventory', e, stackTrace, 'InventoryService');
+      rethrow;
+    }
   }
   
-  /// Record a stock sale (decrease stock quantity)
-  Future<void> recordStockSale(
+  // Update stock count (record sale)
+  Future<void> updateStockCount(
     int itemDefinitionId, 
     int decreaseAmount, {
     DateTime? timestamp,
   }) async {
     final actualTimestamp = timestamp ?? DateTime.now();
     
-    await _itemInstanceRepository.withTransaction((txn) async {
-      // Fetch stock items INSIDE the transaction
-      final stockItems = await _itemInstanceRepository.getStockInstances(itemDefinitionId, txn: txn);
-      
-      var remainingDecrease = decreaseAmount;
-      
-      // Loop through stock items and decrease quantities
-      for (final instance in stockItems) {
-        if (remainingDecrease <= 0) break;
+    try {
+      await _itemInstanceRepository.withTransaction((txn) async {
+        // Fetch stock items INSIDE the transaction
+        final stockItems = await _itemInstanceRepository.getStockInstances(itemDefinitionId, txn: txn);
         
-        if (instance.quantity <= remainingDecrease) {
-          // Remove the entire item instance
-          await _itemInstanceRepository.delete(instance.id!, txn: txn);
-          remainingDecrease -= instance.quantity;
-        } else {
-          // Partially decrease the item instance
-          final updatedInstance = instance.copyWith(
-            quantity: instance.quantity - remainingDecrease,
-          );
+        var remainingDecrease = decreaseAmount;
+        
+        // Loop through stock items and decrease quantities
+        for (final instance in stockItems) {
+          if (remainingDecrease <= 0) break;
           
-          await _itemInstanceRepository.update(updatedInstance, txn: txn);
-          remainingDecrease = 0;
+          if (instance.quantity <= remainingDecrease) {
+            // Remove the entire item instance
+            await _itemInstanceRepository.delete(instance.id!, txn: txn);
+            remainingDecrease -= instance.quantity;
+          } else {
+            // Partially decrease the item instance
+            final updatedInstance = instance.copyWith(
+              quantity: instance.quantity - remainingDecrease,
+            );
+            
+            await _itemInstanceRepository.update(updatedInstance, txn: txn);
+            remainingDecrease = 0;
+          }
         }
-      }
-      
-      // Create and record the movement
-      final movement = _movementFactory.createStockSaleMovement(
-        itemDefinitionId: itemDefinitionId,
-        quantity: decreaseAmount,
-        timestamp: actualTimestamp,
-      );
-      
-      await _movementFactory.save(movement, txn: txn);
-    });
+        
+        // Record the movement
+        InventoryMovement newMovement = _movementFactory.createStockSaleMovement(
+          itemDefinitionId: itemDefinitionId,
+          quantity: decreaseAmount,
+          timestamp: actualTimestamp,
+        );
+
+        await _movementFactory.save(newMovement, txn: txn);
+
+      });
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to update stock count', e, stackTrace, 'InventoryService');
+      rethrow;
+    }
   }
   
-  /// Move items from inventory to stock
+  // Move items from inventory to stock
   Future<void> moveInventoryToStock(
     int itemDefinitionId,
     int moveAmount, {
@@ -126,110 +173,105 @@ class InventoryService {
   }) async {
     final actualTimestamp = timestamp ?? DateTime.now();
     
-    await _itemInstanceRepository.withTransaction((txn) async {
-      // Fetch inventory items INSIDE the transaction
-      final inventoryItems = await _itemInstanceRepository.getInventoryInstances(itemDefinitionId, txn: txn);
-      
-      var remainingMove = moveAmount;
-      
-      // Loop through inventory items and move quantities to stock
-      for (final instance in inventoryItems) {
-        if (remainingMove <= 0) break;
+    try {
+      await _itemInstanceRepository.withTransaction((txn) async {
+        // Fetch inventory items INSIDE the transaction
+        final inventoryItems = await _itemInstanceRepository.getInventoryInstances(itemDefinitionId, txn: txn);
         
-        if (instance.quantity <= remainingMove) {
-          // Move the entire item instance to stock
-          final updatedInstance = instance.copyWith(
-            isInStock: true, // Now in stock
-          );
+        var remainingMove = moveAmount;
+        
+        // Loop through inventory items and move quantities to stock
+        for (final instance in inventoryItems) {
+          if (remainingMove <= 0) break;
           
-          await _itemInstanceRepository.update(updatedInstance, txn: txn);
-          remainingMove -= instance.quantity;
-        } else {
-          // Split the item instance
-          // First, reduce the inventory instance quantity
-          final updatedInventoryInstance = instance.copyWith(
-            quantity: instance.quantity - remainingMove,
-          );
-          
-          await _itemInstanceRepository.update(updatedInventoryInstance, txn: txn);
-          
-          // Then create a new stock instance for the moved quantity
-          await _itemInstanceFactory.addToStock(
-            itemDefinitionId: instance.itemDefinitionId,
-            quantity: remainingMove,
-            expirationDate: instance.expirationDate,
-            shipmentItemId: instance.shipmentItemId,
-            txn: txn
-          );
-          
-          remainingMove = 0;
+          if (instance.quantity <= remainingMove) {
+            // Move the entire item instance to stock
+            final updatedInstance = instance.copyWith(
+              isInStock: true, // Now in stock
+            );
+            
+            await _itemInstanceRepository.update(updatedInstance, txn: txn);
+            remainingMove -= instance.quantity;
+          } else {
+            // Split the item instance
+            // First, reduce the inventory instance quantity
+            final updatedInventoryInstance = instance.copyWith(
+              quantity: instance.quantity - remainingMove,
+            );
+            
+            await _itemInstanceRepository.update(updatedInventoryInstance, txn: txn);
+            
+            // Then create a new stock instance for the moved quantity
+            await _itemInstanceFactory.addToStock(
+              itemDefinitionId: instance.itemDefinitionId,
+              quantity: remainingMove,
+              expirationDate: instance.expirationDate,
+              shipmentItemId: instance.shipmentItemId,
+              txn: txn
+            );
+            
+            remainingMove = 0;
+          }
         }
-      }
-      
-      // Create and record the inventory-to-stock movement
-      final movement = _movementFactory.createInventoryToStockMovement(
-        itemDefinitionId: itemDefinitionId,
-        quantity: moveAmount,
-        timestamp: actualTimestamp,
-      );
-      
-      await _movementFactory.save(movement, txn: txn);
-    });
-  }
-  
-  /// Record an item being added from a shipment to inventory
-  Future<void> recordShipmentToInventory(
-    int itemDefinitionId,
-    int quantity,
-    DateTime timestamp,
-    {Transaction? txn}
-  ) async {
-    // Create the movement
-    final movement = _movementFactory.createShipmentToInventoryMovement(
-      itemDefinitionId: itemDefinitionId,
-      quantity: quantity,
-      timestamp: timestamp,
-    );
-    
-    // Save the movement using the provided transaction (or create one if none provided)
-    if (txn != null) {
-      await _movementFactory.save(movement, txn: txn);
-    } else {
-      await _itemInstanceRepository.withTransaction((newTxn) async {
-        await _movementFactory.save(movement, txn: newTxn);
+        
+        // Record the inventory-to-stock movement
+        InventoryMovement newMovement = _movementFactory.createInventoryToStockMovement(
+          itemDefinitionId: itemDefinitionId,
+          quantity: moveAmount,
+          timestamp: actualTimestamp,
+        );
+
+        await _movementFactory.save(newMovement, txn: txn);
+
+
+
       });
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to move inventory to stock', e, stackTrace, 'InventoryService');
+      rethrow;
     }
   }
   
   /// Get movement history for an item
   Future<List<InventoryMovement>> getItemMovements(int itemDefinitionId) async {
-    return _inventoryMovementRepository.getMovementsForItem(itemDefinitionId);
+    try {
+      return _inventoryMovementRepository.getMovementsForItem(itemDefinitionId);
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to get item movements', e, stackTrace, 'InventoryService');
+      rethrow;
+    }
   }
   
   /// Clear movement history for an item
   Future<int> clearMovementHistory(int itemDefinitionId) async {
-    return _inventoryMovementRepository.clearMovementsForItem(itemDefinitionId);
+    try {
+      return _inventoryMovementRepository.clearMovementsForItem(itemDefinitionId);
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to clear movement history', e, stackTrace, 'InventoryService');
+      rethrow;
+    }
   }
   
   /// Search items by name
   Future<List<ItemDefinition>> searchItems(String query) async {
-    if (query.isEmpty) {
-      return getAllItemDefinitions();
+    try {
+      if (query.isEmpty) {
+        return getAllItemDefinitions();
+      }
+      return _itemDefinitionRepository.searchByName(query);
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to search items', e, stackTrace, 'InventoryService');
+      rethrow;
     }
-    return _itemDefinitionRepository.searchByName(query);
   }
   
   /// Find item by barcode
   Future<ItemDefinition?> findItemByBarcode(String barcode) async {
-    return _itemDefinitionRepository.findByBarcode(barcode);
-  }
-  
-  /// Update expiration date for items linked to a shipment item
-  Future<int> updateExpirationDatesByShipmentItemId(int shipmentItemId, DateTime? expirationDate, {Transaction? txn}) async {
-    return _itemInstanceRepository.updateExpirationDatesByShipmentItemId(
-      shipmentItemId, 
-      expirationDate, 
-      txn: txn
-    );
+    try {
+      return _itemDefinitionRepository.findByBarcode(barcode);
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Failed to find item by barcode', e, stackTrace, 'InventoryService');
+      rethrow;
+    }
   }
 }

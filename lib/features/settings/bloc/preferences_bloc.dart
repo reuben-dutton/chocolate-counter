@@ -13,7 +13,7 @@ class PreferencesBloc extends BlocBase {
   Stream<ThemeMode> get themeMode => _themeModeController.stream;
 
   PreferencesBloc(this._preferencesService) {
-    // Initialize with current theme
+    // Initialize with current theme from service
     _themeModeController.add(_preferencesService.themeMode);
     
     // Listen to changes in the preferences service
@@ -21,13 +21,14 @@ class PreferencesBloc extends BlocBase {
   }
 
   void _onPreferencesChanged() {
+    // Update the stream when preferences change
     _themeModeController.add(_preferencesService.themeMode);
   }
 
   /// Set theme mode
   Future<void> setThemeMode(ThemeMode mode) async {
     await _preferencesService.setThemeMode(mode);
-    // No need to add to stream here, as the service listener will do it
+    // No need to manually add to stream, the service listener will handle it
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
+import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/shipment.dart';
@@ -57,6 +58,13 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
         setState(() {
           _isLoading = loading;
         });
+      }
+    });
+    
+    // Listen for errors
+    _inventoryBloc.errors.listen((error) {
+      if (mounted) {
+        ErrorHandler.showErrorSnackBar(context, error.message, error: error.error);
       }
     });
     
@@ -163,8 +171,9 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                       : () {
                           if (_currentStep == 0) {
                             if (_selectedItems.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please select at least one item')),
+                              ErrorHandler.showErrorSnackBar(
+                                context, 
+                                'Please select at least one item'
                               );
                               return;
                             }
@@ -414,17 +423,27 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
   }
   
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await _dialogService.showCustomDatePicker(
-      context: context,
-      initialDate: _shipmentDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
-    );
-    
-    if (picked != null && picked != _shipmentDate) {
-      setState(() {
-        _shipmentDate = picked;
-      });
+    try {
+      final DateTime? picked = await _dialogService.showCustomDatePicker(
+        context: context,
+        initialDate: _shipmentDate,
+        firstDate: DateTime(2000),
+        lastDate: DateTime.now().add(const Duration(days: 1)),
+      );
+      
+      if (picked != null && picked != _shipmentDate) {
+        setState(() {
+          _shipmentDate = picked;
+        });
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleServiceError(
+        context, 
+        e, 
+        service: 'Dialog',
+        operation: 'date selection',
+        stackTrace: stackTrace
+      );
     }
   }
 
@@ -448,22 +467,22 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
       
       if (success) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Shipment added successfully')),
-          );
+          ErrorHandler.showSuccessSnackBar(context, 'Shipment added successfully');
           Navigator.pop(context);
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error creating shipment')),
-          );
+          ErrorHandler.showErrorSnackBar(context, 'Error creating shipment');
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating shipment: $e')),
+        ErrorHandler.handleServiceError(
+          context, 
+          e, 
+          service: 'Shipment',
+          operation: 'creation',
+          stackTrace: stackTrace
         );
       }
     } finally {

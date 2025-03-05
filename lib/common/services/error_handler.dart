@@ -2,6 +2,38 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 
+/// Error model for standardized error information
+class AppError {
+  final String message;
+  final ErrorSeverity severity;
+  final Object? error;
+  final StackTrace? stackTrace;
+  final String? source;
+
+  AppError({
+    required this.message,
+    this.severity = ErrorSeverity.standard,
+    this.error,
+    this.stackTrace,
+    this.source,
+  });
+
+  @override
+  String toString() {
+    final errorDetails = error != null ? ': ${ErrorHandler._formatError(error!)}' : '';
+    final sourceDetails = source != null ? ' [$source]' : '';
+    return '$message$errorDetails$sourceDetails';
+  }
+}
+
+/// Severity levels for errors
+enum ErrorSeverity {
+  debug,     // Minor issues, debugging info
+  standard,  // Regular errors, recoverable
+  critical,  // Serious errors that may impact functionality
+  fatal      // Severe errors that require app restart
+}
+
 /// A service for handling and displaying errors consistently throughout the application
 class ErrorHandler {
   /// Show a snackbar with an error message
@@ -66,13 +98,25 @@ class ErrorHandler {
     );
   }
   
-  /// Log an error to the console
-  static void logError(String message, Object error, StackTrace? stackTrace) {
-    print('ERROR: $message');
+  /// Log an error to the console with structured information
+  static void logError(String message, Object error, [StackTrace? stackTrace, String? source]) {
+    final appError = AppError(
+      message: message,
+      error: error,
+      stackTrace: stackTrace,
+      source: source
+    );
+    
+    print('ERROR: ${appError.message}');
     print('Details: ${_formatError(error)}');
     if (stackTrace != null) {
       print('Stack trace: $stackTrace');
     }
+    if (source != null) {
+      print('Source: $source');
+    }
+    
+    // Here you could add code to log to a remote error reporting service
   }
   
   /// Format an error object to a readable string
@@ -89,16 +133,32 @@ class ErrorHandler {
   }
   
   /// Handle database operation errors
-  static Future<void> handleDatabaseError(BuildContext context, Object error, {String? operation}) async {
+  static Future<void> handleDatabaseError(BuildContext context, Object error, {String? operation, StackTrace? stackTrace}) async {
     final operationText = operation != null ? ' during $operation' : '';
-    logError('Database error$operationText', error, null);
+    logError('Database error$operationText', error, stackTrace, 'Database');
     showErrorSnackBar(context, 'Database error$operationText', error: error);
   }
   
   /// Handle file operation errors
-  static Future<void> handleFileError(BuildContext context, Object error, {String? operation}) async {
+  static Future<void> handleFileError(BuildContext context, Object error, {String? operation, StackTrace? stackTrace}) async {
     final operationText = operation != null ? ' during $operation' : '';
-    logError('File error$operationText', error, null);
+    logError('File error$operationText', error, stackTrace, 'File');
     showErrorSnackBar(context, 'File error$operationText', error: error);
+  }
+  
+  /// Handle service operation errors
+  static Future<void> handleServiceError(BuildContext context, Object error, {String? service, String? operation, StackTrace? stackTrace}) async {
+    final serviceText = service != null ? '$service service' : 'Service';
+    final operationText = operation != null ? ' during $operation' : '';
+    logError('$serviceText error$operationText', error, stackTrace, serviceText);
+    showErrorSnackBar(context, '$serviceText error$operationText', error: error);
+  }
+  
+  /// Handle BLoC operation errors
+  static Future<void> handleBlocError(BuildContext context, Object error, {String? bloc, String? operation, StackTrace? stackTrace}) async {
+    final blocText = bloc != null ? '$bloc BLoC' : 'BLoC';
+    final operationText = operation != null ? ' during $operation' : '';
+    logError('$blocText error$operationText', error, stackTrace, blocText);
+    showErrorSnackBar(context, '$blocText error$operationText', error: error);
   }
 }
