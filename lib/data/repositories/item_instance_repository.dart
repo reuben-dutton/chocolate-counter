@@ -57,7 +57,7 @@ class ItemInstanceRepository extends BaseRepository<ItemInstance> {
     }).toList();
   }
   
-  /// Get item counts (stock and inventory) for a specific item definition
+  /// Get summary counts for stock and inventory items
   Future<Map<String, int>> getItemCounts(int itemDefinitionId, {Transaction? txn}) async {
     final db = txn ?? databaseService.database;
     
@@ -106,8 +106,8 @@ class ItemInstanceRepository extends BaseRepository<ItemInstance> {
     );
   }
   
-  /// Update the expiration date for instances linked to a shipment item
-  Future<int> updateExpirationForShipmentItem(int shipmentItemId, DateTime? expirationDate, {Transaction? txn}) async {
+  /// Update expiration dates for items linked to a shipment item
+  Future<int> updateExpirationDatesByShipmentItemId(int shipmentItemId, DateTime? expirationDate, {Transaction? txn}) async {
     final db = txn ?? databaseService.database;
     
     return await db.update(

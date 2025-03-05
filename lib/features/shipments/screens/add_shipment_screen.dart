@@ -5,7 +5,6 @@ import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
-import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
 import 'package:food_inventory/features/shipments/widgets/shipment_item_selector.dart';
 import 'package:intl/intl.dart';
@@ -20,7 +19,6 @@ class AddShipmentScreen extends StatefulWidget {
 class _AddShipmentScreenState extends State<AddShipmentScreen> {
   late InventoryBloc _inventoryBloc;
   late ShipmentBloc _shipmentBloc;
-  late ImageService _imageService;
   late DialogService _dialogService;
   
   // Step 1: Select items
@@ -33,7 +31,6 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
   final _nameController = TextEditingController();
   DateTime _shipmentDate = DateTime.now();
   bool _isProcessing = false;
-  bool _initialized = false;
   
   int _currentStep = 0;
 
@@ -42,7 +39,6 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
     super.initState();
     _inventoryBloc = ServiceLocator.instance<InventoryBloc>();
     _shipmentBloc = ServiceLocator.instance<ShipmentBloc>();
-    _imageService = ServiceLocator.instance<ImageService>();
     _dialogService = ServiceLocator.instance<DialogService>();
     
     // Listen for inventory items

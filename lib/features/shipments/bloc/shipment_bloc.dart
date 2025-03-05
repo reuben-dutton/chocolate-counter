@@ -22,6 +22,9 @@ class ShipmentBloc extends BlocBase {
   final _loadingController = StreamController<bool>.broadcast();
   Stream<bool> get isLoading => _loadingController.stream;
 
+  // Keep track of last loaded shipment ID
+  int? _lastLoadedShipmentId;
+
   ShipmentBloc(this._shipmentService);
 
   /// Load all shipments
@@ -49,6 +52,7 @@ class ShipmentBloc extends BlocBase {
     
     _isLoading = true;
     _loadingController.add(true);
+    _lastLoadedShipmentId = shipmentId;
     
     try {
       final items = await _shipmentService.getShipmentItems(shipmentId);
@@ -90,8 +94,12 @@ class ShipmentBloc extends BlocBase {
   Future<bool> updateShipmentItemExpiration(int shipmentItemId, DateTime? expirationDate) async {
     try {
       await _shipmentService.updateShipmentItemExpiration(shipmentItemId, expirationDate);
-      // We need to know the shipment ID to refresh the items list
-      // For simplicity, let's assume the parent shipment will reload the items
+      
+      // Refresh the items list if we have a shipment ID
+      if (_lastLoadedShipmentId != null) {
+        await loadShipmentItems(_lastLoadedShipmentId!);
+      }
+      
       return true;
     } catch (e) {
       print('Error updating shipment item expiration: $e');

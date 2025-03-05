@@ -146,7 +146,7 @@ class InventoryBloc extends BlocBase {
   /// Update stock count (record sale)
   Future<bool> updateStockCount(int itemDefinitionId, int decreaseAmount) async {
     try {
-      await _inventoryService.updateStockCount(itemDefinitionId, decreaseAmount);
+      await _inventoryService.recordStockSale(itemDefinitionId, decreaseAmount);
       await loadItemDetail(itemDefinitionId); // Refresh the item detail
       return true;
     } catch (e) {

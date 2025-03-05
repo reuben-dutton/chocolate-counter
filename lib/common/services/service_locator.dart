@@ -1,4 +1,3 @@
-import 'package:food_inventory/common/bloc/bloc_base.dart';
 import 'package:food_inventory/data/factories/inventory_movement_factory.dart';
 import 'package:food_inventory/data/factories/item_instance_factory.dart';
 import 'package:food_inventory/data/repositories/inventory_movement_repository.dart';
@@ -89,6 +88,8 @@ class ServiceLocator {
         instance<ItemDefinitionRepository>(),
         instance<ItemInstanceRepository>(),
         instance<InventoryMovementRepository>(),
+        instance<ItemInstanceFactory>(),
+        instance<InventoryMovementFactory>(),
       ),
     );
     
@@ -96,9 +97,7 @@ class ServiceLocator {
       ShipmentService(
         instance<ShipmentRepository>(),
         instance<ShipmentItemRepository>(),
-        instance<ItemInstanceRepository>(),
         instance<InventoryService>(),
-        instance<InventoryMovementFactory>(),
       ),
     );
     

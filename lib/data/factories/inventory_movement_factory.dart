@@ -6,49 +6,48 @@ class InventoryMovementFactory {
   final InventoryMovementRepository _repository;
 
   InventoryMovementFactory(this._repository);
-
-  Future<int> recordStockSale({
+  
+  /// Creates a new inventory movement without persisting it
+  InventoryMovement createStockSaleMovement({
     required int itemDefinitionId,
     required int quantity,
     DateTime? timestamp,
-    Transaction? txn,
-  }) async {
-    final movement = InventoryMovement.createStockSale(
+  }) {
+    return InventoryMovement.createStockSale(
       itemDefinitionId: itemDefinitionId,
       quantity: quantity,
       timestamp: timestamp,
     );
-    
-    return await _repository.create(movement, txn: txn);
+  }
+  
+  /// Creates a new inventory-to-stock movement without persisting it
+  InventoryMovement createInventoryToStockMovement({
+    required int itemDefinitionId,
+    required int quantity,
+    DateTime? timestamp,
+  }) {
+    return InventoryMovement.createInventoryToStock(
+      itemDefinitionId: itemDefinitionId,
+      quantity: quantity,
+      timestamp: timestamp,
+    );
+  }
+  
+  /// Creates a new shipment-to-inventory movement without persisting it
+  InventoryMovement createShipmentToInventoryMovement({
+    required int itemDefinitionId,
+    required int quantity,
+    DateTime? timestamp,
+  }) {
+    return InventoryMovement.createShipmentToInventory(
+      itemDefinitionId: itemDefinitionId,
+      quantity: quantity,
+      timestamp: timestamp,
+    );
   }
 
-  Future<int> recordInventoryToStock({
-    required int itemDefinitionId,
-    required int quantity,
-    DateTime? timestamp,
-    Transaction? txn,
-  }) async {
-    final movement = InventoryMovement.createInventoryToStock(
-      itemDefinitionId: itemDefinitionId,
-      quantity: quantity,
-      timestamp: timestamp,
-    );
-    
-    return await _repository.create(movement, txn: txn);
-  }
-
-  Future<int> recordShipmentToInventory({
-    required int itemDefinitionId,
-    required int quantity,
-    DateTime? timestamp,
-    Transaction? txn,
-  }) async {
-    final movement = InventoryMovement.createShipmentToInventory(
-      itemDefinitionId: itemDefinitionId,
-      quantity: quantity,
-      timestamp: timestamp,
-    );
-
+  /// Persists a movement to the repository
+  Future<int> save(InventoryMovement movement, {Transaction? txn}) async {
     return await _repository.create(movement, txn: txn);
   }
 }

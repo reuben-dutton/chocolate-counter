@@ -27,38 +27,6 @@ class InventoryMovementRepository extends BaseRepository<InventoryMovement> {
     return entity.id;
   }
   
-  /// Record a stock sale movement with transaction support
-  Future<int> recordStockSale(int itemDefinitionId, int quantity, DateTime timestamp, {Transaction? txn}) async {
-    final movement = InventoryMovement.createStockSale(
-      itemDefinitionId: itemDefinitionId,
-      quantity: quantity,
-      timestamp: timestamp,
-    );
-    
-    return create(movement, txn: txn);
-  }
-  
-  /// Record an inventory to stock movement with transaction support
-  Future<int> recordInventoryToStock(int itemDefinitionId, int quantity, DateTime timestamp, {Transaction? txn}) async {
-    final movement = InventoryMovement.createInventoryToStock(
-      itemDefinitionId: itemDefinitionId,
-      quantity: quantity,
-      timestamp: timestamp,
-    );
-    
-    return create(movement, txn: txn);
-  }
-
-  Future<int> recordShipmentToInventory(int itemDefinitionId, int quantity, DateTime timestamp, {Transaction? txn}) async {
-    final movement = InventoryMovement.createShipmentToInventory(
-      itemDefinitionId: itemDefinitionId,
-      quantity: quantity,
-      timestamp: timestamp,
-    );
-
-    return create(movement, txn: txn);
-  }
-  
   /// Get all movements for a specific item with item definitions
   Future<List<InventoryMovement>> getMovementsForItem(int itemDefinitionId, {Transaction? txn}) async {
     final movements = await getWhere(

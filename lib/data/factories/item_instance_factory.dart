@@ -17,6 +17,7 @@ class ItemInstanceFactory {
     return instance.copyWith(itemDefinition: itemDef);
   }
 
+  /// Creates an inventory item (not in stock) and persists it
   Future<int> addToInventory({
     required int itemDefinitionId,
     required int quantity,
@@ -34,6 +35,7 @@ class ItemInstanceFactory {
     return await _repository.create(instance, txn: txn);
   }
 
+  /// Creates a stock item (in stock) and persists it
   Future<int> addToStock({
     required int itemDefinitionId,
     required int quantity,
@@ -51,6 +53,7 @@ class ItemInstanceFactory {
     return await _repository.create(instance, txn: txn);
   }
 
+  /// Creates an item instance from a shipment item and persists it
   Future<int> createFromShipmentItem(ShipmentItem shipmentItem, {bool isInStock = false, Transaction? txn}) async {
     final instance = ItemInstance.fromShipmentItem(shipmentItem, isInStock: isInStock);
     return await _repository.create(instance, txn: txn);

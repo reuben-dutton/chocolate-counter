@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:food_inventory/common/bloc/bloc_provider.dart';
 import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/screens/item_detail_screen.dart';

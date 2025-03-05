@@ -1,8 +1,5 @@
-import 'package:food_inventory/data/factories/inventory_movement_factory.dart';
-import 'package:food_inventory/data/factories/item_instance_factory.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
-import 'package:food_inventory/data/repositories/item_instance_repository.dart';
 import 'package:food_inventory/data/repositories/shipment_item_repository.dart';
 import 'package:food_inventory/data/repositories/shipment_repository.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
@@ -11,18 +8,13 @@ import 'package:food_inventory/features/inventory/services/inventory_service.dar
 class ShipmentService {
   final ShipmentRepository _shipmentRepository;
   final ShipmentItemRepository _shipmentItemRepository;
-  final ItemInstanceRepository _itemInstanceRepository;
   final InventoryService _inventoryService;
-  final ItemInstanceFactory _itemInstanceFactory;
-  final InventoryMovementFactory _movementFactory; // Add this line
 
   ShipmentService(
     this._shipmentRepository,
     this._shipmentItemRepository,
-    this._itemInstanceRepository,
     this._inventoryService,
-    this._movementFactory,
-  ) : _itemInstanceFactory = ItemInstanceFactory(_itemInstanceRepository, null);
+  );
 
   /// Get all shipments with their items
   Future<List<Shipment>> getAllShipments() async {
@@ -72,19 +64,18 @@ class ShipmentService {
         );
         
         // Create inventory item with reference to shipment item
-        await _itemInstanceFactory.addToInventory(
-          itemDefinitionId: item.itemDefinitionId,
-          quantity: item.quantity,
-          expirationDate: item.expirationDate,
+        await _inventoryService.addToInventory(
+          item.itemDefinitionId,
+          item.quantity,
+          item.expirationDate,
           shipmentItemId: shipmentItemId,
-          txn: txn
         );
 
         // Record inventory movement for this item
-        await _movementFactory.recordShipmentToInventory(
-          itemDefinitionId: item.itemDefinitionId,
-          quantity: item.quantity,
-          timestamp: shipment.date,
+        await _inventoryService.recordShipmentToInventory(
+          item.itemDefinitionId,
+          item.quantity,
+          shipment.date,
           txn: txn
         );
       }
@@ -100,22 +91,27 @@ class ShipmentService {
   
   /// Update the expiration date of a shipment item and linked inventory items
   Future<void> updateShipmentItemExpiration(int shipmentItemId, DateTime? expirationDate) async {
-    await _shipmentItemRepository.databaseService.database.transaction((txn) async {
-      // First check if the shipment item exists within the transaction
-      final shipmentItem = await _shipmentItemRepository.getById(shipmentItemId, txn: txn);
-      if (shipmentItem == null) {
-        throw Exception('Shipment item not found');
+    await _shipmentRepository.databaseService.database.transaction((txn) async {
+      try {
+        // First check if the shipment item exists within the transaction
+        final shipmentItem = await _shipmentItemRepository.getById(shipmentItemId, txn: txn);
+        if (shipmentItem == null) {
+          throw Exception('Shipment item not found');
+        }
+        
+        // Update the shipment item
+        await _shipmentItemRepository.updateExpirationDate(shipmentItemId, expirationDate, txn: txn);
+        
+        // Update linked inventory items with the correct method name
+        await _inventoryService.updateExpirationDatesByShipmentItemId(
+          shipmentItemId, 
+          expirationDate,
+          txn: txn
+        );
+      } catch (e) {
+        print('Error in updateShipmentItemExpiration: $e');
+        rethrow; // Re-throw to ensure transaction is rolled back
       }
-      
-      // Update the shipment item
-      await _shipmentItemRepository.updateExpirationDate(shipmentItemId, expirationDate, txn: txn);
-      
-      // Update linked inventory items
-      await _itemInstanceRepository.updateExpirationForShipmentItem(
-        shipmentItemId, 
-        expirationDate,
-        txn: txn
-      );
     });
   }
   

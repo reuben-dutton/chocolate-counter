@@ -6,7 +6,7 @@ import 'package:food_inventory/data/models/item_instance.dart';
 import 'package:food_inventory/data/repositories/inventory_movement_repository.dart';
 import 'package:food_inventory/data/repositories/item_definition_repository.dart';
 import 'package:food_inventory/data/repositories/item_instance_repository.dart';
-
+import 'package:sqflite/sqflite.dart';
 
 /// Service for managing inventory-related operations
 class InventoryService {
@@ -20,9 +20,9 @@ class InventoryService {
     this._itemDefinitionRepository,
     this._itemInstanceRepository,
     this._inventoryMovementRepository,
-  ) : 
-    _itemInstanceFactory = ItemInstanceFactory(_itemInstanceRepository, _itemDefinitionRepository),
-    _movementFactory = InventoryMovementFactory(_inventoryMovementRepository);
+    this._itemInstanceFactory,
+    this._movementFactory,
+  );
 
   /// Get all item definitions with their current counts
   Future<List<ItemDefinition>> getAllItemDefinitions() async {
@@ -74,8 +74,8 @@ class InventoryService {
     );
   }
   
-  // Update stock count (record sale)
-  Future<void> updateStockCount(
+  /// Record a stock sale (decrease stock quantity)
+  Future<void> recordStockSale(
     int itemDefinitionId, 
     int decreaseAmount, {
     DateTime? timestamp,
@@ -107,17 +107,18 @@ class InventoryService {
         }
       }
       
-      // Record the movement
-      await _movementFactory.recordStockSale(
+      // Create and record the movement
+      final movement = _movementFactory.createStockSaleMovement(
         itemDefinitionId: itemDefinitionId,
         quantity: decreaseAmount,
         timestamp: actualTimestamp,
-        txn: txn
       );
+      
+      await _movementFactory.save(movement, txn: txn);
     });
   }
   
-  // Move items from inventory to stock
+  /// Move items from inventory to stock
   Future<void> moveInventoryToStock(
     int itemDefinitionId,
     int moveAmount, {
@@ -165,14 +166,39 @@ class InventoryService {
         }
       }
       
-      // Record the inventory-to-stock movement
-      await _movementFactory.recordInventoryToStock(
+      // Create and record the inventory-to-stock movement
+      final movement = _movementFactory.createInventoryToStockMovement(
         itemDefinitionId: itemDefinitionId,
         quantity: moveAmount,
         timestamp: actualTimestamp,
-        txn: txn
       );
+      
+      await _movementFactory.save(movement, txn: txn);
     });
+  }
+  
+  /// Record an item being added from a shipment to inventory
+  Future<void> recordShipmentToInventory(
+    int itemDefinitionId,
+    int quantity,
+    DateTime timestamp,
+    {Transaction? txn}
+  ) async {
+    // Create the movement
+    final movement = _movementFactory.createShipmentToInventoryMovement(
+      itemDefinitionId: itemDefinitionId,
+      quantity: quantity,
+      timestamp: timestamp,
+    );
+    
+    // Save the movement using the provided transaction (or create one if none provided)
+    if (txn != null) {
+      await _movementFactory.save(movement, txn: txn);
+    } else {
+      await _itemInstanceRepository.withTransaction((newTxn) async {
+        await _movementFactory.save(movement, txn: newTxn);
+      });
+    }
   }
   
   /// Get movement history for an item
@@ -196,5 +222,14 @@ class InventoryService {
   /// Find item by barcode
   Future<ItemDefinition?> findItemByBarcode(String barcode) async {
     return _itemDefinitionRepository.findByBarcode(barcode);
+  }
+  
+  /// Update expiration date for items linked to a shipment item
+  Future<int> updateExpirationDatesByShipmentItemId(int shipmentItemId, DateTime? expirationDate, {Transaction? txn}) async {
+    return _itemInstanceRepository.updateExpirationDatesByShipmentItemId(
+      shipmentItemId, 
+      expirationDate, 
+      txn: txn
+    );
   }
 }

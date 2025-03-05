@@ -61,17 +61,6 @@ class InventoryMovementList extends StatelessWidget {
       },
     );
   }
-
-  String _getMovementSign(MovementType type) {
-    switch (type) {
-      case MovementType.stockSale:
-        return '';
-      case MovementType.inventoryToStock:
-        return '';
-      case MovementType.shipmentToInventory:
-        return '';
-    }
-  }
       
   Widget _getMovementIcon(MovementType type, ThemeData theme) {
     switch (type) {

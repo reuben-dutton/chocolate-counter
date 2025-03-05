@@ -14,7 +14,6 @@ import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/inventory/widgets/inventory_movement_list.dart';
 import 'package:food_inventory/features/inventory/widgets/inventory_to_stock_dialog.dart';
 import 'package:food_inventory/features/inventory/widgets/item_expiration_list.dart';
-import 'package:provider/provider.dart';
 
 
 class ItemDetailScreen extends StatefulWidget {

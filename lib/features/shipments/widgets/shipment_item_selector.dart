@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
-import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/shipments/widgets/selected_shipment_item_tile.dart';
 import 'package:food_inventory/features/shipments/widgets/available_item_tile.dart';
 import 'package:food_inventory/features/shipments/widgets/add_item_dialog.dart';
@@ -30,7 +29,6 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
   String _searchQuery = '';
   late List<ShipmentItem> _selectedItems;
   DialogService? _dialogService;
-  ImageService? _imageService;
   bool _initialized = false;
   
   @override
@@ -51,7 +49,6 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
     // This is the safe place to access inherited widgets
     if (!_initialized) {
       _dialogService = Provider.of<DialogService>(context, listen: false);
-      _imageService = Provider.of<ImageService>(context, listen: false);
       _initialized = true;
     }
   }
