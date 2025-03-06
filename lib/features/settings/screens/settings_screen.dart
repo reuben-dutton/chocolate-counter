@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/database_service.dart';
 import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/features/settings/bloc/preferences_bloc.dart';
@@ -9,28 +10,23 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final preferencesBloc = ServiceLocator.instance<PreferencesBloc>();
-    
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
-      body: StreamBuilder<ThemeMode>(
-        stream: preferencesBloc.themeMode,
-        builder: (context, snapshot) {
-          final currentThemeMode = snapshot.data ?? ThemeMode.system;
-          
-          return ListView(
+    return BlocBuilder<PreferencesBloc, PreferencesState>(
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Settings'),
+          ),
+          body: ListView(
             children: [
               ListTile(
                 leading: const Icon(Icons.palette, size: 20),
                 title: const Text('Theme'),
-                subtitle: _getThemeSubtitle(currentThemeMode),
+                subtitle: _getThemeSubtitle(state.themeMode),
                 trailing: DropdownButton<ThemeMode>(
-                  value: currentThemeMode,
+                  value: state.themeMode,
                   onChanged: (ThemeMode? newValue) {
                     if (newValue != null) {
-                      preferencesBloc.setThemeMode(newValue);
+                      context.read<PreferencesBloc>().add(SetThemeMode(newValue));
                     }
                   },
                   underline: const SizedBox.shrink(),
@@ -87,9 +83,9 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
   

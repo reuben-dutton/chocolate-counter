@@ -1,7 +1,6 @@
-import 'dart:async';
-
+import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:food_inventory/common/bloc/bloc_base.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/data/models/inventory_movement.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
@@ -35,37 +34,131 @@ class ItemDetailData {
   });
 }
 
+// Define events
+abstract class InventoryEvent extends Equatable {
+  const InventoryEvent();
+
+  @override
+  List<Object?> get props => [];
+}
+
+class LoadInventoryItems extends InventoryEvent {
+  const LoadInventoryItems();
+}
+
+class LoadItemDetail extends InventoryEvent {
+  final int itemId;
+  
+  const LoadItemDetail(this.itemId);
+  
+  @override
+  List<Object?> get props => [itemId];
+}
+
+class CreateItemDefinition extends InventoryEvent {
+  final ItemDefinition itemDefinition;
+  
+  const CreateItemDefinition(this.itemDefinition);
+  
+  @override
+  List<Object?> get props => [itemDefinition];
+}
+
+class UpdateItemDefinition extends InventoryEvent {
+  final ItemDefinition itemDefinition;
+  
+  const UpdateItemDefinition(this.itemDefinition);
+  
+  @override
+  List<Object?> get props => [itemDefinition];
+}
+
+class DeleteItemDefinition extends InventoryEvent {
+  final int id;
+  
+  const DeleteItemDefinition(this.id);
+  
+  @override
+  List<Object?> get props => [id];
+}
+
+class RecordStockSale extends InventoryEvent {
+  final int itemDefinitionId;
+  final int decreaseAmount;
+  
+  const RecordStockSale(this.itemDefinitionId, this.decreaseAmount);
+  
+  @override
+  List<Object?> get props => [itemDefinitionId, decreaseAmount];
+}
+
+class MoveInventoryToStock extends InventoryEvent {
+  final int itemDefinitionId;
+  final int moveAmount;
+  
+  const MoveInventoryToStock(this.itemDefinitionId, this.moveAmount);
+  
+  @override
+  List<Object?> get props => [itemDefinitionId, moveAmount];
+}
+
+// Define state
+class InventoryState extends Equatable {
+  final bool isLoading;
+  final List<InventoryItemWithCounts> items;
+  final ItemDetailData? itemDetail;
+  final AppError? error;
+  final bool operationSuccess;
+
+  const InventoryState({
+    this.isLoading = false,
+    this.items = const [],
+    this.itemDetail,
+    this.error,
+    this.operationSuccess = false,
+  });
+
+  InventoryState copyWith({
+    bool? isLoading,
+    List<InventoryItemWithCounts>? items,
+    ItemDetailData? itemDetail,
+    AppError? error,
+    bool? operationSuccess,
+  }) {
+    return InventoryState(
+      isLoading: isLoading ?? this.isLoading,
+      items: items ?? this.items,
+      itemDetail: itemDetail ?? this.itemDetail,
+      error: error ?? this.error,
+      operationSuccess: operationSuccess ?? this.operationSuccess,
+    );
+  }
+
+  @override
+  List<Object?> get props => [isLoading, items, itemDetail, error, operationSuccess];
+}
+
 /// BLoC for inventory management
-class InventoryBloc extends BlocBase {
+class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
   final InventoryService _inventoryService;
-  bool _isLoading = false;
 
-  // Stream for all inventory items with counts
-  final _inventoryItemsController = StreamController<List<InventoryItemWithCounts>>.broadcast();
-  Stream<List<InventoryItemWithCounts>> get inventoryItems => _inventoryItemsController.stream;
+  InventoryBloc(this._inventoryService) : super(const InventoryState()) {
+    on<LoadInventoryItems>(_onLoadInventoryItems);
+    on<LoadItemDetail>(_onLoadItemDetail);
+    on<CreateItemDefinition>(_onCreateItemDefinition);
+    on<UpdateItemDefinition>(_onUpdateItemDefinition);
+    on<DeleteItemDefinition>(_onDeleteItemDefinition);
+    on<RecordStockSale>(_onRecordStockSale);
+    on<MoveInventoryToStock>(_onMoveInventoryToStock);
+  }
 
-  // Stream for loading state
-  final _loadingController = StreamController<bool>.broadcast();
-  Stream<bool> get isLoading => _loadingController.stream;
-
-  // Stream for item detail data
-  final _itemDetailController = StreamController<ItemDetailData>.broadcast();
-  Stream<ItemDetailData> get itemDetailData => _itemDetailController.stream;
-
-  // Stream for errors
-  final _errorController = StreamController<AppError>.broadcast();
-  Stream<AppError> get errors => _errorController.stream;
-
-  InventoryBloc(this._inventoryService);
-
-  // Load all inventory items with counts
-  Future<void> loadInventoryItems() async {
-    if (_isLoading) return;
-    
-    _isLoading = true;
-    _loadingController.add(true);
-    
+  Future<void> _onLoadInventoryItems(
+    LoadInventoryItems event,
+    Emitter<InventoryState> emit,
+  ) async {
     try {
+      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
+      
       final items = await _inventoryService.getAllItemDefinitions();
       
       final List<InventoryItemWithCounts> itemsWithCounts = [];
@@ -92,140 +185,185 @@ class InventoryBloc extends BlocBase {
         return aIsEmpty ? 1 : -1;
       });
       
-      _inventoryItemsController.add(itemsWithCounts);
+      emit(state.copyWith(isLoading: false, items: itemsWithCounts));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error loading item list', e, stackTrace, 'InventoryBloc');
-      _errorController.add(AppError(
-        message: 'Failed to load item list',
-        error: e,
-        stackTrace: stackTrace,
-        source: 'InventoryBloc'
+      emit(state.copyWith(
+        isLoading: false,
+        error: AppError(
+          message: 'Failed to load item list',
+          error: e,
+          stackTrace: stackTrace,
+          source: 'InventoryBloc'
+        ),
       ));
-      _inventoryItemsController.add([]);
-    } finally {
-      _isLoading = false;
-      _loadingController.add(false);
     }
   }
 
-  /// Load detailed data for a specific item
-  Future<void> loadItemDetail(int itemId) async {
-    if (_isLoading) return;
-    
-    _isLoading = true;
-    _loadingController.add(true);
-    
+  Future<void> _onLoadItemDetail(
+    LoadItemDetail event,
+    Emitter<InventoryState> emit,
+  ) async {
     try {
-      final counts = await _inventoryService.getItemCounts(itemId);
-      final instances = await _inventoryService.getItemInstances(itemId);
-      final movements = await _inventoryService.getItemMovements(itemId);
+      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
       
-      _itemDetailController.add(ItemDetailData(
+      final counts = await _inventoryService.getItemCounts(event.itemId);
+      final instances = await _inventoryService.getItemInstances(event.itemId);
+      final movements = await _inventoryService.getItemMovements(event.itemId);
+      
+      final itemDetail = ItemDetailData(
         counts: counts,
         instances: instances,
         movements: movements,
-      ));
+      );
+      
+      emit(state.copyWith(isLoading: false, itemDetail: itemDetail));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error loading item detail', e, stackTrace, 'InventoryBloc');
-      _errorController.add(AppError(
-        message: 'Failed to load item details',
-        error: e,
-        stackTrace: stackTrace,
-        source: 'InventoryBloc'
+      emit(state.copyWith(
+        isLoading: false,
+        error: AppError(
+          message: 'Failed to load item details',
+          error: e,
+          stackTrace: stackTrace,
+          source: 'InventoryBloc'
+        ),
       ));
-    } finally {
-      _isLoading = false;
-      _loadingController.add(false);
     }
   }
 
-  /// Create a new item definition
-  Future<bool> createItemDefinition(ItemDefinition itemDefinition) async {
+  Future<void> _onCreateItemDefinition(
+    CreateItemDefinition event,
+    Emitter<InventoryState> emit,
+  ) async {
     try {
-      await _inventoryService.createItemDefinition(itemDefinition);
-      await loadInventoryItems(); // Refresh the list
-      return true;
+      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
+      
+      await _inventoryService.createItemDefinition(event.itemDefinition);
+      
+      emit(state.copyWith(isLoading: false, operationSuccess: true));
+      // Refresh the items list after creation
+      add(const LoadInventoryItems());
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error creating item definition', e, stackTrace, 'InventoryBloc');
-      _errorController.add(AppError(
-        message: 'Failed to create item',
-        error: e,
-        stackTrace: stackTrace,
-        source: 'InventoryBloc'
+      emit(state.copyWith(
+        isLoading: false,
+        error: AppError(
+          message: 'Failed to create item',
+          error: e,
+          stackTrace: stackTrace,
+          source: 'InventoryBloc'
+        ),
+        operationSuccess: false,
       ));
-      return false;
     }
   }
 
-  /// Update an existing item definition
-  Future<bool> updateItemDefinition(ItemDefinition itemDefinition) async {
+  Future<void> _onUpdateItemDefinition(
+    UpdateItemDefinition event,
+    Emitter<InventoryState> emit,
+  ) async {
     try {
-      await _inventoryService.updateItemDefinition(itemDefinition);
-      await loadInventoryItems(); // Refresh the list
-      return true;
+      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
+      
+      await _inventoryService.updateItemDefinition(event.itemDefinition);
+      
+      emit(state.copyWith(isLoading: false, operationSuccess: true));
+      // Refresh the items list after update
+      add(const LoadInventoryItems());
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error updating item definition', e, stackTrace, 'InventoryBloc');
-      _errorController.add(AppError(
-        message: 'Failed to update item',
-        error: e,
-        stackTrace: stackTrace,
-        source: 'InventoryBloc'
+      emit(state.copyWith(
+        isLoading: false,
+        error: AppError(
+          message: 'Failed to update item',
+          error: e,
+          stackTrace: stackTrace,
+          source: 'InventoryBloc'
+        ),
+        operationSuccess: false,
       ));
-      return false;
     }
   }
 
-  /// Delete an item definition
-  Future<bool> deleteItemDefinition(int id) async {
+  Future<void> _onDeleteItemDefinition(
+    DeleteItemDefinition event,
+    Emitter<InventoryState> emit,
+  ) async {
     try {
-      await _inventoryService.deleteItemDefinition(id);
-      await loadInventoryItems(); // Refresh the list
-      return true;
+      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
+      
+      await _inventoryService.deleteItemDefinition(event.id);
+      
+      emit(state.copyWith(isLoading: false, operationSuccess: true));
+      // Refresh the items list after deletion
+      add(const LoadInventoryItems());
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error deleting item definition', e, stackTrace, 'InventoryBloc');
-      _errorController.add(AppError(
-        message: 'Failed to delete item',
-        error: e,
-        stackTrace: stackTrace,
-        source: 'InventoryBloc'
+      emit(state.copyWith(
+        isLoading: false,
+        error: AppError(
+          message: 'Failed to delete item',
+          error: e,
+          stackTrace: stackTrace,
+          source: 'InventoryBloc'
+        ),
+        operationSuccess: false,
       ));
-      return false;
     }
   }
 
-  /// Update stock count (record sale)
-  Future<bool> recordStockSale(int itemDefinitionId, int decreaseAmount) async {
+  Future<void> _onRecordStockSale(
+    RecordStockSale event,
+    Emitter<InventoryState> emit,
+  ) async {
     try {
-      await _inventoryService.updateStockCount(itemDefinitionId, decreaseAmount);
-      await loadItemDetail(itemDefinitionId); // Refresh the item detail
-      return true;
+      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
+      
+      await _inventoryService.updateStockCount(event.itemDefinitionId, event.decreaseAmount);
+      
+      emit(state.copyWith(isLoading: false, operationSuccess: true));
+      // Refresh item detail
+      add(LoadItemDetail(event.itemDefinitionId));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error updating stock count', e, stackTrace, 'InventoryBloc');
-      _errorController.add(AppError(
-        message: 'Failed to update stock count',
-        error: e,
-        stackTrace: stackTrace,
-        source: 'InventoryBloc'
+      emit(state.copyWith(
+        isLoading: false,
+        error: AppError(
+          message: 'Failed to update stock count',
+          error: e,
+          stackTrace: stackTrace,
+          source: 'InventoryBloc'
+        ),
+        operationSuccess: false,
       ));
-      return false;
     }
   }
 
-  /// Move items from inventory to stock
-  Future<bool> moveInventoryToStock(int itemDefinitionId, int moveAmount) async {
+  Future<void> _onMoveInventoryToStock(
+    MoveInventoryToStock event,
+    Emitter<InventoryState> emit,
+  ) async {
     try {
-      await _inventoryService.moveInventoryToStock(itemDefinitionId, moveAmount);
-      await loadItemDetail(itemDefinitionId); // Refresh the item detail
-      return true;
+      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
+      
+      await _inventoryService.moveInventoryToStock(event.itemDefinitionId, event.moveAmount);
+      
+      emit(state.copyWith(isLoading: false, operationSuccess: true));
+      // Refresh item detail
+      add(LoadItemDetail(event.itemDefinitionId));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error moving inventory to stock', e, stackTrace, 'InventoryBloc');
-      _errorController.add(AppError(
-        message: 'Failed to move items to stock',
-        error: e,
-        stackTrace: stackTrace,
-        source: 'InventoryBloc'
+      emit(state.copyWith(
+        isLoading: false,
+        error: AppError(
+          message: 'Failed to move items to stock',
+          error: e,
+          stackTrace: stackTrace,
+          source: 'InventoryBloc'
+        ),
+        operationSuccess: false,
       ));
-      return false;
     }
   }
 
@@ -236,13 +374,5 @@ class InventoryBloc extends BlocBase {
       error.message,
       error: error.error
     );
-  }
-
-  @override
-  void dispose() {
-    _inventoryItemsController.close();
-    _loadingController.close();
-    _itemDetailController.close();
-    _errorController.close();
   }
 }

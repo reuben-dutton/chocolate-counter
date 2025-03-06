@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
-import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
@@ -20,19 +20,6 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
   final _barcodeController = TextEditingController();
   File? _imageFile;
   bool _isCreating = false;
-  late ImageService _imageService;
-  late InventoryBloc _inventoryBloc;
-  bool _initialized = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_initialized) {
-      _imageService = Provider.of<ImageService>(context, listen: false);
-      _inventoryBloc = ServiceLocator.instance<InventoryBloc>();
-      _initialized = true;
-    }
-  }
 
   @override
   void dispose() {
@@ -41,9 +28,9 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
     super.dispose();
   }
 
-  Future<void> _takePhoto() async {
+  Future<void> _takePhoto(ImageService imageService) async {
     try {
-      final pickedFile = await _imageService.takePhoto();
+      final pickedFile = await imageService.takePhoto();
       if (pickedFile != null) {
         setState(() {
           _imageFile = pickedFile;
@@ -60,9 +47,9 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
     }
   }
 
-  Future<void> _pickPhoto() async {
+  Future<void> _pickPhoto(ImageService imageService) async {
     try {
-      final pickedFile = await _imageService.pickPhoto();
+      final pickedFile = await imageService.pickPhoto();
       if (pickedFile != null) {
         setState(() {
           _imageFile = pickedFile;
@@ -81,113 +68,136 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Item'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _isCreating ? null : _saveItem,
+    final imageService = Provider.of<ImageService>(context);
+    
+    return BlocConsumer<InventoryBloc, InventoryState>(
+      listenWhen: (previous, current) => 
+        current.error != null && previous.error != current.error ||
+        current.operationSuccess && !previous.operationSuccess,
+      listener: (context, state) {
+        if (state.error != null) {
+          ErrorHandler.showErrorSnackBar(context, state.error!.message, error: state.error!.error);
+          setState(() {
+            _isCreating = false;
+          });
+        }
+        
+        if (state.operationSuccess) {
+          // Item was created successfully
+          ErrorHandler.showSuccessSnackBar(context, 'Item added successfully');
+          Navigator.pop(context);
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Add Item'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.save),
+                onPressed: _isCreating ? null : () => _saveItem(context, imageService),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Item Name *',
-                    hintText: 'e.g., Snickers Bar',
-                    isDense: true,
-                    prefixIcon: Icon(Icons.label, size: 18),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter an item name';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _barcodeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Barcode (Optional)',
-                    hintText: 'e.g., 012345678912',
-                    isDense: true,
-                    prefixIcon: Icon(Icons.qr_code, size: 18),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Image picker
-                Center(
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Item Image (Optional)',
-                        style: TextStyle(fontSize: 14),
+          body: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Item Name *',
+                        hintText: 'e.g., Snickers Bar',
+                        isDense: true,
+                        prefixIcon: Icon(Icons.label, size: 18),
                       ),
-                      const SizedBox(height: 8),
-                      Container(
-                        width: 180,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: _imageFile != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.file(
-                                  _imageFile!,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.camera_alt,
-                                size: 60,
-                                color: Colors.grey,
-                              ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter an item name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _barcodeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Barcode (Optional)',
+                        hintText: 'e.g., 012345678912',
+                        isDense: true,
+                        prefixIcon: Icon(Icons.qr_code, size: 18),
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Image picker
+                    Center(
+                      child: Column(
                         children: [
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.camera_alt, size: 18),
-                            label: const Text('Camera'),
-                            onPressed: _takePhoto,
+                          const Text(
+                            'Item Image (Optional)',
+                            style: TextStyle(fontSize: 14),
                           ),
-                          const SizedBox(width: 16),
-                          OutlinedButton.icon(
-                            icon: const Icon(Icons.photo_library, size: 18),
-                            label: const Text('Gallery'),
-                            onPressed: _pickPhoto,
+                          const SizedBox(height: 8),
+                          Container(
+                            width: 180,
+                            height: 180,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: _imageFile != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(
+                                      _imageFile!,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.camera_alt,
+                                    size: 60,
+                                    color: Colors.grey,
+                                  ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ElevatedButton.icon(
+                                icon: const Icon(Icons.camera_alt, size: 18),
+                                label: const Text('Camera'),
+                                onPressed: () => _takePhoto(imageService),
+                              ),
+                              const SizedBox(width: 16),
+                              OutlinedButton.icon(
+                                icon: const Icon(Icons.photo_library, size: 18),
+                                label: const Text('Gallery'),
+                                onPressed: () => _pickPhoto(imageService),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    if (_isCreating)
+                      const Center(child: CircularProgressIndicator()),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                if (_isCreating)
-                  const Center(child: CircularProgressIndicator()),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Future<void> _saveItem() async {
+  Future<void> _saveItem(BuildContext context, ImageService imageService) async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -196,7 +206,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
 
     try {
       // Save image to app directory and get the path
-      final imagePath = await _imageService.saveImage(_imageFile);
+      final imagePath = await imageService.saveImage(_imageFile);
       
       final itemDefinition = ItemDefinition(
         name: _nameController.text,
@@ -204,14 +214,10 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
         imageUrl: imagePath, // Now stores local file path instead of URL
       );
       
-      final success = await _inventoryBloc.createItemDefinition(itemDefinition);
+      // Dispatch create event
+      context.read<InventoryBloc>().add(CreateItemDefinition(itemDefinition));
       
-      if (success) {
-        ErrorHandler.showSuccessSnackBar(context, 'Item added successfully');
-        Navigator.pop(context);
-      } else {
-        ErrorHandler.showErrorSnackBar(context, 'Error creating item');
-      }
+      // The listener will handle success and navigation
     } catch (e, stackTrace) {
       ErrorHandler.handleServiceError(
         context, 
@@ -220,7 +226,6 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
         operation: 'creation',
         stackTrace: stackTrace
       );
-    } finally {
       setState(() {
         _isCreating = false;
       });

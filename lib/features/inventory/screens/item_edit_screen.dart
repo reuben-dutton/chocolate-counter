@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/common/widgets/full_item_image_widget.dart';
@@ -28,8 +29,6 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   String? _existingImagePath;
   bool _isUpdating = false;
   late ImageService _imageService;
-  late InventoryBloc _inventoryBloc;
-  bool _initialized = false;
 
   @override
   void initState() {
@@ -37,20 +36,11 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     _nameController = TextEditingController(text: widget.itemDefinition.name);
     _barcodeController = TextEditingController(text: widget.itemDefinition.barcode ?? '');
     _existingImagePath = widget.itemDefinition.imageUrl;
+    _imageService = ServiceLocator.instance<ImageService>();
     
     // If there's an existing local image, initialize _imageFile
     if (_existingImagePath != null && !_existingImagePath!.startsWith('http')) {
       _imageFile = File(_existingImagePath!);
-    }
-  }
-  
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_initialized) {
-      _imageService = Provider.of<ImageService>(context, listen: false);
-      _inventoryBloc = ServiceLocator.instance<InventoryBloc>();
-      _initialized = true;
     }
   }
 
@@ -111,95 +101,125 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Item'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _isUpdating ? null : _updateItem,
-          ),
-        ],
-      ),
-      body: _isUpdating
-          ? const Center(child: CircularProgressIndicator())
-          : Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Image at the top
-                    _buildImagePreview(),
-                    
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
+    return BlocProvider(
+      create: (context) => ServiceLocator.instance<InventoryBloc>(),
+      child: BlocConsumer<InventoryBloc, InventoryState>(
+        listenWhen: (previous, current) => 
+          current.error != null && previous.error != current.error ||
+          current.operationSuccess && !previous.operationSuccess,
+        listener: (context, state) {
+          if (state.error != null) {
+            ErrorHandler.showErrorSnackBar(context, state.error!.message, error: state.error!.error);
+            setState(() {
+              _isUpdating = false;
+            });
+          }
+          
+          if (state.operationSuccess) {
+            // Item was updated successfully
+            ErrorHandler.showSuccessSnackBar(context, 'Item updated');
+            // Return the updated item definition to the calling screen
+            final updatedItem = widget.itemDefinition.copyWith(
+              name: _nameController.text,
+              barcode: _barcodeController.text.isEmpty ? null : _barcodeController.text,
+              imageUrl: _existingImagePath,
+            );
+            Navigator.pop(context, updatedItem);
+          }
+        },
+        builder: (context, state) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Edit Item'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.save),
+                  onPressed: _isUpdating ? null : () => _updateItem(context),
+                ),
+              ],
+            ),
+            body: _isUpdating
+                ? const Center(child: CircularProgressIndicator())
+                : Form(
+                    key: _formKey,
+                    child: SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Item Name *',
-                              hintText: 'e.g., Snickers Bar',
-                              isDense: true,
-                              prefixIcon: Icon(Icons.label, size: 18),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter an item name';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _barcodeController,
-                            decoration: const InputDecoration(
-                              labelText: 'Barcode (Optional)',
-                              hintText: 'e.g., 012345678912',
-                              isDense: true,
-                              prefixIcon: Icon(Icons.qr_code, size: 18),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
+                          // Image at the top
+                          _buildImagePreview(),
                           
-                          // Image controls
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.camera_alt, size: 16),
-                                label: const Text('Camera'),
-                                onPressed: _takePhoto,
-                              ),
-                              const SizedBox(width: 16),
-                              OutlinedButton.icon(
-                                icon: const Icon(Icons.photo_library, size: 16),
-                                label: const Text('Gallery'),
-                                onPressed: _pickPhoto,
-                              ),
-                            ],
-                          ),
-                          if (_imageFile != null || _existingImagePath != null) ...[
-                            const SizedBox(height: 8),
-                            Center(
-                              child: TextButton.icon(
-                                icon: const Icon(Icons.delete, color: Colors.red, size: 16),
-                                label: const Text('Remove Image', 
-                                  style: TextStyle(color: Colors.red, fontSize: 12)
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                TextFormField(
+                                  controller: _nameController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Item Name *',
+                                    hintText: 'e.g., Snickers Bar',
+                                    isDense: true,
+                                    prefixIcon: Icon(Icons.label, size: 18),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter an item name';
+                                    }
+                                    return null;
+                                  },
                                 ),
-                                onPressed: _removePhoto,
-                              ),
+                                const SizedBox(height: 12),
+                                TextFormField(
+                                  controller: _barcodeController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Barcode (Optional)',
+                                    hintText: 'e.g., 012345678912',
+                                    isDense: true,
+                                    prefixIcon: Icon(Icons.qr_code, size: 18),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                
+                                // Image controls
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    ElevatedButton.icon(
+                                      icon: const Icon(Icons.camera_alt, size: 16),
+                                      label: const Text('Camera'),
+                                      onPressed: _takePhoto,
+                                    ),
+                                    const SizedBox(width: 16),
+                                    OutlinedButton.icon(
+                                      icon: const Icon(Icons.photo_library, size: 16),
+                                      label: const Text('Gallery'),
+                                      onPressed: _pickPhoto,
+                                    ),
+                                  ],
+                                ),
+                                if (_imageFile != null || _existingImagePath != null) ...[
+                                  const SizedBox(height: 8),
+                                  Center(
+                                    child: TextButton.icon(
+                                      icon: const Icon(Icons.delete, color: Colors.red, size: 16),
+                                      label: const Text('Remove Image', 
+                                        style: TextStyle(color: Colors.red, fontSize: 12)
+                                      ),
+                                      onPressed: _removePhoto,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                          ],
+                          ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
+          );
+        },
+      ),
     );
   }
   
@@ -233,7 +253,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     }
   }
 
-  Future<void> _updateItem() async {
+  Future<void> _updateItem(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
     
     setState(() {
@@ -255,17 +275,12 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
         imageUrl: imagePath, // This should explicitly be null when image is removed
       );
       
-      final success = await _inventoryBloc.updateItemDefinition(updatedItem);
+      // Dispatch update event
+      context.read<InventoryBloc>().add(UpdateItemDefinition(updatedItem));
       
-      if (success) {
-        ErrorHandler.showSuccessSnackBar(context, 'Item updated');
-        Navigator.pop(context, updatedItem);
-      } else {
-        ErrorHandler.showErrorSnackBar(context, 'Error updating item');
-      }
+      // The listener will handle success and navigation
     } catch (e) {
       ErrorHandler.showErrorSnackBar(context, 'Error updating item', error: e);
-    } finally {
       setState(() {
         _isUpdating = false;
       });

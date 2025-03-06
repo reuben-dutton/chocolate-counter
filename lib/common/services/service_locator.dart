@@ -7,20 +7,17 @@ import 'package:food_inventory/data/repositories/shipment_item_repository.dart';
 import 'package:food_inventory/data/repositories/shipment_repository.dart';
 import 'package:food_inventory/common/services/database_service.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
-import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/common/services/preferences_service.dart';
-import 'package:food_inventory/features/settings/bloc/preferences_bloc.dart';
-import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:get_it/get_it.dart';
 
-/// A service locator for managing dependency injection
+/// A service locator for managing dependency injection of services and repositories
 class ServiceLocator {
   static final GetIt instance = GetIt.instance;
   
-  /// Initialize all services, repositories, and BLoCs
+  /// Initialize all services and repositories
   static Future<void> init() async {
     // Services
     final databaseService = DatabaseService();
@@ -100,17 +97,6 @@ class ServiceLocator {
       ),
     );
     
-    // Register BLoCs
-    instance.registerSingleton<InventoryBloc>(
-      InventoryBloc(instance<InventoryService>()),
-    );
-    
-    instance.registerSingleton<ShipmentBloc>(
-      ShipmentBloc(instance<ShipmentService>()),
-    );
-    
-    instance.registerSingleton<PreferencesBloc>(
-      PreferencesBloc(instance<PreferencesService>()),
-    );
+    // Note: BLoCs are now managed by Provider in the app.dart file
   }
 }

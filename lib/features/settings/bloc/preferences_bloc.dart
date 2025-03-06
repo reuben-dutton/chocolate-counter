@@ -1,39 +1,77 @@
-import 'dart:async';
-
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:food_inventory/common/bloc/bloc_base.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/preferences_service.dart';
 
-/// BLoC for application preferences
-class PreferencesBloc extends BlocBase {
-  final PreferencesService _preferencesService;
+// Define events
+abstract class PreferencesEvent extends Equatable {
+  const PreferencesEvent();
 
-  // Stream for theme mode
-  final _themeModeController = StreamController<ThemeMode>.broadcast();
-  Stream<ThemeMode> get themeMode => _themeModeController.stream;
+  @override
+  List<Object?> get props => [];
+}
 
-  PreferencesBloc(this._preferencesService) {
-    // Initialize with current theme from service
-    _themeModeController.add(_preferencesService.themeMode);
-    
-    // Listen to changes in the preferences service
-    _preferencesService.addListener(_onPreferencesChanged);
-  }
+class SetThemeMode extends PreferencesEvent {
+  final ThemeMode themeMode;
 
-  void _onPreferencesChanged() {
-    // Update the stream when preferences change
-    _themeModeController.add(_preferencesService.themeMode);
-  }
+  const SetThemeMode(this.themeMode);
 
-  /// Set theme mode
-  Future<void> setThemeMode(ThemeMode mode) async {
-    await _preferencesService.setThemeMode(mode);
-    // No need to manually add to stream, the service listener will handle it
+  @override
+  List<Object?> get props => [themeMode];
+}
+
+// Define state
+class PreferencesState extends Equatable {
+  final ThemeMode themeMode;
+
+  const PreferencesState({
+    this.themeMode = ThemeMode.system,
+  });
+
+  PreferencesState copyWith({
+    ThemeMode? themeMode,
+  }) {
+    return PreferencesState(
+      themeMode: themeMode ?? this.themeMode,
+    );
   }
 
   @override
-  void dispose() {
-    _themeModeController.close();
+  List<Object?> get props => [themeMode];
+}
+
+/// BLoC for application preferences
+class PreferencesBloc extends Bloc<PreferencesEvent, PreferencesState> {
+  final PreferencesService _preferencesService;
+
+  PreferencesBloc(this._preferencesService) 
+      : super(PreferencesState(themeMode: _preferencesService.themeMode)) {
+    // Set up listener for preferences changes
+    _preferencesService.addListener(_onPreferencesChanged);
+    
+    // Event handler
+    on<SetThemeMode>(_onSetThemeMode);
+  }
+
+  void _onPreferencesChanged() {
+    // Update the state when preferences change externally
+    emit(state.copyWith(themeMode: _preferencesService.themeMode));
+  }
+
+  Future<void> _onSetThemeMode(
+    SetThemeMode event, 
+    Emitter<PreferencesState> emit,
+  ) async {
+    // Update the service
+    await _preferencesService.setThemeMode(event.themeMode);
+    
+    // Note: We don't need to emit here as the service listener will handle it
+  }
+
+  @override
+  Future<void> close() {
+    // Remove listener when bloc is closed
     _preferencesService.removeListener(_onPreferencesChanged);
+    return super.close();
   }
 }

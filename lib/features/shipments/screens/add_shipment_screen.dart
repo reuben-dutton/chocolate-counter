@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
-import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
 import 'package:food_inventory/features/shipments/widgets/shipment_item_selector.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 class AddShipmentScreen extends StatefulWidget {
@@ -18,10 +19,6 @@ class AddShipmentScreen extends StatefulWidget {
 }
 
 class _AddShipmentScreenState extends State<AddShipmentScreen> {
-  late InventoryBloc _inventoryBloc;
-  late ShipmentBloc _shipmentBloc;
-  late DialogService _dialogService;
-  
   // Step 1: Select items
   List<ItemDefinition> _availableItems = [];
   final List<ShipmentItem> _selectedItems = [];
@@ -38,37 +35,11 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
   @override
   void initState() {
     super.initState();
-    _inventoryBloc = ServiceLocator.instance<InventoryBloc>();
-    _shipmentBloc = ServiceLocator.instance<ShipmentBloc>();
-    _dialogService = ServiceLocator.instance<DialogService>();
     
-    // Listen for inventory items
-    _inventoryBloc.inventoryItems.listen((items) {
-      if (mounted) {
-        setState(() {
-          _availableItems = items.map((item) => item.itemDefinition).toList();
-          _isLoading = false;
-        });
-      }
+    // Load inventory items when the screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<InventoryBloc>().add(const LoadInventoryItems());
     });
-    
-    // Listen for loading state
-    _inventoryBloc.isLoading.listen((loading) {
-      if (mounted) {
-        setState(() {
-          _isLoading = loading;
-        });
-      }
-    });
-    
-    // Listen for errors
-    _inventoryBloc.errors.listen((error) {
-      if (mounted) {
-        ErrorHandler.showErrorSnackBar(context, error.message, error: error.error);
-      }
-    });
-    
-    _loadItems();
   }
 
   @override
@@ -77,118 +48,160 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
     super.dispose();
   }
 
-  void _loadItems() {
-    _inventoryBloc.loadInventoryItems();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final dialogService = Provider.of<DialogService>(context);
     
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_currentStep == 0 ? 'Select Items' : 'Shipment Details'),
-        actions: [
-          if (_currentStep == 1)
-            IconButton(
-              icon: const Icon(Icons.save),
-              onPressed: _isProcessing ? null : _saveShipment,
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Stepper indicator
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 4,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                Expanded(
-                  child: Container(
-                    height: 4,
-                    color: _currentStep == 1 
-                        ? theme.colorScheme.primary 
-                        : theme.colorScheme.surfaceContainerHighest,
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return BlocListener<InventoryBloc, InventoryState>(
+      listenWhen: (previous, current) => 
+        current.items != previous.items ||
+        current.isLoading != previous.isLoading ||
+        (current.error != null && previous.error != current.error),
+      listener: (context, inventoryState) {
+        if (inventoryState.error != null) {
+          ErrorHandler.showErrorSnackBar(
+            context, 
+            inventoryState.error!.message, 
+            error: inventoryState.error!.error
+          );
+        }
+        
+        setState(() {
+          _isLoading = inventoryState.isLoading;
+          _availableItems = inventoryState.items.map((item) => item.itemDefinition).toList();
+        });
+      },
+      child: BlocConsumer<ShipmentBloc, ShipmentState>(
+        listenWhen: (previous, current) => 
+          current.error != null && previous.error != current.error ||
+          current.operationSuccess && !previous.operationSuccess,
+        listener: (context, shipmentState) {
+          if (shipmentState.error != null) {
+            ErrorHandler.showErrorSnackBar(
+              context, 
+              shipmentState.error!.message, 
+              error: shipmentState.error!.error
+            );
+            setState(() {
+              _isProcessing = false;
+            });
+          }
           
-          // Content area
-          Expanded(
-            child: _isProcessing
-                ? const Center(child: CircularProgressIndicator())
-                : (_currentStep == 0 ? _buildItemsStep() : _buildDetailsStep()),
-          ),
+          if (shipmentState.operationSuccess) {
+            ErrorHandler.showSuccessSnackBar(context, 'Shipment added successfully');
+            Navigator.pop(context);
+          }
+        },
+        builder: (context, shipmentState) {
+          final theme = Theme.of(context);
           
-          // Fixed bottom buttons
-          Container(
-            padding: const EdgeInsets.all(12.0),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(25),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton.icon(
-                  icon: const Icon(Icons.arrow_back, size: 16),
-                  label: Text(_currentStep > 0 ? 'Back' : 'Cancel'),
-                  onPressed: _isProcessing
-                      ? null
-                      : () {
-                          if (_currentStep > 0) {
-                            setState(() {
-                              _currentStep--;
-                            });
-                          } else {
-                            Navigator.pop(context);
-                          }
-                        },
-                ),
-                ElevatedButton.icon(
-                  icon: Icon(
-                    _currentStep == 0 ? Icons.arrow_forward : Icons.save,
-                    size: 16,
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(_currentStep == 0 ? 'Select Items' : 'Shipment Details'),
+              actions: [
+                if (_currentStep == 1)
+                  IconButton(
+                    icon: const Icon(Icons.save),
+                    onPressed: _isProcessing ? null : () => _saveShipment(context),
                   ),
-                  label: Text(_currentStep == 0 ? 'Continue' : 'Save'),
-                  onPressed: _isProcessing
-                      ? null
-                      : () {
-                          if (_currentStep == 0) {
-                            if (_selectedItems.isEmpty) {
-                              ErrorHandler.showErrorSnackBar(
-                                context, 
-                                'Please select at least one item'
-                              );
-                              return;
-                            }
-                            setState(() {
-                              _currentStep = 1;
-                            });
-                          } else {
-                            _saveShipment();
-                          }
-                        },
+              ],
+            ),
+            body: Column(
+              children: [
+                // Stepper indicator
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 4,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          height: 4,
+                          color: _currentStep == 1 
+                              ? theme.colorScheme.primary 
+                              : theme.colorScheme.surfaceContainerHighest,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Content area
+                Expanded(
+                  child: _isProcessing
+                      ? const Center(child: CircularProgressIndicator())
+                      : (_currentStep == 0 ? _buildItemsStep() : _buildDetailsStep(dialogService)),
+                ),
+                
+                // Fixed bottom buttons
+                Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(25),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton.icon(
+                        icon: const Icon(Icons.arrow_back, size: 16),
+                        label: Text(_currentStep > 0 ? 'Back' : 'Cancel'),
+                        onPressed: _isProcessing
+                            ? null
+                            : () {
+                                if (_currentStep > 0) {
+                                  setState(() {
+                                    _currentStep--;
+                                  });
+                                } else {
+                                  Navigator.pop(context);
+                                }
+                              },
+                      ),
+                      ElevatedButton.icon(
+                        icon: Icon(
+                          _currentStep == 0 ? Icons.arrow_forward : Icons.save,
+                          size: 16,
+                        ),
+                        label: Text(_currentStep == 0 ? 'Continue' : 'Save'),
+                        onPressed: _isProcessing
+                            ? null
+                            : () {
+                                if (_currentStep == 0) {
+                                  if (_selectedItems.isEmpty) {
+                                    ErrorHandler.showErrorSnackBar(
+                                      context, 
+                                      'Please select at least one item'
+                                    );
+                                    return;
+                                  }
+                                  setState(() {
+                                    _currentStep = 1;
+                                  });
+                                } else {
+                                  _saveShipment(context);
+                                }
+                              },
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -232,7 +245,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
     );
   }
 
-  Widget _buildDetailsStep() {
+  Widget _buildDetailsStep(DialogService dialogService) {
     final dateFormat = DateFormat('yyyy-MM-dd');
     final theme = Theme.of(context);
     
@@ -257,7 +270,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
               
               // Shipment date
               InkWell(
-                onTap: () => _selectDate(context),
+                onTap: () => _selectDate(context, dialogService),
                 child: InputDecorator(
                   decoration: const InputDecoration(
                     labelText: 'Shipment Date',
@@ -422,9 +435,9 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
     );
   }
   
-  Future<void> _selectDate(BuildContext context) async {
+  Future<void> _selectDate(BuildContext context, DialogService dialogService) async {
     try {
-      final DateTime? picked = await _dialogService.showCustomDatePicker(
+      final DateTime? picked = await dialogService.showCustomDatePicker(
         context: context,
         initialDate: _shipmentDate,
         firstDate: DateTime(2000),
@@ -447,7 +460,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
     }
   }
 
-  Future<void> _saveShipment() async {
+  Future<void> _saveShipment(BuildContext context) async {
     if (_isProcessing) return;
     
     setState(() {
@@ -462,35 +475,21 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
         items: _selectedItems,
       );
       
-      // Use the shipment bloc to create the shipment
-      final success = await _shipmentBloc.createShipment(shipment);
+      // Dispatch the create shipment event
+      context.read<ShipmentBloc>().add(CreateShipment(shipment));
       
-      if (success) {
-        if (mounted) {
-          ErrorHandler.showSuccessSnackBar(context, 'Shipment added successfully');
-          Navigator.pop(context);
-        }
-      } else {
-        if (mounted) {
-          ErrorHandler.showErrorSnackBar(context, 'Error creating shipment');
-        }
-      }
+      // The listener will handle success and navigation
     } catch (e, stackTrace) {
-      if (mounted) {
-        ErrorHandler.handleServiceError(
-          context, 
-          e, 
-          service: 'Shipment',
-          operation: 'creation',
-          stackTrace: stackTrace
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isProcessing = false;
-        });
-      }
+      ErrorHandler.handleServiceError(
+        context, 
+        e, 
+        service: 'Shipment',
+        operation: 'creation',
+        stackTrace: stackTrace
+      );
+      setState(() {
+        _isProcessing = false;
+      });
     }
   }
 }
