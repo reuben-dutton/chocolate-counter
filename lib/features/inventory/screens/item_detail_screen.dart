@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/widgets/count_display_widget.dart';
 import 'package:food_inventory/common/widgets/full_item_image_widget.dart';
 import 'package:food_inventory/common/widgets/section_header_widget.dart';
+import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/data/models/inventory_movement.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/item_instance.dart';
@@ -288,12 +290,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   void _editItem(BuildContext context) async {
     try {
-      final result = await Navigator.push<ItemDefinition>(
+      final result = await NavigationUtils.navigateWithSlide<ItemDefinition>(
         context,
-        MaterialPageRoute(
-          builder: (context) => ItemEditScreen(
-            itemDefinition: _currentItemDefinition,
-          ),
+        ItemEditScreen(
+          itemDefinition: _currentItemDefinition,
         ),
       );
 

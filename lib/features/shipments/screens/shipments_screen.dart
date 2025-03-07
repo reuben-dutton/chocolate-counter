@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
+import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/features/inventory/screens/add_item_definition_screen.dart';
 import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
 import 'package:food_inventory/features/shipments/screens/add_shipment_screen.dart';
@@ -80,11 +82,9 @@ class _ShipmentsList extends StatelessWidget {
               return ShipmentListItem(
                 shipment: shipment,
                 onTap: () {
-                  Navigator.push(
+                  NavigationUtils.navigateWithSlide(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => ShipmentDetailScreen(shipment: shipment),
-                    ),
+                    ShipmentDetailScreen(shipment: shipment),
                   ).then((_) {
                     // Refresh data when returning from details
                     context.read<ShipmentBloc>().add(const LoadShipments());
@@ -116,11 +116,9 @@ class _ShipmentsList extends StatelessWidget {
   }
 
   void _navigateToAddShipment(BuildContext context) {
-    Navigator.push(
+    NavigationUtils.navigateWithSlide(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddShipmentScreen(),
-      ),
+      const AddShipmentScreen(),
     ).then((_) {
       context.read<ShipmentBloc>().add(const LoadShipments());
     });
@@ -151,20 +149,16 @@ class _ShipmentsActionButtons extends StatelessWidget {
   }
   
   void _navigateToAddItemDefinition(BuildContext context) {
-    Navigator.push(
+    NavigationUtils.navigateWithSlide(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddItemDefinitionScreen(),
-      ),
+      const AddItemDefinitionScreen(),
     );
   }
   
   void _navigateToAddShipment(BuildContext context) {
-    Navigator.push(
+    NavigationUtils.navigateWithSlide(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddShipmentScreen(),
-      ),
+      const AddShipmentScreen(),
     ).then((_) {
       context.read<ShipmentBloc>().add(const LoadShipments());
     });

@@ -12,6 +12,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  PageController _pageController = PageController(); // Initialize here
 
   // Define screens as lazy loading widgets to avoid premature BLoC creation
   final List<Widget Function(BuildContext)> _screenBuilders = [
@@ -21,27 +22,50 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Set the initial page
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  void _onTabTapped(int index) {
+    // Animate to the selected page when tab is tapped
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
     return Scaffold(
-      // Use IndexedStack to maintain state when switching tabs
-      body: IndexedStack(
-        index: _currentIndex,
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: _onPageChanged,
         children: [
-          // Build screens only when needed
           _screenBuilders[0](context),
-          _currentIndex == 1 ? _screenBuilders[1](context) : Container(),
-          _currentIndex == 2 ? _screenBuilders[2](context) : Container(),
+          _screenBuilders[1](context),
+          _screenBuilders[2](context),
         ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onDestinationSelected: _onTabTapped,
         backgroundColor: theme.colorScheme.surface,
         elevation: 3,
         shadowColor: Colors.black26,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/screens/item_detail_screen.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
@@ -158,11 +160,9 @@ class _InventoryListView extends StatelessWidget {
                   inventoryCount: item.inventoryCount,
                   isEmptyItem: item.isEmptyItem,
                   onTap: () {
-                    Navigator.push(
+                    NavigationUtils.navigateWithSlide(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => ItemDetailScreen(itemDefinition: item.itemDefinition),
-                      ),
+                      ItemDetailScreen(itemDefinition: item.itemDefinition),
                     ).then((_) {
                       // Refresh data when returning from details
                       context.read<InventoryBloc>().add(const LoadInventoryItems());
