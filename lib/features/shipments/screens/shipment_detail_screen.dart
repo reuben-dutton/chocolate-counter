@@ -40,7 +40,9 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
           
           if (state is OperationResult && state.success) {
             // If it was a deletion operation, navigate back
-            Navigator.pop(context);
+            if (state.operationType == OperationType.delete) {
+              Navigator.pop(context);
+            }
             
             // Clear the operation state
             context.read<ShipmentBloc>().add(const ClearOperationState());

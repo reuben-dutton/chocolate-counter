@@ -126,15 +126,19 @@ class ShipmentItemsLoaded extends ShipmentState {
 
 class OperationResult extends ShipmentState {
   final bool success;
+  final OperationType operationType;
   
   const OperationResult({
     required this.success,
+    required this.operationType,
     super.error,
   });
   
   @override
-  List<Object?> get props => [success, error];
+  List<Object?> get props => [success, operationType, error];
 }
+
+enum OperationType { delete, update, create }
 
 /// BLoC for shipment management
 class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
@@ -243,12 +247,13 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
       
       await _shipmentService.createShipment(event.shipment);
       
-      emit(const OperationResult(success: true));
+      emit(const OperationResult(success: true, operationType: OperationType.create));
       add(const LoadShipments());
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error creating shipment', e, stackTrace, 'ShipmentBloc');
       emit(OperationResult(
         success: false,
+        operationType: OperationType.create,
         error: AppError(
           message: 'Failed to create shipment',
           error: e,
@@ -268,12 +273,13 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
       
       await _shipmentService.deleteShipment(event.id);
       
-      emit(const OperationResult(success: true));
+      emit(const OperationResult(success: true, operationType: OperationType.delete));
       add(const LoadShipments());
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error deleting shipment', e, stackTrace, 'ShipmentBloc');
       emit(OperationResult(
         success: false,
+        operationType: OperationType.delete,
         error: AppError(
           message: 'Failed to delete shipment',
           error: e,
@@ -299,12 +305,13 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
       // Instead of waiting for a delayed refresh, load the items directly
       final items = await _shipmentService.getShipmentItems(event.shipmentId);
       
-      emit(OperationResult(success: true));
+      emit(OperationResult(success: true, operationType: OperationType.update));
       emit(ShipmentItemsLoaded(items));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error updating shipment item expiration', e, stackTrace, 'ShipmentBloc');
       emit(OperationResult(
         success: false,
+        operationType: OperationType.update,
         error: AppError(
           message: 'Failed to update expiration date',
           error: e,
