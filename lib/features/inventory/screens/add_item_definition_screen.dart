@@ -4,6 +4,7 @@ import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
+import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 
@@ -69,131 +70,135 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
   @override
   Widget build(BuildContext context) {
     final imageService = Provider.of<ImageService>(context);
+    final inventoryService = Provider.of<InventoryService>(context, listen: false);
     
-    return BlocConsumer<InventoryBloc, InventoryState>(
-      listenWhen: (previous, current) => 
-        current.error != null && previous.error != current.error ||
-        current.operationSuccess && !previous.operationSuccess,
-      listener: (context, state) {
-        if (state.error != null) {
-          ErrorHandler.showErrorSnackBar(context, state.error!.message, error: state.error!.error);
-          setState(() {
-            _isCreating = false;
-          });
-        }
-        
-        if (state.operationSuccess) {
-          // Item was created successfully
-          ErrorHandler.showSuccessSnackBar(context, 'Item added successfully');
-          Navigator.pop(context);
-        }
-      },
-      builder: (context, state) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Add Item'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.save),
-                onPressed: _isCreating ? null : () => _saveItem(context, imageService),
-              ),
-            ],
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Item Name *',
-                        hintText: 'e.g., Snickers Bar',
-                        isDense: true,
-                        prefixIcon: Icon(Icons.label, size: 18),
+    return BlocProvider(
+      create: (context) => InventoryBloc(inventoryService),
+      child: BlocConsumer<InventoryBloc, InventoryState>(
+        listenWhen: (previous, current) => 
+          current.error != null && previous.error != current.error ||
+          current is OperationResult,
+        listener: (context, state) {
+          if (state.error != null) {
+            ErrorHandler.showErrorSnackBar(context, state.error!.message, error: state.error!.error);
+            setState(() {
+              _isCreating = false;
+            });
+          }
+          
+          if (state is OperationResult && state.success) {
+            // Item was created successfully
+            ErrorHandler.showSuccessSnackBar(context, 'Item added successfully');
+            Navigator.pop(context);
+          }
+        },
+        builder: (context, state) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Add Item'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.save),
+                  onPressed: _isCreating ? null : () => _saveItem(context, imageService),
+                ),
+              ],
+            ),
+            body: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Item Name *',
+                          hintText: 'e.g., Snickers Bar',
+                          isDense: true,
+                          prefixIcon: Icon(Icons.label, size: 18),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter an item name';
+                          }
+                          return null;
+                        },
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter an item name';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _barcodeController,
-                      decoration: const InputDecoration(
-                        labelText: 'Barcode (Optional)',
-                        hintText: 'e.g., 012345678912',
-                        isDense: true,
-                        prefixIcon: Icon(Icons.qr_code, size: 18),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _barcodeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Barcode (Optional)',
+                          hintText: 'e.g., 012345678912',
+                          isDense: true,
+                          prefixIcon: Icon(Icons.qr_code, size: 18),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // Image picker
-                    Center(
-                      child: Column(
-                        children: [
-                          const Text(
-                            'Item Image (Optional)',
-                            style: TextStyle(fontSize: 14),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            width: 180,
-                            height: 180,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(8),
+                      const SizedBox(height: 16),
+                      
+                      // Image picker
+                      Center(
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Item Image (Optional)',
+                              style: TextStyle(fontSize: 14),
                             ),
-                            child: _imageFile != null
-                                ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.file(
-                                      _imageFile!,
-                                      fit: BoxFit.cover,
+                            const SizedBox(height: 8),
+                            Container(
+                              width: 180,
+                              height: 180,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: _imageFile != null
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.file(
+                                        _imageFile!,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.camera_alt,
+                                      size: 60,
+                                      color: Colors.grey,
                                     ),
-                                  )
-                                : const Icon(
-                                    Icons.camera_alt,
-                                    size: 60,
-                                    color: Colors.grey,
-                                  ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.camera_alt, size: 18),
-                                label: const Text('Camera'),
-                                onPressed: () => _takePhoto(imageService),
-                              ),
-                              const SizedBox(width: 16),
-                              OutlinedButton.icon(
-                                icon: const Icon(Icons.photo_library, size: 18),
-                                label: const Text('Gallery'),
-                                onPressed: () => _pickPhoto(imageService),
-                              ),
-                            ],
-                          ),
-                        ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.camera_alt, size: 18),
+                                  label: const Text('Camera'),
+                                  onPressed: () => _takePhoto(imageService),
+                                ),
+                                const SizedBox(width: 16),
+                                OutlinedButton.icon(
+                                  icon: const Icon(Icons.photo_library, size: 18),
+                                  label: const Text('Gallery'),
+                                  onPressed: () => _pickPhoto(imageService),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    if (_isCreating)
-                      const Center(child: CircularProgressIndicator()),
-                  ],
+                      const SizedBox(height: 24),
+                      if (_isCreating)
+                        const Center(child: CircularProgressIndicator()),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

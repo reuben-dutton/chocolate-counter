@@ -13,10 +13,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const InventoryScreen(),
-    const ShipmentsScreen(),
-    const SettingsScreen(),
+  // Define screens as lazy loading widgets to avoid premature BLoC creation
+  final List<Widget Function(BuildContext)> _screenBuilders = [
+    (context) => const InventoryScreen(),
+    (context) => const ShipmentsScreen(),
+    (context) => const SettingsScreen(),
   ];
 
   @override
@@ -24,7 +25,16 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      body: _screens[_currentIndex],
+      // Use IndexedStack to maintain state when switching tabs
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          // Build screens only when needed
+          _screenBuilders[0](context),
+          _currentIndex == 1 ? _screenBuilders[1](context) : Container(),
+          _currentIndex == 2 ? _screenBuilders[2](context) : Container(),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {

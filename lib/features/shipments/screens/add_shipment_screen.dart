@@ -5,8 +5,10 @@ import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
-import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
+import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart' as inventory;
+import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
+import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:food_inventory/features/shipments/widgets/shipment_item_selector.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -33,16 +35,6 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
   int _currentStep = 0;
 
   @override
-  void initState() {
-    super.initState();
-    
-    // Load inventory items when the screen initializes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<InventoryBloc>().add(const LoadInventoryItems());
-    });
-  }
-
-  @override
   void dispose() {
     _nameController.dispose();
     super.dispose();
@@ -51,157 +43,176 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
   @override
   Widget build(BuildContext context) {
     final dialogService = Provider.of<DialogService>(context);
+    final inventoryService = Provider.of<InventoryService>(context, listen: false);
+    final shipmentService = Provider.of<ShipmentService>(context, listen: false);
     
-    return BlocListener<InventoryBloc, InventoryState>(
-      listenWhen: (previous, current) => 
-        current.items != previous.items ||
-        current.isLoading != previous.isLoading ||
-        (current.error != null && previous.error != current.error),
-      listener: (context, inventoryState) {
-        if (inventoryState.error != null) {
-          ErrorHandler.showErrorSnackBar(
-            context, 
-            inventoryState.error!.message, 
-            error: inventoryState.error!.error
-          );
-        }
-        
-        setState(() {
-          _isLoading = inventoryState.isLoading;
-          _availableItems = inventoryState.items.map((item) => item.itemDefinition).toList();
-        });
-      },
-      child: BlocConsumer<ShipmentBloc, ShipmentState>(
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => inventory.InventoryBloc(inventoryService)
+            ..add(const inventory.LoadInventoryItems()),
+        ),
+        BlocProvider(
+          create: (context) => ShipmentBloc(shipmentService),
+        ),
+      ],
+      child: BlocListener<inventory.InventoryBloc, inventory.InventoryState>(
         listenWhen: (previous, current) => 
-          current.error != null && previous.error != current.error ||
-          current.operationSuccess && !previous.operationSuccess,
-        listener: (context, shipmentState) {
-          if (shipmentState.error != null) {
+          current is inventory.InventoryItemsLoaded || 
+          current is inventory.InventoryLoading ||
+          (current.error != null && previous.error != current.error),
+        listener: (context, inventoryState) {
+          if (inventoryState.error != null) {
             ErrorHandler.showErrorSnackBar(
               context, 
-              shipmentState.error!.message, 
-              error: shipmentState.error!.error
+              inventoryState.error!.message, 
+              error: inventoryState.error!.error
             );
+          }
+          
+          if (inventoryState is inventory.InventoryLoading) {
             setState(() {
-              _isProcessing = false;
+              _isLoading = true;
+            });
+          } else if (inventoryState is inventory.InventoryItemsLoaded) {
+            setState(() {
+              _isLoading = false;
+              _availableItems = inventoryState.items.map((item) => item.itemDefinition).toList();
             });
           }
-          
-          if (shipmentState.operationSuccess) {
-            ErrorHandler.showSuccessSnackBar(context, 'Shipment added successfully');
-            Navigator.pop(context);
-          }
         },
-        builder: (context, shipmentState) {
-          final theme = Theme.of(context);
-          
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(_currentStep == 0 ? 'Select Items' : 'Shipment Details'),
-              actions: [
-                if (_currentStep == 1)
-                  IconButton(
-                    icon: const Icon(Icons.save),
-                    onPressed: _isProcessing ? null : () => _saveShipment(context),
-                  ),
-              ],
-            ),
-            body: Column(
-              children: [
-                // Stepper indicator
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 4,
-                          color: theme.colorScheme.primary,
+        child: BlocConsumer<ShipmentBloc, ShipmentState>(
+          listenWhen: (previous, current) => 
+            current.error != null && previous.error != current.error ||
+            current is OperationResult,
+          listener: (context, shipmentState) {
+            if (shipmentState.error != null) {
+              ErrorHandler.showErrorSnackBar(
+                context, 
+                shipmentState.error!.message, 
+                error: shipmentState.error!.error
+              );
+              setState(() {
+                _isProcessing = false;
+              });
+            }
+            
+            if (shipmentState is OperationResult && shipmentState.success) {
+              ErrorHandler.showSuccessSnackBar(context, 'Shipment added successfully');
+              Navigator.pop(context);
+            }
+          },
+          builder: (context, shipmentState) {
+            final theme = Theme.of(context);
+            
+            return Scaffold(
+              appBar: AppBar(
+                title: Text(_currentStep == 0 ? 'Select Items' : 'Shipment Details'),
+                actions: [
+                  if (_currentStep == 1)
+                    IconButton(
+                      icon: const Icon(Icons.save),
+                      onPressed: _isProcessing ? null : () => _saveShipment(context),
+                    ),
+                ],
+              ),
+              body: Column(
+                children: [
+                  // Stepper indicator
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 4,
+                            color: theme.colorScheme.primary,
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          height: 4,
-                          color: _currentStep == 1 
-                              ? theme.colorScheme.primary 
-                              : theme.colorScheme.surfaceContainerHighest,
+                        Expanded(
+                          child: Container(
+                            height: 4,
+                            color: _currentStep == 1 
+                                ? theme.colorScheme.primary 
+                                : theme.colorScheme.surfaceContainerHighest,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                
-                // Content area
-                Expanded(
-                  child: _isProcessing
-                      ? const Center(child: CircularProgressIndicator())
-                      : (_currentStep == 0 ? _buildItemsStep() : _buildDetailsStep(dialogService)),
-                ),
-                
-                // Fixed bottom buttons
-                Container(
-                  padding: const EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(25),
-                        spreadRadius: 1,
-                        blurRadius: 3,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
+                  
+                  // Content area
+                  Expanded(
+                    child: _isProcessing
+                        ? const Center(child: CircularProgressIndicator())
+                        : (_currentStep == 0 ? _buildItemsStep() : _buildDetailsStep(dialogService)),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton.icon(
-                        icon: const Icon(Icons.arrow_back, size: 16),
-                        label: Text(_currentStep > 0 ? 'Back' : 'Cancel'),
-                        onPressed: _isProcessing
-                            ? null
-                            : () {
-                                if (_currentStep > 0) {
-                                  setState(() {
-                                    _currentStep--;
-                                  });
-                                } else {
-                                  Navigator.pop(context);
-                                }
-                              },
-                      ),
-                      ElevatedButton.icon(
-                        icon: Icon(
-                          _currentStep == 0 ? Icons.arrow_forward : Icons.save,
-                          size: 16,
+                  
+                  // Fixed bottom buttons
+                  Container(
+                    padding: const EdgeInsets.all(12.0),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(25),
+                          spreadRadius: 1,
+                          blurRadius: 3,
+                          offset: const Offset(0, -2),
                         ),
-                        label: Text(_currentStep == 0 ? 'Continue' : 'Save'),
-                        onPressed: _isProcessing
-                            ? null
-                            : () {
-                                if (_currentStep == 0) {
-                                  if (_selectedItems.isEmpty) {
-                                    ErrorHandler.showErrorSnackBar(
-                                      context, 
-                                      'Please select at least one item'
-                                    );
-                                    return;
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton.icon(
+                          icon: const Icon(Icons.arrow_back, size: 16),
+                          label: Text(_currentStep > 0 ? 'Back' : 'Cancel'),
+                          onPressed: _isProcessing
+                              ? null
+                              : () {
+                                  if (_currentStep > 0) {
+                                    setState(() {
+                                      _currentStep--;
+                                    });
+                                  } else {
+                                    Navigator.pop(context);
                                   }
-                                  setState(() {
-                                    _currentStep = 1;
-                                  });
-                                } else {
-                                  _saveShipment(context);
-                                }
-                              },
-                      ),
-                    ],
+                                },
+                        ),
+                        ElevatedButton.icon(
+                          icon: Icon(
+                            _currentStep == 0 ? Icons.arrow_forward : Icons.save,
+                            size: 16,
+                          ),
+                          label: Text(_currentStep == 0 ? 'Continue' : 'Save'),
+                          onPressed: _isProcessing
+                              ? null
+                              : () {
+                                  if (_currentStep == 0) {
+                                    if (_selectedItems.isEmpty) {
+                                      ErrorHandler.showErrorSnackBar(
+                                        context, 
+                                        'Please select at least one item'
+                                      );
+                                      return;
+                                    }
+                                    setState(() {
+                                      _currentStep = 1;
+                                    });
+                                  } else {
+                                    _saveShipment(context);
+                                  }
+                                },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          );
-        },
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

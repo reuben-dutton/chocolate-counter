@@ -11,6 +11,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<PreferencesBloc, PreferencesState>(
+      buildWhen: (previous, current) => previous.themeMode != current.themeMode,
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(

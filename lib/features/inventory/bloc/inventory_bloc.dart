@@ -42,6 +42,10 @@ abstract class InventoryEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class InitializeInventoryScreen extends InventoryEvent {
+  const InitializeInventoryScreen();
+}
+
 class LoadInventoryItems extends InventoryEvent {
   const LoadInventoryItems();
 }
@@ -102,47 +106,84 @@ class MoveInventoryToStock extends InventoryEvent {
   List<Object?> get props => [itemDefinitionId, moveAmount];
 }
 
-// Define state
-class InventoryState extends Equatable {
-  final bool isLoading;
-  final List<InventoryItemWithCounts> items;
-  final ItemDetailData? itemDetail;
+class ClearOperationState extends InventoryEvent {
+  const ClearOperationState();
+}
+
+// Split into more focused states
+abstract class InventoryState extends Equatable {
   final AppError? error;
-  final bool operationSuccess;
+  
+  const InventoryState({this.error});
+  
+  @override
+  List<Object?> get props => [error];
+}
 
-  const InventoryState({
-    this.isLoading = false,
-    this.items = const [],
-    this.itemDetail,
-    this.error,
-    this.operationSuccess = false,
-  });
+class InventoryInitial extends InventoryState {
+  const InventoryInitial();
+}
 
-  InventoryState copyWith({
-    bool? isLoading,
+class InventoryLoading extends InventoryState {
+  const InventoryLoading();
+}
+
+class InventoryItemsLoaded extends InventoryState {
+  final List<InventoryItemWithCounts> items;
+  
+  const InventoryItemsLoaded(this.items, {super.error});
+  
+  @override
+  List<Object?> get props => [items, error];
+  
+  InventoryItemsLoaded copyWith({
     List<InventoryItemWithCounts>? items,
-    ItemDetailData? itemDetail,
     AppError? error,
-    bool? operationSuccess,
   }) {
-    return InventoryState(
-      isLoading: isLoading ?? this.isLoading,
-      items: items ?? this.items,
-      itemDetail: itemDetail ?? this.itemDetail,
+    return InventoryItemsLoaded(
+      items ?? this.items,
       error: error ?? this.error,
-      operationSuccess: operationSuccess ?? this.operationSuccess,
     );
   }
+}
 
+class ItemDetailLoaded extends InventoryState {
+  final ItemDetailData itemDetail;
+  
+  const ItemDetailLoaded(this.itemDetail, {super.error});
+  
   @override
-  List<Object?> get props => [isLoading, items, itemDetail, error, operationSuccess];
+  List<Object?> get props => [itemDetail, error];
+  
+  ItemDetailLoaded copyWith({
+    ItemDetailData? itemDetail,
+    AppError? error,
+  }) {
+    return ItemDetailLoaded(
+      itemDetail ?? this.itemDetail,
+      error: error ?? this.error,
+    );
+  }
+}
+
+class OperationResult extends InventoryState {
+  final bool success;
+  
+  const OperationResult({
+    required this.success,
+    super.error,
+  });
+  
+  @override
+  List<Object?> get props => [success, error];
 }
 
 /// BLoC for inventory management
 class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
   final InventoryService _inventoryService;
 
-  InventoryBloc(this._inventoryService) : super(const InventoryState()) {
+  InventoryBloc(this._inventoryService) : super(const InventoryInitial()) {
+    on<InitializeInventoryScreen>(_onInitializeInventoryScreen);
     on<LoadInventoryItems>(_onLoadInventoryItems);
     on<LoadItemDetail>(_onLoadItemDetail);
     on<CreateItemDefinition>(_onCreateItemDefinition);
@@ -150,6 +191,17 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     on<DeleteItemDefinition>(_onDeleteItemDefinition);
     on<RecordStockSale>(_onRecordStockSale);
     on<MoveInventoryToStock>(_onMoveInventoryToStock);
+    on<ClearOperationState>(_onClearOperationState);
+  }
+
+  Future<void> _onInitializeInventoryScreen(
+    InitializeInventoryScreen event,
+    Emitter<InventoryState> emit,
+  ) async {
+    // Only load if we're not already loading and don't have data
+    if (state is! InventoryItemsLoaded && state is! InventoryLoading) {
+      add(const LoadInventoryItems());
+    }
   }
 
   Future<void> _onLoadInventoryItems(
@@ -157,7 +209,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     Emitter<InventoryState> emit,
   ) async {
     try {
-      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
+      emit(const InventoryLoading());
       
       final items = await _inventoryService.getAllItemDefinitions();
       
@@ -185,18 +237,31 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
         return aIsEmpty ? 1 : -1;
       });
       
-      emit(state.copyWith(isLoading: false, items: itemsWithCounts));
+      emit(InventoryItemsLoaded(itemsWithCounts));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error loading item list', e, stackTrace, 'InventoryBloc');
-      emit(state.copyWith(
-        isLoading: false,
-        error: AppError(
-          message: 'Failed to load item list',
-          error: e,
-          stackTrace: stackTrace,
-          source: 'InventoryBloc'
-        ),
-      ));
+      
+      // If we already had items loaded, keep them but add the error
+      if (state is InventoryItemsLoaded) {
+        emit((state as InventoryItemsLoaded).copyWith(
+          error: AppError(
+            message: 'Failed to load item list',
+            error: e,
+            stackTrace: stackTrace,
+            source: 'InventoryBloc'
+          ),
+        ));
+      } else {
+        emit(InventoryItemsLoaded(
+          const [],
+          error: AppError(
+            message: 'Failed to load item list',
+            error: e,
+            stackTrace: stackTrace,
+            source: 'InventoryBloc'
+          ),
+        ));
+      }
     }
   }
 
@@ -205,7 +270,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     Emitter<InventoryState> emit,
   ) async {
     try {
-      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
+      emit(const InventoryLoading());
       
       final counts = await _inventoryService.getItemCounts(event.itemId);
       final instances = await _inventoryService.getItemInstances(event.itemId);
@@ -217,18 +282,28 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
         movements: movements,
       );
       
-      emit(state.copyWith(isLoading: false, itemDetail: itemDetail));
+      emit(ItemDetailLoaded(itemDetail));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error loading item detail', e, stackTrace, 'InventoryBloc');
-      emit(state.copyWith(
-        isLoading: false,
-        error: AppError(
+      
+      // If we already had item detail loaded, keep it but add the error
+      if (state is ItemDetailLoaded) {
+        emit((state as ItemDetailLoaded).copyWith(
+          error: AppError(
+            message: 'Failed to load item details',
+            error: e,
+            stackTrace: stackTrace,
+            source: 'InventoryBloc'
+          ),
+        ));
+      } else {
+        emit(InventoryItemsLoaded([], error: AppError(
           message: 'Failed to load item details',
           error: e,
           stackTrace: stackTrace,
           source: 'InventoryBloc'
-        ),
-      ));
+        )));
+      }
     }
   }
 
@@ -237,24 +312,19 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     Emitter<InventoryState> emit,
   ) async {
     try {
-      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
-      
       await _inventoryService.createItemDefinition(event.itemDefinition);
-      
-      emit(state.copyWith(isLoading: false, operationSuccess: true));
-      // Refresh the items list after creation
+      emit(const OperationResult(success: true));
       add(const LoadInventoryItems());
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error creating item definition', e, stackTrace, 'InventoryBloc');
-      emit(state.copyWith(
-        isLoading: false,
+      emit(OperationResult(
+        success: false,
         error: AppError(
           message: 'Failed to create item',
           error: e,
           stackTrace: stackTrace,
           source: 'InventoryBloc'
         ),
-        operationSuccess: false,
       ));
     }
   }
@@ -264,24 +334,19 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     Emitter<InventoryState> emit,
   ) async {
     try {
-      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
-      
       await _inventoryService.updateItemDefinition(event.itemDefinition);
-      
-      emit(state.copyWith(isLoading: false, operationSuccess: true));
-      // Refresh the items list after update
+      emit(const OperationResult(success: true));
       add(const LoadInventoryItems());
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error updating item definition', e, stackTrace, 'InventoryBloc');
-      emit(state.copyWith(
-        isLoading: false,
+      emit(OperationResult(
+        success: false,
         error: AppError(
           message: 'Failed to update item',
           error: e,
           stackTrace: stackTrace,
           source: 'InventoryBloc'
         ),
-        operationSuccess: false,
       ));
     }
   }
@@ -291,24 +356,19 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     Emitter<InventoryState> emit,
   ) async {
     try {
-      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
-      
       await _inventoryService.deleteItemDefinition(event.id);
-      
-      emit(state.copyWith(isLoading: false, operationSuccess: true));
-      // Refresh the items list after deletion
+      emit(const OperationResult(success: true));
       add(const LoadInventoryItems());
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error deleting item definition', e, stackTrace, 'InventoryBloc');
-      emit(state.copyWith(
-        isLoading: false,
+      emit(OperationResult(
+        success: false,
         error: AppError(
           message: 'Failed to delete item',
           error: e,
           stackTrace: stackTrace,
           source: 'InventoryBloc'
         ),
-        operationSuccess: false,
       ));
     }
   }
@@ -318,24 +378,19 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     Emitter<InventoryState> emit,
   ) async {
     try {
-      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
-      
       await _inventoryService.updateStockCount(event.itemDefinitionId, event.decreaseAmount);
-      
-      emit(state.copyWith(isLoading: false, operationSuccess: true));
-      // Refresh item detail
+      emit(const OperationResult(success: true));
       add(LoadItemDetail(event.itemDefinitionId));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error updating stock count', e, stackTrace, 'InventoryBloc');
-      emit(state.copyWith(
-        isLoading: false,
+      emit(OperationResult(
+        success: false,
         error: AppError(
           message: 'Failed to update stock count',
           error: e,
           stackTrace: stackTrace,
           source: 'InventoryBloc'
         ),
-        operationSuccess: false,
       ));
     }
   }
@@ -345,25 +400,31 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     Emitter<InventoryState> emit,
   ) async {
     try {
-      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
-      
       await _inventoryService.moveInventoryToStock(event.itemDefinitionId, event.moveAmount);
-      
-      emit(state.copyWith(isLoading: false, operationSuccess: true));
-      // Refresh item detail
+      emit(const OperationResult(success: true));
       add(LoadItemDetail(event.itemDefinitionId));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error moving inventory to stock', e, stackTrace, 'InventoryBloc');
-      emit(state.copyWith(
-        isLoading: false,
+      emit(OperationResult(
+        success: false,
         error: AppError(
           message: 'Failed to move items to stock',
           error: e,
           stackTrace: stackTrace,
           source: 'InventoryBloc'
         ),
-        operationSuccess: false,
       ));
+    }
+  }
+
+  void _onClearOperationState(
+    ClearOperationState event,
+    Emitter<InventoryState> emit,
+  ) {
+    // If we're in OperationResult state, go back to initial state
+    // to avoid sticky operation result
+    if (state is OperationResult) {
+      emit(const InventoryInitial());
     }
   }
 

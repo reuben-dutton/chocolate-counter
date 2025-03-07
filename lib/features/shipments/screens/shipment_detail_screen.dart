@@ -4,8 +4,10 @@ import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/features/settings/widgets/confirm_dialog.dart';
 import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
+import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:food_inventory/features/shipments/widgets/shipment_item_list.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class ShipmentDetailScreen extends StatefulWidget {
   final Shipment shipment;
@@ -21,61 +23,63 @@ class ShipmentDetailScreen extends StatefulWidget {
 
 class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
   @override
-  void initState() {
-    super.initState();
-    // Load shipment items when screen initializes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ShipmentBloc>().add(LoadShipmentItems(widget.shipment.id!));
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return BlocConsumer<ShipmentBloc, ShipmentState>(
-      listenWhen: (previous, current) => 
-        current.error != null && previous.error != current.error ||
-        current.operationSuccess && !previous.operationSuccess,
-      listener: (context, state) {
-        if (state.error != null) {
-          context.read<ShipmentBloc>().handleError(context, state.error!);
-        }
-        
-        if (state.operationSuccess) {
-          // If it was a deletion operation, navigate back
-          if (state.shipments.isEmpty) {
-            Navigator.pop(context);
+    final shipmentService = Provider.of<ShipmentService>(context, listen: false);
+    
+    return BlocProvider(
+      create: (context) => ShipmentBloc(shipmentService)
+        ..add(LoadShipmentItems(widget.shipment.id!)),
+      child: BlocConsumer<ShipmentBloc, ShipmentState>(
+        listenWhen: (previous, current) => 
+          current.error != null && previous.error != current.error ||
+          current is OperationResult,
+        listener: (context, state) {
+          if (state.error != null) {
+            context.read<ShipmentBloc>().handleError(context, state.error!);
           }
-        }
-      },
-      builder: (context, state) {
-        final formattedDate = DateFormat('yyyy-MM-dd').format(widget.shipment.date);
-        final theme = Theme.of(context);
-        
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(
-              widget.shipment.name ?? 'Shipment Details',
-              style: const TextStyle(fontSize: 16),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.delete, size: 20),
-                onPressed: () => _deleteShipment(context),
+          
+          if (state is OperationResult && state.success) {
+            // If it was a deletion operation, navigate back
+            Navigator.pop(context);
+            
+            // Clear the operation state
+            context.read<ShipmentBloc>().add(const ClearOperationState());
+          }
+        },
+        builder: (context, state) {
+          final formattedDate = DateFormat('yyyy-MM-dd').format(widget.shipment.date);
+          final theme = Theme.of(context);
+          
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(
+                widget.shipment.name ?? 'Shipment Details',
+                style: const TextStyle(fontSize: 16),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
-          ),
-          body: state.isLoading && state.shipmentItems.isEmpty
-              ? const Center(child: CircularProgressIndicator())
-              : _buildContent(context, state, formattedDate, theme),
-        );
-      },
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.delete, size: 20),
+                  onPressed: () => _deleteShipment(context),
+                ),
+              ],
+            ),
+            body: state is ShipmentLoading && state is! ShipmentItemsLoaded
+                ? const Center(child: CircularProgressIndicator())
+                : _buildContent(context, state, formattedDate, theme),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildContent(BuildContext context, ShipmentState state, String formattedDate, ThemeData theme) {
-    final items = state.shipmentItems;
+    List<dynamic> items = [];
+    
+    if (state is ShipmentItemsLoaded) {
+      items = state.shipmentItems;
+    }
     
     return SingleChildScrollView(
       child: Padding(
@@ -133,59 +137,7 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
             const SizedBox(height: 12),
             
             // Items list
-            Card(
-              color: theme.colorScheme.surface,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.inventory_2, size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Items (${items.length})',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14),
-                            ),
-                          ],
-                        ),
-                        Tooltip(
-                          message: 'Tap the calendar icon to edit expiration dates',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.edit_calendar, size: 16),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Edit dates', 
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.colorScheme.primary
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    if (items.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text('No items in this shipment.'),
-                      )
-                    else
-                      ShipmentItemList(
-                        items: items,
-                        onExpirationDateChanged: _updateItemExpirationDate,
-                      ),
-                  ],
-                ),
-              ),
-            ),
+            _ShipmentItemsList(shipmentId: widget.shipment.id!, items: items),
           ],
         ),
       ),
@@ -216,15 +168,84 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
       );
     }
   }
+}
+
+class _ShipmentItemsList extends StatelessWidget {
+  final int shipmentId;
+  final List<dynamic> items;
   
-  void _updateItemExpirationDate(int shipmentItemId, DateTime? newExpirationDate) {
-    context.read<ShipmentBloc>().add(
-      UpdateShipmentItemExpiration(shipmentItemId, newExpirationDate)
-    );
+  const _ShipmentItemsList({
+    required this.shipmentId,
+    required this.items,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     
-    // After the update, reload the shipment items
-    Future.delayed(const Duration(milliseconds: 500), () {
-      context.read<ShipmentBloc>().add(LoadShipmentItems(widget.shipment.id!));
-    });
+    return Card(
+      color: theme.colorScheme.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.inventory_2, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Items (${items.length})',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14),
+                    ),
+                  ],
+                ),
+                Tooltip(
+                  message: 'Tap the calendar icon to edit expiration dates',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.edit_calendar, size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Edit dates', 
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.primary
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (items.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text('No items in this shipment.'),
+              )
+            else
+              ShipmentItemList(
+                items: items,
+                onExpirationDateChanged: (shipmentItemId, newExpirationDate) => _updateItemExpirationDate(context, shipmentItemId, newExpirationDate),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  void _updateItemExpirationDate(BuildContext context, int shipmentItemId, DateTime? newExpirationDate) {
+    // Use the combined update+refresh event
+    BlocProvider.of<ShipmentBloc>(context).add(
+      UpdateShipmentItemExpiration(
+        shipmentItemId: shipmentItemId,
+        expirationDate: newExpirationDate,
+        shipmentId: shipmentId,
+      )
+    );
   }
 }

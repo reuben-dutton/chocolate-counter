@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
-import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/common/widgets/full_item_image_widget.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
+import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 
@@ -36,12 +36,17 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     _nameController = TextEditingController(text: widget.itemDefinition.name);
     _barcodeController = TextEditingController(text: widget.itemDefinition.barcode ?? '');
     _existingImagePath = widget.itemDefinition.imageUrl;
-    _imageService = ServiceLocator.instance<ImageService>();
     
     // If there's an existing local image, initialize _imageFile
     if (_existingImagePath != null && !_existingImagePath!.startsWith('http')) {
       _imageFile = File(_existingImagePath!);
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _imageService = Provider.of<ImageService>(context, listen: false);
   }
 
   @override
@@ -101,12 +106,14 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final inventoryService = Provider.of<InventoryService>(context, listen: false);
+    
     return BlocProvider(
-      create: (context) => ServiceLocator.instance<InventoryBloc>(),
+      create: (context) => InventoryBloc(inventoryService),
       child: BlocConsumer<InventoryBloc, InventoryState>(
         listenWhen: (previous, current) => 
           current.error != null && previous.error != current.error ||
-          current.operationSuccess && !previous.operationSuccess,
+          current is OperationResult,
         listener: (context, state) {
           if (state.error != null) {
             ErrorHandler.showErrorSnackBar(context, state.error!.message, error: state.error!.error);
@@ -115,7 +122,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
             });
           }
           
-          if (state.operationSuccess) {
+          if (state is OperationResult && state.success) {
             // Item was updated successfully
             ErrorHandler.showSuccessSnackBar(context, 'Item updated');
             // Return the updated item definition to the calling screen

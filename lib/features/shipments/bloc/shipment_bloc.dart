@@ -14,6 +14,10 @@ abstract class ShipmentEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class InitializeShipmentsScreen extends ShipmentEvent {
+  const InitializeShipmentsScreen();
+}
+
 class LoadShipments extends ShipmentEvent {
   const LoadShipments();
 }
@@ -48,59 +52,112 @@ class DeleteShipment extends ShipmentEvent {
 class UpdateShipmentItemExpiration extends ShipmentEvent {
   final int shipmentItemId;
   final DateTime? expirationDate;
+  final int shipmentId;
   
-  const UpdateShipmentItemExpiration(this.shipmentItemId, this.expirationDate);
+  const UpdateShipmentItemExpiration({
+    required this.shipmentItemId, 
+    required this.expirationDate,
+    required this.shipmentId,
+  });
   
   @override
-  List<Object?> get props => [shipmentItemId, expirationDate];
+  List<Object?> get props => [shipmentItemId, expirationDate, shipmentId];
 }
 
-// Define state
-class ShipmentState extends Equatable {
-  final bool isLoading;
-  final List<Shipment> shipments;
-  final List<ShipmentItem> shipmentItems;
+class ClearOperationState extends ShipmentEvent {
+  const ClearOperationState();
+}
+
+// Split into more focused states
+abstract class ShipmentState extends Equatable {
   final AppError? error;
-  final bool operationSuccess;
+  
+  const ShipmentState({this.error});
+  
+  @override
+  List<Object?> get props => [error];
+}
 
-  const ShipmentState({
-    this.isLoading = false,
-    this.shipments = const [],
-    this.shipmentItems = const [],
-    this.error,
-    this.operationSuccess = false,
-  });
+class ShipmentInitial extends ShipmentState {
+  const ShipmentInitial();
+}
 
-  ShipmentState copyWith({
-    bool? isLoading,
+class ShipmentLoading extends ShipmentState {
+  const ShipmentLoading();
+}
+
+class ShipmentsLoaded extends ShipmentState {
+  final List<Shipment> shipments;
+  
+  const ShipmentsLoaded(this.shipments, {super.error});
+  
+  @override
+  List<Object?> get props => [shipments, error];
+  
+  ShipmentsLoaded copyWith({
     List<Shipment>? shipments,
-    List<ShipmentItem>? shipmentItems,
     AppError? error,
-    bool? operationSuccess,
   }) {
-    return ShipmentState(
-      isLoading: isLoading ?? this.isLoading,
-      shipments: shipments ?? this.shipments,
-      shipmentItems: shipmentItems ?? this.shipmentItems,
+    return ShipmentsLoaded(
+      shipments ?? this.shipments,
       error: error ?? this.error,
-      operationSuccess: operationSuccess ?? this.operationSuccess,
     );
   }
+}
 
+class ShipmentItemsLoaded extends ShipmentState {
+  final List<ShipmentItem> shipmentItems;
+  
+  const ShipmentItemsLoaded(this.shipmentItems, {super.error});
+  
   @override
-  List<Object?> get props => [isLoading, shipments, shipmentItems, error, operationSuccess];
+  List<Object?> get props => [shipmentItems, error];
+  
+  ShipmentItemsLoaded copyWith({
+    List<ShipmentItem>? shipmentItems,
+    AppError? error,
+  }) {
+    return ShipmentItemsLoaded(
+      shipmentItems ?? this.shipmentItems,
+      error: error ?? this.error,
+    );
+  }
+}
+
+class OperationResult extends ShipmentState {
+  final bool success;
+  
+  const OperationResult({
+    required this.success,
+    super.error,
+  });
+  
+  @override
+  List<Object?> get props => [success, error];
 }
 
 /// BLoC for shipment management
 class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
   final ShipmentService _shipmentService;
 
-  ShipmentBloc(this._shipmentService) : super(const ShipmentState()) {
+  ShipmentBloc(this._shipmentService) : super(const ShipmentInitial()) {
+    on<InitializeShipmentsScreen>(_onInitializeShipmentsScreen);
     on<LoadShipments>(_onLoadShipments);
     on<LoadShipmentItems>(_onLoadShipmentItems);
     on<CreateShipment>(_onCreateShipment);
     on<DeleteShipment>(_onDeleteShipment);
     on<UpdateShipmentItemExpiration>(_onUpdateShipmentItemExpiration);
+    on<ClearOperationState>(_onClearOperationState);
+  }
+
+  Future<void> _onInitializeShipmentsScreen(
+    InitializeShipmentsScreen event,
+    Emitter<ShipmentState> emit,
+  ) async {
+    // Only load if we're not already loading and don't have data
+    if (state is! ShipmentsLoaded && state is! ShipmentLoading) {
+      add(const LoadShipments());
+    }
   }
 
   Future<void> _onLoadShipments(
@@ -108,22 +165,35 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
     Emitter<ShipmentState> emit,
   ) async {
     try {
-      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
+      emit(const ShipmentLoading());
       
       final shipmentList = await _shipmentService.getAllShipments();
       
-      emit(state.copyWith(isLoading: false, shipments: shipmentList));
+      emit(ShipmentsLoaded(shipmentList));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error loading shipments', e, stackTrace, 'ShipmentBloc');
-      emit(state.copyWith(
-        isLoading: false,
-        error: AppError(
-          message: 'Failed to load shipments',
-          error: e,
-          stackTrace: stackTrace,
-          source: 'ShipmentBloc'
-        ),
-      ));
+      
+      // If we already had shipments loaded, keep them but add the error
+      if (state is ShipmentsLoaded) {
+        emit((state as ShipmentsLoaded).copyWith(
+          error: AppError(
+            message: 'Failed to load shipments',
+            error: e,
+            stackTrace: stackTrace,
+            source: 'ShipmentBloc'
+          ),
+        ));
+      } else {
+        emit(ShipmentsLoaded(
+          const [],
+          error: AppError(
+            message: 'Failed to load shipments',
+            error: e,
+            stackTrace: stackTrace,
+            source: 'ShipmentBloc'
+          ),
+        ));
+      }
     }
   }
 
@@ -132,22 +202,35 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
     Emitter<ShipmentState> emit,
   ) async {
     try {
-      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
+      emit(const ShipmentLoading());
       
       final items = await _shipmentService.getShipmentItems(event.shipmentId);
       
-      emit(state.copyWith(isLoading: false, shipmentItems: items));
+      emit(ShipmentItemsLoaded(items));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error loading shipment items', e, stackTrace, 'ShipmentBloc');
-      emit(state.copyWith(
-        isLoading: false,
-        error: AppError(
-          message: 'Failed to load shipment items',
-          error: e,
-          stackTrace: stackTrace,
-          source: 'ShipmentBloc'
-        ),
-      ));
+      
+      // If we already had items loaded, keep them but add the error
+      if (state is ShipmentItemsLoaded) {
+        emit((state as ShipmentItemsLoaded).copyWith(
+          error: AppError(
+            message: 'Failed to load shipment items',
+            error: e,
+            stackTrace: stackTrace,
+            source: 'ShipmentBloc'
+          ),
+        ));
+      } else {
+        emit(ShipmentItemsLoaded(
+          const [],
+          error: AppError(
+            message: 'Failed to load shipment items',
+            error: e,
+            stackTrace: stackTrace,
+            source: 'ShipmentBloc'
+          ),
+        ));
+      }
     }
   }
 
@@ -156,24 +239,22 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
     Emitter<ShipmentState> emit,
   ) async {
     try {
-      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
+      emit(const ShipmentLoading());
       
       await _shipmentService.createShipment(event.shipment);
       
-      emit(state.copyWith(isLoading: false, operationSuccess: true));
-      // Refresh the shipments list
+      emit(const OperationResult(success: true));
       add(const LoadShipments());
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error creating shipment', e, stackTrace, 'ShipmentBloc');
-      emit(state.copyWith(
-        isLoading: false,
+      emit(OperationResult(
+        success: false,
         error: AppError(
           message: 'Failed to create shipment',
           error: e,
           stackTrace: stackTrace,
           source: 'ShipmentBloc'
         ),
-        operationSuccess: false,
       ));
     }
   }
@@ -183,24 +264,22 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
     Emitter<ShipmentState> emit,
   ) async {
     try {
-      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
+      emit(const ShipmentLoading());
       
       await _shipmentService.deleteShipment(event.id);
       
-      emit(state.copyWith(isLoading: false, operationSuccess: true));
-      // Refresh the shipments list
+      emit(const OperationResult(success: true));
       add(const LoadShipments());
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error deleting shipment', e, stackTrace, 'ShipmentBloc');
-      emit(state.copyWith(
-        isLoading: false,
+      emit(OperationResult(
+        success: false,
         error: AppError(
           message: 'Failed to delete shipment',
           error: e,
           stackTrace: stackTrace,
           source: 'ShipmentBloc'
         ),
-        operationSuccess: false,
       ));
     }
   }
@@ -210,30 +289,40 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
     Emitter<ShipmentState> emit,
   ) async {
     try {
-      emit(state.copyWith(isLoading: true, error: null, operationSuccess: false));
+      emit(const ShipmentLoading());
       
       await _shipmentService.updateShipmentItemExpiration(
         event.shipmentItemId, 
         event.expirationDate
       );
       
-      emit(state.copyWith(isLoading: false, operationSuccess: true));
+      // Instead of waiting for a delayed refresh, load the items directly
+      final items = await _shipmentService.getShipmentItems(event.shipmentId);
       
-      // We need to reload the shipment items for the affected shipment
-      // We can't do that here because we don't know the shipment ID
-      // The UI needs to handle this by dispatching a LoadShipmentItems event
+      emit(OperationResult(success: true));
+      emit(ShipmentItemsLoaded(items));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error updating shipment item expiration', e, stackTrace, 'ShipmentBloc');
-      emit(state.copyWith(
-        isLoading: false,
+      emit(OperationResult(
+        success: false,
         error: AppError(
           message: 'Failed to update expiration date',
           error: e,
           stackTrace: stackTrace,
           source: 'ShipmentBloc'
         ),
-        operationSuccess: false,
       ));
+    }
+  }
+
+  void _onClearOperationState(
+    ClearOperationState event,
+    Emitter<ShipmentState> emit,
+  ) {
+    // If we're in OperationResult state, go back to initial state
+    // to avoid sticky operation result
+    if (state is OperationResult) {
+      emit(const ShipmentInitial());
     }
   }
 

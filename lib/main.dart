@@ -4,6 +4,9 @@ import 'package:food_inventory/app.dart';
 import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/utils/bloc_observer.dart';
 
+// Global navigator key for context access
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,5 +18,10 @@ void main() async {
   Bloc.observer = AppBlocObserver();
   
   // Run the app
-  runApp(const FoodInventoryApp());
+  runApp(
+    MaterialApp(
+      home: const FoodInventoryApp(),
+      navigatorKey: navigatorKey,
+    ),
+  );
 }

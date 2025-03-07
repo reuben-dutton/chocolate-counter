@@ -11,6 +11,7 @@ import 'package:food_inventory/data/models/item_instance.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/screens/item_edit_screen.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
+import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/inventory/widgets/inventory_movement_list.dart';
 import 'package:food_inventory/features/inventory/widgets/inventory_to_stock_dialog.dart';
 import 'package:food_inventory/features/inventory/widgets/item_expiration_list.dart';
@@ -35,143 +36,150 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   void initState() {
     super.initState();
     _currentItemDefinition = widget.itemDefinition;
-    
-    // Load item details when screen initializes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<InventoryBloc>().add(LoadItemDetail(_currentItemDefinition.id!));
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     final dialogService = Provider.of<DialogService>(context);
     final imageService = Provider.of<ImageService>(context);
+    final inventoryService = Provider.of<InventoryService>(context, listen: false);
     final theme = Theme.of(context);
     
-    return BlocConsumer<InventoryBloc, InventoryState>(
-      listenWhen: (previous, current) => 
-        current.error != null && previous.error != current.error ||
-        current.operationSuccess && !previous.operationSuccess,
-      listener: (context, state) {
-        if (state.error != null) {
-          context.read<InventoryBloc>().handleError(context, state.error!);
-        }
-        if (state.operationSuccess) {
-          // Reset the success flag after handling
-          // Note: This is not ideal and would be better handled in the BLoC
-          // But we keep the same behavior as the original implementation
-        }
-      },
-      builder: (context, state) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text(
-              'Item Details',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    return BlocProvider(
+      create: (context) => InventoryBloc(inventoryService)
+        ..add(LoadItemDetail(_currentItemDefinition.id!)),
+      child: BlocConsumer<InventoryBloc, InventoryState>(
+        listenWhen: (previous, current) => 
+          current.error != null && previous.error != current.error ||
+          current is OperationResult,
+        listener: (context, state) {
+          if (state.error != null) {
+            context.read<InventoryBloc>().handleError(context, state.error!);
+          }
+          
+          if (state is OperationResult) {
+            if (state.success) {
+              // If successful operation, clear the operation state
+              context.read<InventoryBloc>().add(const ClearOperationState());
+            }
+          }
+        },
+        builder: (context, state) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text(
+                'Item Details',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.edit, size: 22),
+                  onPressed: () => _editItem(context),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, size: 22),
+                  onPressed: () => _deleteItem(context, dialogService),
+                ),
+              ],
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.edit, size: 22),
-                onPressed: () => _editItem(context),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete, size: 22),
-                onPressed: () => _deleteItem(context, dialogService),
-              ),
-            ],
-          ),
-          body: RefreshIndicator(
-            onRefresh: () async {
-              context.read<InventoryBloc>().add(LoadItemDetail(_currentItemDefinition.id!));
-            },
-            child: _buildContent(context, state, theme, imageService, dialogService),
-          ),
-        );
-      },
+            body: RefreshIndicator(
+              onRefresh: () async {
+                context.read<InventoryBloc>().add(LoadItemDetail(_currentItemDefinition.id!));
+              },
+              child: _buildContent(context, state, theme, imageService, dialogService),
+            ),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildContent(BuildContext context, InventoryState state, ThemeData theme, 
                        ImageService imageService, DialogService dialogService) {
-    if (state.isLoading && state.itemDetail == null) {
+    if (state is InventoryLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     
-    final itemData = state.itemDetail;
-    
-    if (itemData == null) {
-      return const Center(child: Text('Failed to load item details'));
+    if (state is ItemDetailLoaded) {
+      final itemData = state.itemDetail;
+      
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Item image at the top
+            FullItemImageWidget(
+              imagePath: _currentItemDefinition.imageUrl,
+              itemName: _currentItemDefinition.name,
+              imageService: imageService,
+            ),
+            
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Item name 
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Text(
+                      _currentItemDefinition.name,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  
+                  // Barcode (if available)
+                  if (_currentItemDefinition.barcode != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.qr_code, size: 18, color: theme.colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text(
+                            _currentItemDefinition.barcode!,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface.withAlpha(175),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  
+                  // Item counts
+                  _buildCounts(theme, itemData.counts),
+                  
+                  const SizedBox(height: 16),
+
+                  // Actions
+                  _ItemActions(
+                    itemDefinitionId: _currentItemDefinition.id!,
+                    stockCount: itemData.counts['stock'] ?? 0,
+                    inventoryCount: itemData.counts['inventory'] ?? 0,
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Expiration dates
+                  _buildExpirationDates(theme, itemData.instances),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Movement history
+                  _buildMovementHistory(theme, itemData.movements),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
     }
     
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Item image at the top
-          FullItemImageWidget(
-            imagePath: _currentItemDefinition.imageUrl,
-            itemName: _currentItemDefinition.name,
-            imageService: imageService,
-          ),
-          
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Item name 
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Text(
-                    _currentItemDefinition.name,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                
-                // Barcode (if available)
-                if (_currentItemDefinition.barcode != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Row(
-                      children: [
-                        Icon(Icons.qr_code, size: 18, color: theme.colorScheme.primary),
-                        const SizedBox(width: 8),
-                        Text(
-                          _currentItemDefinition.barcode!,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface.withAlpha(175),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                
-                // Item counts
-                _buildCounts(theme, itemData.counts),
-                
-                const SizedBox(height: 16),
-
-                // Actions
-                _buildActions(context, theme, itemData.counts, dialogService),
-                
-                const SizedBox(height: 24),
-                
-                // Expiration dates
-                _buildExpirationDates(theme, itemData.instances),
-                
-                const SizedBox(height: 24),
-                
-                // Movement history
-                _buildMovementHistory(theme, itemData.movements),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    // Fallback if no data loaded yet
+    return const Center(child: Text('Failed to load item details'));
   }
 
   Widget _buildCounts(ThemeData theme, Map<String, int> counts) {
@@ -199,46 +207,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               label: 'Inventory',
               count: inventoryCount,
               color: theme.colorScheme.secondary,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActions(BuildContext context, ThemeData theme, Map<String, int> counts, DialogService dialogService) {
-    final stockCount = counts['stock'] ?? 0;
-    final inventoryCount = counts['inventory'] ?? 0;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                icon: Icon(Icons.remove_shopping_cart, size: 18, color: theme.colorScheme.onSecondary),
-                label: const Text('Record Sale'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.secondary,
-                  foregroundColor: theme.colorScheme.onSecondary,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                onPressed: stockCount > 0 ? () => _updateStock(context, stockCount, dialogService) : null,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton.icon(
-                icon: Icon(Icons.move_up, size: 18, color: theme.colorScheme.onTertiary),
-                label: const Text('Move to Stock'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.tertiary,
-                  foregroundColor: theme.colorScheme.onTertiary,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                onPressed: inventoryCount > 0 ? () => _moveToStock(context, inventoryCount) : null,
-              ),
             ),
           ],
         ),
@@ -361,7 +329,61 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       ErrorHandler.showErrorSnackBar(context, 'Failed to delete item', error: e);
     }
   }
+}
 
+/// Extracted widget for item actions to prevent parent rebuilds
+class _ItemActions extends StatelessWidget {
+  final int itemDefinitionId;
+  final int stockCount;
+  final int inventoryCount;
+  
+  const _ItemActions({
+    required this.itemDefinitionId,
+    required this.stockCount,
+    required this.inventoryCount,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dialogService = Provider.of<DialogService>(context);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                icon: Icon(Icons.remove_shopping_cart, size: 18, color: theme.colorScheme.onSecondary),
+                label: const Text('Record Sale'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.secondary,
+                  foregroundColor: theme.colorScheme.onSecondary,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: stockCount > 0 ? () => _updateStock(context, stockCount, dialogService) : null,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                icon: Icon(Icons.move_up, size: 18, color: theme.colorScheme.onTertiary),
+                label: const Text('Move to Stock'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.tertiary,
+                  foregroundColor: theme.colorScheme.onTertiary,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: inventoryCount > 0 ? () => _moveToStock(context, inventoryCount) : null,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+  
   void _updateStock(BuildContext context, int currentStock, DialogService dialogService) async {
     try {
       final result = await dialogService.showQuantityDialog(
@@ -374,7 +396,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
       if (result != null) {
         context.read<InventoryBloc>().add(RecordStockSale(
-          _currentItemDefinition.id!,
+          itemDefinitionId,
           result,
         ));
       }
@@ -394,7 +416,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
       if (result != null) {
         context.read<InventoryBloc>().add(MoveInventoryToStock(
-          _currentItemDefinition.id!,
+          itemDefinitionId,
           result,
         ));
       }

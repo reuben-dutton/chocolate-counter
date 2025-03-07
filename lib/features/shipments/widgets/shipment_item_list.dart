@@ -7,7 +7,7 @@ import 'package:food_inventory/features/shipments/widgets/expiration_edit_dialog
 import 'package:provider/provider.dart';
 
 class ShipmentItemList extends StatelessWidget {
-  final List<ShipmentItem> items;
+  final List<dynamic> items;
   final Function(int, DateTime?)? onExpirationDateChanged;
 
   const ShipmentItemList({
@@ -25,7 +25,7 @@ class ShipmentItemList extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: items.length,
       itemBuilder: (context, index) {
-        final item = items[index];
+        final item = items[index] as ShipmentItem;
         return ListTile(
           dense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
