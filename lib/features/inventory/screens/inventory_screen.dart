@@ -6,6 +6,7 @@ import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/screens/item_detail_screen.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/inventory/widgets/inventory_list_item.dart';
+import 'package:food_inventory/features/settings/screens/settings_screen.dart';
 import 'package:provider/provider.dart';
 
 class InventoryScreen extends StatefulWidget {
@@ -50,6 +51,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
         child: Scaffold(
           appBar: AppBar(
             title: const Text('Stock & Inventory'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings, size: 24),
+                onPressed: () => _openSettings(context),
+              ),
+            ],
           ),
           body: Column(
             children: [
@@ -87,6 +94,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  void _openSettings(BuildContext context) {
+    NavigationUtils.navigateWithSlide(
+      context,
+      const SettingsScreen(),
     );
   }
 }

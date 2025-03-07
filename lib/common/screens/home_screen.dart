@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/features/inventory/screens/inventory_screen.dart';
 import 'package:food_inventory/features/shipments/screens/shipments_screen.dart';
 import 'package:food_inventory/features/settings/screens/settings_screen.dart';
+import 'package:food_inventory/common/utils/navigation_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,7 +19,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget Function(BuildContext)> _screenBuilders = [
     (context) => const InventoryScreen(),
     (context) => const ShipmentsScreen(),
-    (context) => const SettingsScreen(),
   ];
 
   @override
@@ -49,6 +49,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _openSettings() {
+    NavigationUtils.navigateWithSlide(
+      context,
+      const SettingsScreen(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -60,7 +67,6 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _screenBuilders[0](context),
           _screenBuilders[1](context),
-          _screenBuilders[2](context),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -79,11 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.local_shipping_outlined, color: theme.colorScheme.onSurface.withAlpha(175)),
             selectedIcon: Icon(Icons.local_shipping, color: theme.colorScheme.primary),
             label: 'Shipments',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined, color: theme.colorScheme.onSurface.withAlpha(175)),
-            selectedIcon: Icon(Icons.settings, color: theme.colorScheme.primary),
-            label: 'Settings',
           ),
         ],
       ),

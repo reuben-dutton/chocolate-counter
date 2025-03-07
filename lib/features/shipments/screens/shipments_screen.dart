@@ -9,6 +9,7 @@ import 'package:food_inventory/features/shipments/screens/add_shipment_screen.da
 import 'package:food_inventory/features/shipments/screens/shipment_detail_screen.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:food_inventory/features/shipments/widgets/shipment_list_item.dart';
+import 'package:food_inventory/features/settings/screens/settings_screen.dart';
 import 'package:provider/provider.dart';
 
 class ShipmentsScreen extends StatelessWidget {
@@ -31,11 +32,24 @@ class ShipmentsScreen extends StatelessWidget {
         child: Scaffold(
           appBar: AppBar(
             title: const Text('Shipments'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings, size: 24),
+                onPressed: () => _openSettings(context),
+              ),
+            ],
           ),
           body: _ShipmentsList(),
           floatingActionButton: _ShipmentsActionButtons(),
         ),
       ),
+    );
+  }
+  
+  void _openSettings(BuildContext context) {
+    NavigationUtils.navigateWithSlide(
+      context,
+      const SettingsScreen(),
     );
   }
 }
