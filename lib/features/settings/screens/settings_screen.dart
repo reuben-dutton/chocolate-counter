@@ -11,7 +11,9 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<PreferencesBloc, PreferencesState>(
-      buildWhen: (previous, current) => previous.themeMode != current.themeMode,
+      buildWhen: (previous, current) => 
+        previous.themeMode != current.themeMode || 
+        previous.hardwareAcceleration != current.hardwareAcceleration,
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(
@@ -47,6 +49,26 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              const Divider(),
+              
+              // Hardware Acceleration Toggle
+              SwitchListTile(
+                title: const Text('Hardware Acceleration'),
+                subtitle: const Text('Use GPU for rendering (disabling may help on some devices, but is undefined behaviour)'),
+                secondary: const Icon(Icons.speed, size: 20),
+                value: state.hardwareAcceleration,
+                onChanged: (bool value) {
+                  context.read<PreferencesBloc>().add(SetHardwareAcceleration(value));
+                  
+                  // Show a snackbar informing the user that restart is required
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Restart the app for this change to take effect'),
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                },
               ),
               const Divider(),
               

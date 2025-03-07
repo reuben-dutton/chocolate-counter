@@ -21,12 +21,17 @@ class FoodInventoryApp extends StatelessWidget {
     final dialogService = ServiceLocator.instance<DialogService>();
     final inventoryService = ServiceLocator.instance<InventoryService>();
     final shipmentService = ServiceLocator.instance<ShipmentService>();
+    final preferencesService = ServiceLocator.instance<PreferencesService>();
     
     // Theme
     final theme = MaterialTheme(Theme.of(context).textTheme);
     
     return MultiProvider(
       providers: [
+
+        ChangeNotifierProvider<PreferencesService>.value(
+          value: preferencesService,
+        ),
         // Services
         Provider<ImageService>.value(value: imageService),
         Provider<DialogService>.value(value: dialogService),
@@ -35,11 +40,13 @@ class FoodInventoryApp extends StatelessWidget {
 
         // Only keep the PreferencesBloc at app-level since it affects the entire app theme
         BlocProvider<PreferencesBloc>(
-          create: (context) => PreferencesBloc(ServiceLocator.instance<PreferencesService>()),
+          create: (context) => PreferencesBloc(preferencesService),
         ),
       ],
       child: BlocBuilder<PreferencesBloc, PreferencesState>(
-        buildWhen: (previous, current) => previous.themeMode != current.themeMode,
+        buildWhen: (previous, current) => 
+          previous.themeMode != current.themeMode || 
+          previous.hardwareAcceleration != current.hardwareAcceleration,
         builder: (context, state) {
           final themeMode = state.themeMode;
           
@@ -49,6 +56,19 @@ class FoodInventoryApp extends StatelessWidget {
             darkTheme: theme.dark(),
             themeMode: themeMode,
             home: const HomeScreen(),
+            // Set the disableHardwareAcceleration flag based on preferences
+            builder: (context, child) {
+              if (child == null) return const SizedBox.shrink();
+              
+              // Apply hardware acceleration setting
+              return MediaQuery(
+                // This is where we would disable hardware acceleration if Flutter supported it
+                // For now, we'll just pass through the data since Flutter doesn't have a direct way 
+                // to toggle hardware acceleration at runtime
+                data: MediaQuery.of(context),
+                child: child,
+              );
+            },
           );
         },
       ),
