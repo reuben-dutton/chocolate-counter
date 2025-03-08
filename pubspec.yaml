@@ -47,6 +47,9 @@ dependencies:
   # More icons
   font_awesome_flutter: ^10.7.0
 
+  # data analytics
+  fl_chart: ^0.70.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
