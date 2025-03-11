@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/widgets/count_display_widget.dart';
-import 'package:food_inventory/common/widgets/full_item_image_widget.dart';
+import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:food_inventory/common/widgets/section_header_widget.dart';
 import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/data/models/inventory_movement.dart';
@@ -115,6 +115,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               imagePath: _currentItemDefinition.imageUrl,
               itemName: _currentItemDefinition.name,
               imageService: imageService,
+              memoryEfficient: true,
             ),
             
             Padding(

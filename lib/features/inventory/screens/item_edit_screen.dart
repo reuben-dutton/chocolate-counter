@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
-import 'package:food_inventory/common/widgets/full_item_image_widget.dart';
+import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
@@ -244,6 +244,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
         itemName: widget.itemDefinition.name,
         imageService: _imageService,
         height: 200,
+        memoryEfficient: true,
       );
     } else {
       // No image

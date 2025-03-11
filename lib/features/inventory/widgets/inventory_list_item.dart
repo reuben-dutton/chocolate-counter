@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/common/widgets/count_chip_widget.dart';
-import 'package:food_inventory/common/widgets/item_image_widget.dart';
+import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:provider/provider.dart';
 
 class InventoryListItem extends StatelessWidget {
@@ -45,6 +45,7 @@ class InventoryListItem extends StatelessWidget {
                   itemName: itemDefinition.name,
                   radius: 24,
                   imageService: imageService,
+                  memoryEfficient: true,
                 ),
                 const SizedBox(width: 12),
                 Expanded(

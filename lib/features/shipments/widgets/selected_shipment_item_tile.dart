@@ -3,7 +3,7 @@ import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/shipments/widgets/edit_item_dialog.dart';
-import 'package:food_inventory/common/widgets/item_image_widget.dart';
+import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:food_inventory/common/widgets/expiration_date_widget.dart';
 import 'package:provider/provider.dart';
 
@@ -36,6 +36,7 @@ class SelectedShipmentItemTile extends StatelessWidget {
           itemName: item.itemDefinition?.name ?? 'Unknown Item',
           radius: 16,
           imageService: imageService,
+          memoryEfficient: true,
         ),
         title: Text(
           item.itemDefinition?.name ?? 'Unknown Item',

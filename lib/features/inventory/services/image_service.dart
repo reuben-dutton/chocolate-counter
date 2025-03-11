@@ -1,43 +1,50 @@
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/utils/item_visualization.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-import 'dart:math' as math;
 
 // Parameters for resizing operation in isolate
 class ResizeParams {
-  final String filePath;
+  final Uint8List imageData;
   final int targetSize;
-  final String outputPath;
 
-  ResizeParams(this.filePath, this.targetSize, this.outputPath);
+  ResizeParams(this.imageData, this.targetSize);
+}
+
+// Result from isolate computation
+class ResizeResult {
+  final Uint8List resizedImageData;
+  final String error;
+
+  ResizeResult(this.resizedImageData, [this.error = '']);
 }
 
 /// Service for handling image operations in the application
 class ImageService {
   final ImagePicker _picker = ImagePicker();
   
-  // LRU Cache implementation
-  final int _maxCacheSize = 100; // Maximum number of images to cache
-  final Map<String, ImageProvider> _imageCache = {};
-  final List<String> _cacheOrder = []; // Tracks access order for LRU policy
+  // Cache manager for handling image caching with proper size limitations
+  final DefaultCacheManager _cacheManager = DefaultCacheManager();
   
   // Image resizing constants
   final int _thumbnailSize = 128; // Size for list thumbnails
   
-  // Track pending operations to avoid duplicates
-  final Map<String, Future<File>> _pendingOperations = {};
+  // Track pending operations to avoid duplicates and enable cancellation
+  final Map<String, Completer<File>> _pendingOperations = {};
   
   // Directory for storing thumbnail cache
   Directory? _thumbnailCacheDir;
   
   // Initialize thumbnail cache directory
-  Future<void> _initThumbnailCache() async {
-    if (_thumbnailCacheDir != null) return;
+  Future<Directory> _getThumbnailCacheDir() async {
+    if (_thumbnailCacheDir != null) return _thumbnailCacheDir!;
     
     try {
       final appDir = await getApplicationDocumentsDirectory();
@@ -46,16 +53,25 @@ class ImageService {
         await cacheDir.create(recursive: true);
       }
       _thumbnailCacheDir = cacheDir;
+      return cacheDir;
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error initializing thumbnail cache', e, stackTrace, 'ImageService');
-      // Don't rethrow, try to continue without cache
+      // Fallback to app documents directory
+      final appDir = await getApplicationDocumentsDirectory();
+      _thumbnailCacheDir = appDir;
+      return appDir;
     }
   }
   
   /// Take a photo using the device camera
   Future<File?> takePhoto() async {
     try {
-      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.camera);
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1200,  // Limit max resolution to prevent excessive memory usage
+        maxHeight: 1200,
+        imageQuality: 85, // Good quality but still compressed
+      );
       if (pickedFile != null) {
         return File(pickedFile.path);
       }
@@ -69,7 +85,12 @@ class ImageService {
   /// Select a photo from the device gallery
   Future<File?> pickPhoto() async {
     try {
-      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1200,  // Limit max resolution to prevent excessive memory usage
+        maxHeight: 1200,
+        imageQuality: 85, // Good quality but still compressed
+      );
       if (pickedFile != null) {
         return File(pickedFile.path);
       }
@@ -105,11 +126,8 @@ class ImageService {
       if (await file.exists()) {
         await file.delete();
         
-        // Also remove from cache if present
-        if (_imageCache.containsKey(imagePath)) {
-          _imageCache.remove(imagePath);
-          _cacheOrder.remove(imagePath);
-        }
+        // Also clear from cache
+        await _cacheManager.removeFile(imagePath);
         
         // Also remove thumbnail if it exists
         await _deleteThumbnail(imagePath);
@@ -127,159 +145,132 @@ class ImageService {
   /// Delete thumbnail associated with an image path
   Future<void> _deleteThumbnail(String imagePath) async {
     try {
-      await _initThumbnailCache();
+      final cacheDir = await _getThumbnailCacheDir();
       final thumbFileName = 'thumbnail_${path.basename(imagePath)}';
-      final thumbFile = File('${_thumbnailCacheDir!.path}/$thumbFileName');
+      final thumbFile = File('${cacheDir.path}/$thumbFileName');
       
       if (await thumbFile.exists()) {
         await thumbFile.delete();
-        
-        // Remove from cache
-        final thumbCacheKey = '${imagePath}_thumb';
-        _imageCache.remove(thumbCacheKey);
-        _cacheOrder.remove(thumbCacheKey);
       }
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error deleting thumbnail', e, stackTrace, 'ImageService');
     }
   }
 
-  /// Add an image to the cache with LRU eviction policy
-  void _addToCache(String key, ImageProvider imageProvider) {
-    // First check if we need to evict
-    if (_cacheOrder.length >= _maxCacheSize && !_imageCache.containsKey(key)) {
-      // Remove least recently used item
-      final lruKey = _cacheOrder.removeAt(0);
-      _imageCache.remove(lruKey);
-    }
-    
-    // Update cache
-    _imageCache[key] = imageProvider;
-    
-    // Update access order (remove if exists, then add to end)
-    _cacheOrder.remove(key);
-    _cacheOrder.add(key);
-  }
-  
-  /// Get image from cache, updating its position in LRU order
-  /// Validates the cache entry against file modification time
-  ImageProvider? _getFromCache(String key) {
-    final imageProvider = _imageCache[key];
-    
-    // For file-based images, check if source file has been modified
-    if (imageProvider != null && imageProvider is FileImage) {
-      try {
-        final file = File(imageProvider.file.path);
-        if (file.existsSync()) {
-          // Extract timestamp from key if it exists
-          final keyParts = key.split('_ts_');
-          if (keyParts.length > 1) {
-            final cachedTimestamp = int.tryParse(keyParts[1]);
-            if (cachedTimestamp != null) {
-              final currentTimestamp = file.lastModifiedSync().millisecondsSinceEpoch;
-              // If file was modified after cache entry was created, invalidate cache
-              if (currentTimestamp > cachedTimestamp) {
-                _imageCache.remove(key);
-                _cacheOrder.remove(key);
-                return null;
-              }
-            }
-          }
-        }
-      } catch (e, stackTrace) {
-        ErrorHandler.logError('Error validating cache entry', e, stackTrace, 'ImageService');
+  /// Static isolate function for image resizing
+  static Future<ResizeResult> _resizeImageInIsolate(ResizeParams params) async {
+    try {
+      final codec = await ui.instantiateImageCodec(
+        params.imageData, 
+        targetWidth: params.targetSize,
+        targetHeight: params.targetSize,
+      );
+      
+      final frameInfo = await codec.getNextFrame();
+      final data = await frameInfo.image.toByteData(format: ui.ImageByteFormat.png);
+      
+      // Properly dispose of image after use
+      frameInfo.image.dispose();
+      
+      if (data != null) {
+        return ResizeResult(data.buffer.asUint8List());
       }
+      
+      return ResizeResult(Uint8List(0), 'Failed to encode image');
+    } catch (e) {
+      return ResizeResult(Uint8List(0), e.toString());
     }
-    
-    if (imageProvider != null) {
-      // Update access order by moving to the end
-      _cacheOrder.remove(key);
-      _cacheOrder.add(key);
-    }
-    return imageProvider;
   }
   
-  /// Resize a file image for optimal memory usage in lists
+  /// Resize a file image using compute (lightweight isolate) for optimal memory usage
   Future<File> _resizeImageFile(File file, int targetSize) async {
-    await _initThumbnailCache();
+    final cacheDir = await _getThumbnailCacheDir();
     final fileName = path.basename(file.path);
     final thumbnailFileName = 'thumbnail_$fileName';
-    final thumbnailPath = '${_thumbnailCacheDir!.path}/$thumbnailFileName';
+    final thumbnailPath = '${cacheDir.path}/$thumbnailFileName';
     
-    // Check if thumbnail already exists
+    // Check if thumbnail already exists and is valid
     final thumbnailFile = File(thumbnailPath);
     if (await thumbnailFile.exists()) {
-      return thumbnailFile;
+      try {
+        final thumbnailStat = await thumbnailFile.stat();
+        final originalStat = await file.stat();
+        
+        // Use thumbnail if it exists and original hasn't been modified since
+        if (thumbnailStat.modified.isAfter(originalStat.modified)) {
+          return thumbnailFile;
+        }
+      } catch (e) {
+        // If stat fails, continue with resize operation
+      }
     }
     
     // Check if there's a pending operation for this file
     final cacheKey = '${file.path}_resize';
     if (_pendingOperations.containsKey(cacheKey)) {
-      return _pendingOperations[cacheKey]!;
+      return _pendingOperations[cacheKey]!.future;
     }
     
-    // Skip the isolate approach since it's causing issues
-    // Just do the resizing directly on the main thread
-    final resizeOperation = Future<File>(() async {
-      try {
-        final bytes = await file.readAsBytes();
-        
-        final codec = await ui.instantiateImageCodec(
-          bytes, 
-          targetWidth: targetSize,
-          targetHeight: targetSize,
-        );
-        
-        final frameInfo = await codec.getNextFrame();
-        final data = await frameInfo.image.toByteData(format: ui.ImageByteFormat.png);
-        
-        // Properly dispose of image after use
-        frameInfo.image.dispose();
-        
-        if (data != null) {
-          // Create resized file
-          final thumbnailFile = File(thumbnailPath);
-          await thumbnailFile.writeAsBytes(data.buffer.asUint8List());
-          return thumbnailFile;
-        }
-        
-        return file; // Return original on error
-      } catch (e, stackTrace) {
-        ErrorHandler.logError('Error resizing image', e, stackTrace, 'ImageService');
-        return file; // Return original on error
-      } finally {
-        // Remove from pending operations in all cases
-        _pendingOperations.remove(cacheKey);
+    // Create a completer to track this operation
+    final completer = Completer<File>();
+    _pendingOperations[cacheKey] = completer;
+    
+    try {
+      // Read the file as bytes
+      final bytes = await file.readAsBytes();
+      
+      // Use compute for isolate-based processing
+      final result = await compute(_resizeImageInIsolate, ResizeParams(bytes, targetSize));
+      
+      if (result.error.isNotEmpty) {
+        throw Exception(result.error);
       }
-    });
-    
-    // Register pending operation
-    _pendingOperations[cacheKey] = resizeOperation;
-    
-    return resizeOperation;
+      
+      if (result.resizedImageData.isEmpty) {
+        throw Exception('Resize operation produced empty data');
+      }
+      
+      // Create resized file
+      await thumbnailFile.writeAsBytes(result.resizedImageData);
+      completer.complete(thumbnailFile);
+      return thumbnailFile;
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error resizing image', e, stackTrace, 'ImageService');
+      // Return original on error, but still mark the operation as complete
+      completer.complete(file);
+      return file;
+    } finally {
+      // Remove from pending operations in all cases
+      _pendingOperations.remove(cacheKey);
+    }
   }
   
   /// Clean up old thumbnails that are no longer needed
   Future<void> cleanupThumbnailCache() async {
     try {
-      await _initThumbnailCache();
-      final files = await _thumbnailCacheDir!.list().toList();
+      final cacheDir = await _getThumbnailCacheDir();
       
-      // Keep only most recent files (up to max cache size)
-      if (files.length > _maxCacheSize * 2) { // Use a multiplier for buffer
-        // Sort by modification time
-        files.sort((a, b) {
-          if (a is! File || b is! File) return 0;
-          return b.lastModifiedSync().compareTo(a.lastModifiedSync());
-        });
+      // Run this on a background isolate using compute
+      await compute<String, void>((dirPath) async {
+        final directory = Directory(dirPath);
+        final files = await directory.list().toList();
         
-        // Delete old files
-        for (int i = _maxCacheSize * 2; i < files.length; i++) {
-          if (files[i] is File) {
-            await (files[i] as File).delete();
+        // Keep only 100 most recent files
+        if (files.length > 100) {
+          // Sort by modification time
+          files.sort((a, b) {
+            if (a is! File || b is! File) return 0;
+            return b.lastModifiedSync().compareTo(a.lastModifiedSync());
+          });
+          
+          // Delete old files
+          for (int i = 100; i < files.length; i++) {
+            if (files[i] is File) {
+              await (files[i] as File).delete();
+            }
           }
         }
-      }
+      }, cacheDir.path);
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error cleaning up thumbnail cache', e, stackTrace, 'ImageService');
     }
@@ -299,71 +290,76 @@ class ImageService {
     }
     
     try {
-      // For local file paths, get timestamp for cache validation
-      int? fileTimestamp;
-      if (!imagePath.startsWith('http')) {
-        try {
-          final file = File(imagePath);
-          if (file.existsSync()) {
-            fileTimestamp = file.lastModifiedSync().millisecondsSinceEpoch;
-          }
-        } catch (e, stackTrace) {
-          ErrorHandler.logError('Error getting file timestamp', e, stackTrace, 'ImageService');
-        }
-      }
-      
-      // For thumbnail version, use a unique cache key with timestamp
-      final String cacheKey = fileTimestamp != null 
-          ? '${imagePath}_thumb_ts_$fileTimestamp' 
-          : '${imagePath}_thumb';
-      ImageProvider? imageProvider = _getFromCache(cacheKey);
-      
-      if (imageProvider == null) {
-        if (imagePath.startsWith('http')) {
-          // For network images, we use ResizeImage for memory efficiency
-          imageProvider = ResizeImage(
-            NetworkImage(imagePath),
-            width: _thumbnailSize,
-            height: _thumbnailSize,
-          );
-          _addToCache(cacheKey, imageProvider);
-        } else {
-          // For local files, check if exists
-          final file = File(imagePath);
-          if (!file.existsSync()) {
+      if (imagePath.startsWith('http')) {
+        // For network images, use a memory-efficient approach
+        return FutureBuilder<File>(
+          future: _cacheManager.getSingleFile(imagePath),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return CircleAvatar(
+                radius: radius,
+                backgroundColor: Colors.grey.shade300,
+              );
+            }
+            
+            if (snapshot.hasError || !snapshot.hasData) {
+              return CircleAvatar(
+                radius: radius,
+                backgroundColor: Colors.grey,
+                child: Icon(Icons.error_outline, color: Colors.white, size: radius * 0.8),
+              );
+            }
+            
             return CircleAvatar(
               radius: radius,
-              backgroundColor: Colors.grey,
-              child: Icon(Icons.image_not_supported, color: Colors.white, size: radius * 0.8),
+              backgroundImage: FileImage(snapshot.data!),
+              onBackgroundImageError: (_, __) {
+                // Error handled by builder
+              },
             );
-          }
-          
-          // Use file initially
-          imageProvider = FileImage(file);
-          _addToCache(cacheKey, imageProvider);
-          
-          // Start async resize operation
-          _resizeImageFile(file, _thumbnailSize).then((resizedFile) {
-            final resizedProvider = FileImage(resizedFile);
-            _addToCache(cacheKey, resizedProvider);
-            
-            // Schedule cleanup occasionally
-            if (math.Random().nextInt(100) < 5) { // 5% chance
-              cleanupThumbnailCache();
-            }
-          });
+          },
+        );
+      } else {
+        // For local files, check if exists
+        final file = File(imagePath);
+        if (!file.existsSync()) {
+          return CircleAvatar(
+            radius: radius,
+            backgroundColor: Colors.grey,
+            child: Icon(Icons.image_not_supported, color: Colors.white, size: radius * 0.8),
+          );
         }
+        
+        // Load the file but delegate thumbnail generation to a separate method
+        return FutureBuilder<File>(
+          future: _getOrCreateThumbnail(file),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              // Show a placeholder during loading
+              return CircleAvatar(
+                radius: radius,
+                backgroundColor: Colors.grey.shade300,
+              );
+            }
+            
+            if (snapshot.hasError || !snapshot.hasData) {
+              return CircleAvatar(
+                radius: radius,
+                backgroundColor: Colors.grey,
+                child: Icon(Icons.error_outline, color: Colors.white, size: radius * 0.8),
+              );
+            }
+            
+            return CircleAvatar(
+              radius: radius,
+              backgroundImage: FileImage(snapshot.data!),
+              onBackgroundImageError: (_, __) {
+                // Error handled by builder
+              },
+            );
+          },
+        );
       }
-      
-      return CircleAvatar(
-        radius: radius,
-        backgroundImage: imageProvider,
-        onBackgroundImageError: (_, __) {
-          // On error, remove from cache
-          _imageCache.remove(cacheKey);
-          _cacheOrder.remove(cacheKey);
-        },
-      );
     } catch (e, stackTrace) {
       // Fallback in case of any image loading errors
       ErrorHandler.logError('Error loading image', e, stackTrace, 'ImageService');
@@ -372,6 +368,32 @@ class ImageService {
         backgroundColor: Colors.grey,
         child: Icon(Icons.image_not_supported, color: Colors.white, size: radius * 0.8),
       );
+    }
+  }
+  
+  /// Get or create a thumbnail for a file
+  Future<File> _getOrCreateThumbnail(File file) async {
+    final cacheKey = '${file.path}_thumb';
+    
+    // Check if there's a pending operation
+    if (_pendingOperations.containsKey(cacheKey)) {
+      return _pendingOperations[cacheKey]!.future;
+    }
+    
+    // Create a new operation
+    final completer = Completer<File>();
+    _pendingOperations[cacheKey] = completer;
+    
+    try {
+      final thumbnail = await _resizeImageFile(file, _thumbnailSize);
+      completer.complete(thumbnail);
+      return thumbnail;
+    } catch (e) {
+      // On error, return the original file
+      completer.complete(file);
+      return file;
+    } finally {
+      _pendingOperations.remove(cacheKey);
     }
   }
   
@@ -390,67 +412,63 @@ class ImageService {
     }
 
     try {
-      // For local file paths, get timestamp for cache validation
-      int? fileTimestamp;
-      if (!imagePath.startsWith('http')) {
-        try {
-          final file = File(imagePath);
-          if (file.existsSync()) {
-            fileTimestamp = file.lastModifiedSync().millisecondsSinceEpoch;
-          }
-        } catch (e, stackTrace) {
-          ErrorHandler.logError('Error getting file timestamp', e, stackTrace, 'ImageService');
-        }
-      }
-      
-      // For full image, use original path as cache key with timestamp
-      final String cacheKey = fileTimestamp != null 
-          ? '${imagePath}_ts_$fileTimestamp' 
-          : imagePath;
-      ImageProvider? imageProvider = _getFromCache(cacheKey);
-      
-      if (imageProvider == null) {
-        if (imagePath.startsWith('http')) {
-          // Remote URL - use network image (no resize for full image)
-          imageProvider = NetworkImage(imagePath);
-          _addToCache(imagePath, imageProvider);
-        } else {
-          // Local file path
-          final file = File(imagePath);
-          if (!file.existsSync()) {
+      if (imagePath.startsWith('http')) {
+        // For network images, use a simple Image with error handling
+        return Image.network(
+          imagePath,
+          width: double.infinity,
+          height: height,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              width: double.infinity,
+              height: height,
+              color: Colors.grey.shade300,
+              child: const Center(child: CircularProgressIndicator()),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
             return Container(
               width: double.infinity,
               height: height,
               color: Colors.grey.shade300,
               child: const Icon(Icons.image_not_supported, size: 80, color: Colors.white),
             );
-          }
-          
-          // Use original size for full image display
-          imageProvider = FileImage(file);
-          _addToCache(imagePath, imageProvider);
-        }
-      }
-      
-      return Image(
-        image: imageProvider,
-        width: double.infinity,
-        height: height,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          // On error, remove from cache
-          _imageCache.remove(imagePath);
-          _cacheOrder.remove(imagePath);
-          ErrorHandler.logError('Error displaying image', error, stackTrace, 'ImageService');
-          
+          },
+          cacheWidth: 800, // Limit memory usage by downsampling
+        );
+      } else {
+        // Local file path
+        final file = File(imagePath);
+        if (!file.existsSync()) {
           return Container(
             width: double.infinity,
             height: height,
             color: Colors.grey.shade300,
             child: const Icon(Icons.image_not_supported, size: 80, color: Colors.white),
           );
-        },
-      );
+        }
+        
+        // Use original size for full image display
+        return Image.file(
+          file,
+          width: double.infinity,
+          height: height,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            ErrorHandler.logError('Error displaying image', error, stackTrace, 'ImageService');
+            
+            return Container(
+              width: double.infinity,
+              height: height,
+              color: Colors.grey.shade300,
+              child: const Icon(Icons.image_not_supported, size: 80, color: Colors.white),
+            );
+          },
+          cacheWidth: 800, // Limit memory usage by downsampling
+        );
+      }
     } catch (e, stackTrace) {
       // Fallback in case of any image loading errors
       ErrorHandler.logError('Error loading image', e, stackTrace, 'ImageService');
@@ -465,13 +483,12 @@ class ImageService {
   
   /// Clear the image cache and thumbnail cache
   Future<void> clearCache() async {
-    _imageCache.clear();
-    _cacheOrder.clear();
+    await _cacheManager.emptyCache();
     
     // Clear thumbnail directory
     try {
-      await _initThumbnailCache();
-      final files = await _thumbnailCacheDir!.list().toList();
+      final cacheDir = await _getThumbnailCacheDir();
+      final files = await cacheDir.list().toList();
       for (var file in files) {
         if (file is File) {
           await file.delete();

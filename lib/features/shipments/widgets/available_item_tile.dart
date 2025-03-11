@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/common/widgets/item_image_widget.dart';
+import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:provider/provider.dart';
 
 // Extracted widget for available items to prevent parent rebuilds
@@ -27,6 +27,7 @@ class AvailableItemTile extends StatelessWidget {
         itemName: item.name,
         radius: 16,
         imageService: imageService,
+        memoryEfficient: true,
       ),
       title: Text(
         item.name,

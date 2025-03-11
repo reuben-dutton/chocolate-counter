@@ -47,6 +47,9 @@ dependencies:
   # More icons
   font_awesome_flutter: ^10.7.0
 
+  flutter_cache_manager: ^3.3.1  # Efficient image caching
+  octo_image: ^2.0.0     # Advanced image handling with placeholders
+
   # data analytics
   fl_chart: ^0.70.2
 
