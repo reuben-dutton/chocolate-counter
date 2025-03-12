@@ -76,14 +76,14 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Inventory',
           ),
           NavigationDestination(
-            icon: Icon(Icons.local_shipping_outlined, color: theme.colorScheme.onSurface.withAlpha(175)),
-            selectedIcon: Icon(Icons.local_shipping, color: theme.colorScheme.primary),
-            label: 'Shipments',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.analytics_outlined, color: theme.colorScheme.onSurface.withAlpha(175)),
             selectedIcon: Icon(Icons.analytics, color: theme.colorScheme.primary),
             label: 'Analytics',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.local_shipping_outlined, color: theme.colorScheme.onSurface.withAlpha(175)),
+            selectedIcon: Icon(Icons.local_shipping, color: theme.colorScheme.primary),
+            label: 'Shipments',
           ),
         ],
       ),
