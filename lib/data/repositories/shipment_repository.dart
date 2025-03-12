@@ -2,6 +2,7 @@ import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/data/repositories/base_repository.dart';
 import 'package:food_inventory/data/repositories/shipment_item_repository.dart';
 import 'package:food_inventory/common/services/database_service.dart';
+import 'package:sqflite/sqflite.dart';
 
 class ShipmentRepository extends BaseRepository<Shipment> {
   final ShipmentItemRepository _shipmentItemRepository;
@@ -27,12 +28,12 @@ class ShipmentRepository extends BaseRepository<Shipment> {
   }
   
   /// Get all shipments with their items
-  Future<List<Shipment>> getAllWithItems() async {
-    final shipments = await getAll(orderBy: 'date DESC');
+  Future<List<Shipment>> getAllWithItems({Transaction? txn}) async {
+    final shipments = await getAll(orderBy: 'date DESC', txn: txn);
     
     return Future.wait(
       shipments.map((shipment) async {
-        final items = await _shipmentItemRepository.getItemsForShipment(shipment.id!);
+        final items = await _shipmentItemRepository.getItemsForShipment(shipment.id!, txn: txn);
         return Shipment(
           id: shipment.id,
           name: shipment.name,
@@ -44,14 +45,14 @@ class ShipmentRepository extends BaseRepository<Shipment> {
   }
   
   /// Get a shipment with its items
-  Future<Shipment?> getWithItems(int id) async {
-    final shipment = await getById(id);
+  Future<Shipment?> getWithItems(int id, {Transaction? txn}) async {
+    final shipment = await getById(id, txn: txn);
     
     if (shipment == null) {
       return null;
     }
     
-    final items = await _shipmentItemRepository.getItemsForShipment(id);
+    final items = await _shipmentItemRepository.getItemsForShipment(id, txn: txn);
     
     return Shipment(
       id: shipment.id,

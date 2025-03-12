@@ -7,6 +7,7 @@ import 'package:food_inventory/data/models/inventory_movement.dart';
 import 'package:food_inventory/data/repositories/item_instance_repository.dart';
 import 'package:food_inventory/data/repositories/shipment_item_repository.dart';
 import 'package:food_inventory/data/repositories/shipment_repository.dart';
+import 'package:sqflite/sqflite.dart';
 
 /// Service for managing shipments and related operations
 class ShipmentService {
@@ -23,10 +24,21 @@ class ShipmentService {
     this._movementFactory,
   ) : _itemInstanceFactory = ItemInstanceFactory(_itemInstanceRepository, null);
 
-  /// Get all shipments with their items
-  Future<List<Shipment>> getAllShipments() async {
+  /// Run a function within a transaction
+  Future<R> withTransaction<R>(Future<R> Function(Transaction txn) action) async {
+    return _shipmentRepository.withTransaction(action);
+  }
+
+/// Get all shipments with their items
+  Future<List<Shipment>> getAllShipments({Transaction? txn}) async {
     try {
-      return _shipmentRepository.getAllWithItems();
+      if (txn != null) {
+        // If transaction is provided, use it for all operations
+        return await _shipmentRepository.getAllWithItems(txn: txn);
+      } else {
+        // Otherwise use repository's own transaction
+        return _shipmentRepository.getAllWithItems();
+      }
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to get all shipments', e, stackTrace, 'ShipmentService');
       rethrow;
@@ -34,9 +46,14 @@ class ShipmentService {
   }
   
   /// Get a specific shipment with its items
-  Future<Shipment?> getShipment(int id) async {
+  Future<Shipment?> getShipment(int id, {Transaction? txn}) async {
     try {
-      return _shipmentRepository.getWithItems(id);
+      if (txn != null) {
+        // If transaction is provided, use it for all operations
+        return await _shipmentRepository.getWithItems(id, txn: txn);
+      } else {
+        return _shipmentRepository.getWithItems(id);
+      }
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to get shipment', e, stackTrace, 'ShipmentService');
       rethrow;
@@ -44,79 +61,94 @@ class ShipmentService {
   }
   
   /// Get all items for a specific shipment
-  Future<List<ShipmentItem>> getShipmentItems(int shipmentId) async {
+  Future<List<ShipmentItem>> getShipmentItems(int shipmentId, {Transaction? txn}) async {
     try {
-      return _shipmentItemRepository.getItemsForShipment(shipmentId);
+      return _shipmentItemRepository.getItemsForShipment(shipmentId, txn: txn);
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to get shipment items', e, stackTrace, 'ShipmentService');
       rethrow;
     }
   }
   
-  /// Create a new shipment and add inventory items
-  Future<int> createShipment(Shipment shipment) async {
+/// Create a new shipment and add inventory items
+  Future<int> createShipment(Shipment shipment, {Transaction? txn}) async {
     try {
-      return await _shipmentRepository.databaseService.database.transaction((txn) async {
-        // Create the shipment using the transaction
-        final shipmentMap = _shipmentRepository.toMap(shipment);
-        shipmentMap.remove('id');
-        
-        final shipmentId = await txn.insert(
-          _shipmentRepository.tableName,
-          shipmentMap,
-        );
-        
-        // Process each shipment item
-        for (final item in shipment.items) {
-          // Create a new ShipmentItem with updated shipmentId
-          final shipmentItem = ShipmentItem.create(
-            shipmentId: shipmentId,
-            itemDefinitionId: item.itemDefinitionId,
-            quantity: item.quantity,
-            expirationDate: item.expirationDate,
-            itemDefinition: item.itemDefinition
-          );
-          
-          final itemMap = _shipmentItemRepository.toMap(shipmentItem);
-          itemMap.remove('id');
-          
-          // Insert into shipment_items table
-          final shipmentItemId = await txn.insert(
-            _shipmentItemRepository.tableName,
-            itemMap,
-          );
-          
-          // Create inventory item with reference to shipment item
-          await _itemInstanceFactory.addToInventory(
-            itemDefinitionId: item.itemDefinitionId,
-            quantity: item.quantity,
-            expirationDate: item.expirationDate,
-            shipmentItemId: shipmentItemId,
-            txn: txn
-          );
-
-          // Record inventory movement for this item
-          InventoryMovement newMovement = _movementFactory.createShipmentToInventoryMovement(
-            itemDefinitionId: item.itemDefinitionId,
-            quantity: item.quantity,
-            timestamp: shipment.date,
-          );
-
-          await _movementFactory.save(newMovement, txn: txn);
-        }
-        
-        return shipmentId;
-      });
+      if (txn != null) {
+        return await _createShipmentInternal(shipment, txn);
+      } else {
+        return await _shipmentRepository.withTransaction((transaction) async {
+          return await _createShipmentInternal(shipment, transaction);
+        });
+      }
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to create shipment', e, stackTrace, 'ShipmentService');
       rethrow;
     }
   }
   
+  // Helper method to perform shipment creation within a transaction
+  Future<int> _createShipmentInternal(Shipment shipment, Transaction txn) async {
+    // Create the shipment using the transaction
+    final shipmentMap = _shipmentRepository.toMap(shipment);
+    shipmentMap.remove('id');
+    
+    final shipmentId = await txn.insert(
+      _shipmentRepository.tableName,
+      shipmentMap,
+    );
+    
+    // Process each shipment item
+    for (final item in shipment.items) {
+      // Create a new ShipmentItem with updated shipmentId
+      final shipmentItem = ShipmentItem.create(
+        shipmentId: shipmentId,
+        itemDefinitionId: item.itemDefinitionId,
+        quantity: item.quantity,
+        expirationDate: item.expirationDate,
+        itemDefinition: item.itemDefinition
+      );
+      
+      final itemMap = _shipmentItemRepository.toMap(shipmentItem);
+      itemMap.remove('id');
+      
+      // Insert into shipment_items table
+      final shipmentItemId = await txn.insert(
+        _shipmentItemRepository.tableName,
+        itemMap,
+      );
+      
+      // Create inventory item with reference to shipment item
+      await _itemInstanceFactory.addToInventory(
+        itemDefinitionId: item.itemDefinitionId,
+        quantity: item.quantity,
+        expirationDate: item.expirationDate,
+        shipmentItemId: shipmentItemId,
+        txn: txn
+      );
+
+      // Record inventory movement for this item
+      InventoryMovement newMovement = _movementFactory.createShipmentToInventoryMovement(
+        itemDefinitionId: item.itemDefinitionId,
+        quantity: item.quantity,
+        timestamp: shipment.date,
+      );
+
+      await _movementFactory.save(newMovement, txn: txn);
+    }
+    
+    return shipmentId;
+  }
+  
   /// Delete a shipment (inventory items are not affected)
-  Future<int> deleteShipment(int id) async {
+  Future<int> deleteShipment(int id, {Transaction? txn}) async {
     try {
-      return _shipmentRepository.delete(id);
+      if (txn != null) {
+        return await _shipmentRepository.delete(id, txn: txn);
+      } else {
+        return await _shipmentRepository.withTransaction((transaction) async {
+          return await _shipmentRepository.delete(id, txn: transaction);
+        });
+      }
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to delete shipment', e, stackTrace, 'ShipmentService');
       rethrow;
@@ -124,35 +156,46 @@ class ShipmentService {
   }
   
   /// Update the expiration date of a shipment item and linked inventory items
-  Future<void> updateShipmentItemExpiration(int shipmentItemId, DateTime? expirationDate) async {
+  Future<void> updateShipmentItemExpiration(int shipmentItemId, DateTime? expirationDate, {Transaction? txn}) async {
     try {
-      await _shipmentItemRepository.databaseService.database.transaction((txn) async {
-        // First check if the shipment item exists within the transaction
-        final shipmentItem = await _shipmentItemRepository.getById(shipmentItemId, txn: txn);
-        if (shipmentItem == null) {
-          throw Exception('Shipment item not found');
-        }
-        
-        // Update the shipment item
-        await _shipmentItemRepository.updateExpirationDate(shipmentItemId, expirationDate, txn: txn);
-        
-        // Update linked inventory items
-        await _itemInstanceRepository.updateExpirationDatesByShipmentItemId(
-          shipmentItemId, 
-          expirationDate,
-          txn: txn
-        );
-      });
+      // Handle transaction internally in a simpler way
+      if (txn != null) {
+        await _updateExpiration(shipmentItemId, expirationDate, txn);
+      } else {
+        // Use the repository's withTransaction method when no transaction is provided
+        await _shipmentItemRepository.withTransaction((txn) async {
+          await _updateExpiration(shipmentItemId, expirationDate, txn);
+        });
+      }
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to update shipment item expiration', e, stackTrace, 'ShipmentService');
       rethrow;
     }
   }
   
+  // Helper method to perform the actual update operations within a transaction
+  Future<void> _updateExpiration(int shipmentItemId, DateTime? expirationDate, Transaction txn) async {
+    // First check if the shipment item exists
+    final shipmentItem = await _shipmentItemRepository.getById(shipmentItemId, txn: txn);
+    if (shipmentItem == null) {
+      throw Exception('Shipment item not found');
+    }
+    
+    // Update the shipment item
+    await _shipmentItemRepository.updateExpirationDate(shipmentItemId, expirationDate, txn: txn);
+    
+    // Update linked inventory items
+    await _itemInstanceRepository.updateExpirationDatesByShipmentItemId(
+      shipmentItemId, 
+      expirationDate,
+      txn: txn
+    );
+  }
+  
   /// Get a specific shipment item by ID
-  Future<ShipmentItem?> getShipmentItem(int id) async {
+  Future<ShipmentItem?> getShipmentItem(int id, {Transaction? txn}) async {
     try {
-      return _shipmentItemRepository.getById(id);
+      return _shipmentItemRepository.getById(id, txn: txn);
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to get shipment item', e, stackTrace, 'ShipmentService');
       rethrow;

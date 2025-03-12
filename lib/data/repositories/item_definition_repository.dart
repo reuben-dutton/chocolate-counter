@@ -27,25 +27,6 @@ class ItemDefinitionRepository extends BaseRepository<ItemDefinition> {
     return getAll(orderBy: 'name ASC', txn: txn);
   }
   
-  /// Get item definition by ID with transaction support
-  @override
-  Future<ItemDefinition?> getById(int id, {Transaction? txn}) async {
-    final db = txn ?? databaseService.database;
-    
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'id = ?',
-      whereArgs: [id],
-      limit: 1,
-    );
-    
-    if (maps.isEmpty) {
-      return null;
-    }
-    
-    return fromMap(maps.first);
-  }
-  
   /// Find item definition by barcode
   Future<ItemDefinition?> findByBarcode(String barcode, {Transaction? txn}) async {
     final items = await getWhere(

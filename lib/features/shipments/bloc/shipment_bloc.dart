@@ -171,9 +171,11 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
     try {
       emit(const ShipmentLoading());
       
-      final shipmentList = await _shipmentService.getAllShipments();
-      
-      emit(ShipmentsLoaded(shipmentList));
+      // Use transaction for consistent read
+      await _shipmentService.withTransaction((txn) async {
+        final shipmentList = await _shipmentService.getAllShipments(txn: txn);
+        emit(ShipmentsLoaded(shipmentList));
+      });
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error loading shipments', e, stackTrace, 'ShipmentBloc');
       
@@ -208,9 +210,11 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
     try {
       emit(const ShipmentLoading());
       
-      final items = await _shipmentService.getShipmentItems(event.shipmentId);
-      
-      emit(ShipmentItemsLoaded(items));
+      // Use transaction for consistent read
+      await _shipmentService.withTransaction((txn) async {
+        final items = await _shipmentService.getShipmentItems(event.shipmentId, txn: txn);
+        emit(ShipmentItemsLoaded(items));
+      });
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error loading shipment items', e, stackTrace, 'ShipmentBloc');
       
@@ -245,6 +249,7 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
     try {
       emit(const ShipmentLoading());
       
+      // Transaction is managed inside the service method
       await _shipmentService.createShipment(event.shipment);
       
       emit(const OperationResult(success: true, operationType: OperationType.create));
@@ -271,6 +276,7 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
     try {
       emit(const ShipmentLoading());
       
+      // Transaction is managed inside the service method
       await _shipmentService.deleteShipment(event.id);
       
       emit(const OperationResult(success: true, operationType: OperationType.delete));
@@ -290,22 +296,26 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
     }
   }
 
-  Future<void> _onUpdateShipmentItemExpiration(
+Future<void> _onUpdateShipmentItemExpiration(
     UpdateShipmentItemExpiration event,
     Emitter<ShipmentState> emit,
   ) async {
     try {
       emit(const ShipmentLoading());
       
+      // First update the expiration date
       await _shipmentService.updateShipmentItemExpiration(
         event.shipmentItemId, 
         event.expirationDate
       );
       
-      // Instead of waiting for a delayed refresh, load the items directly
+      // Then load the items with a fresh transaction
       final items = await _shipmentService.getShipmentItems(event.shipmentId);
       
-      emit(OperationResult(success: true, operationType: OperationType.update));
+      // First emit operation result
+      emit(const OperationResult(success: true, operationType: OperationType.update));
+      
+      // Then emit updated items
       emit(ShipmentItemsLoaded(items));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error updating shipment item expiration', e, stackTrace, 'ShipmentBloc');
