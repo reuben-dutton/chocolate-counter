@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/features/analytics/screens/analytics_screen.dart';
 import 'package:food_inventory/features/inventory/screens/inventory_screen.dart';
 import 'package:food_inventory/features/shipments/screens/shipments_screen.dart';
-import 'package:food_inventory/features/settings/screens/settings_screen.dart';
-import 'package:food_inventory/common/utils/navigation_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,14 +11,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
+  int _currentIndex = 1;
   late PageController _pageController;
 
   // Define screens as lazy loading widgets to avoid premature BLoC creation
   final List<Widget Function(BuildContext)> _screenBuilders = [
     (context) => const InventoryScreen(),
-    (context) => const ShipmentsScreen(),
     (context) => const AnalyticsScreen(),
+    (context) => const ShipmentsScreen(),
   ];
 
   @override
@@ -48,13 +46,6 @@ class _HomeScreenState extends State<HomeScreen> {
       index,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-    );
-  }
-
-  void _openSettings() {
-    NavigationUtils.navigateWithSlide(
-      context,
-      const SettingsScreen(),
     );
   }
 
