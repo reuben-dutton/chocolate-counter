@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:food_inventory/features/analytics/bloc/analytics_state.dart';
 
 /// Base class for analytics events
 abstract class AnalyticsEvent extends Equatable {
@@ -21,4 +22,15 @@ class LoadPopularItemsData extends AnalyticsEvent {
 /// Event to clear operation state
 class ClearOperationState extends AnalyticsEvent {
   const ClearOperationState();
+}
+
+
+/// Event to change analytics type
+class ChangeAnalyticsType extends AnalyticsEvent {
+  final AnalyticsType type;
+  
+  const ChangeAnalyticsType(this.type);
+
+  @override
+  List<Object?> get props => [type];
 }

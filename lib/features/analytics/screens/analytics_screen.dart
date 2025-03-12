@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
-import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/features/analytics/bloc/analytics_bloc.dart';
 import 'package:food_inventory/features/analytics/bloc/analytics_event.dart';
 import 'package:food_inventory/features/analytics/bloc/analytics_state.dart';
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
 import 'package:food_inventory/features/analytics/widgets/analytics_card.dart';
 import 'package:food_inventory/features/analytics/widgets/popular_items_chart.dart';
-import 'package:food_inventory/features/settings/screens/settings_screen.dart';
 import 'package:provider/provider.dart';
 
 class AnalyticsScreen extends StatefulWidget {
@@ -37,6 +35,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return BlocProvider<AnalyticsBloc>.value(
       value: _analyticsBloc,
       child: BlocListener<AnalyticsBloc, AnalyticsState>(
@@ -51,69 +51,48 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           }
         },
         child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Analytics'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.settings, size: 24),
-                onPressed: () => _openSettings(context),
-              ),
-            ],
-          ),
           body: Builder(
             builder: (context) {
               return RefreshIndicator(
                 onRefresh: () async {
                   BlocProvider.of<AnalyticsBloc>(context).add(const LoadPopularItemsData());
                 },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Popular Items Chart
-                        BlocBuilder<AnalyticsBloc, AnalyticsState>(
-                          buildWhen: (previous, current) => 
-                            current is AnalyticsLoaded || 
-                            current is AnalyticsLoading && previous is! AnalyticsLoading,
+                child: CustomScrollView(
+                  slivers: [
+                    SliverAppBar(
+                      floating: true,
+                      snap: true,
+                      backgroundColor: theme.colorScheme.surface,
+                      foregroundColor: theme.colorScheme.onSurface,
+                      elevation: 0,
+                      automaticallyImplyLeading: false,
+                      flexibleSpace: SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                          child: _buildAnalyticsTypeSelector(context, theme),
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: BlocBuilder<AnalyticsBloc, AnalyticsState>(
                           builder: (context, state) {
-                            if (state is AnalyticsLoading) {
-                              return const AnalyticsCard(
-                                title: 'Most Popular Items',
-                                icon: Icons.bar_chart,
-                                child: Center(
-                                  heightFactor: 2,
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
+                            switch (state.selectedType) {
+                              case AnalyticsType.popularItems:
+                                return _buildPopularItemsContent(context, state);
+                              case AnalyticsType.stockTrends:
+                                return _buildStockTrendsContent();
+                              case AnalyticsType.expirationAnalytics:
+                                return _buildExpirationAnalyticsContent();
+                              case AnalyticsType.salesHistory:
+                                return _buildSalesHistoryContent();
                             }
-                            
-                            if (state is AnalyticsLoaded) {
-                              return AnalyticsCard(
-                                title: 'Most Popular Items',
-                                icon: Icons.bar_chart,
-                                child: PopularItemsChart(
-                                  popularItems: state.data.popularItems,
-                                ),
-                              );
-                            }
-                            
-                            // Initial state or error state
-                            return const AnalyticsCard(
-                              title: 'Most Popular Items',
-                              icon: Icons.bar_chart,
-                              child: Center(
-                                heightFactor: 2,
-                                child: Text('No data available'),
-                              ),
-                            );
                           },
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               );
             }
@@ -122,11 +101,126 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ),
     );
   }
-  
-  void _openSettings(BuildContext context) {
-    NavigationUtils.navigateWithSlide(
-      context,
-      const SettingsScreen(),
+
+  Widget _buildAnalyticsTypeSelector(BuildContext context, ThemeData theme) {
+    return BlocBuilder<AnalyticsBloc, AnalyticsState>(
+      builder: (context, state) {
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: AnalyticsType.values.map((type) {
+              final isSelected = state.selectedType == type;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => context.read<AnalyticsBloc>().add(ChangeAnalyticsType(type)),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected 
+                          ? theme.colorScheme.primary 
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Text(
+                      _getAnalyticsTypeLabel(type),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: isSelected 
+                            ? theme.colorScheme.onPrimary 
+                            : theme.colorScheme.onSurface,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
+  }
+
+  Widget _buildPopularItemsContent(BuildContext context, AnalyticsState state) {
+    if (state is AnalyticsLoading) {
+      return const AnalyticsCard(
+        title: 'Most Popular Items',
+        icon: Icons.bar_chart,
+        child: Center(
+          heightFactor: 2,
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
+    if (state is AnalyticsLoaded) {
+      return AnalyticsCard(
+        title: 'Most Popular Items',
+        icon: Icons.bar_chart,
+        child: PopularItemsChart(
+          popularItems: state.data.popularItems,
+        ),
+      );
+    }
+    
+    return const AnalyticsCard(
+      title: 'Most Popular Items',
+      icon: Icons.bar_chart,
+      child: Center(
+        heightFactor: 2,
+        child: Text('No data available'),
+      ),
+    );
+  }
+
+  Widget _buildStockTrendsContent() {
+    return const AnalyticsCard(
+      title: 'Stock Trends',
+      icon: Icons.trending_up,
+      child: Center(
+        heightFactor: 2,
+        child: Text('Stock Trends Coming Soon'),
+      ),
+    );
+  }
+
+  Widget _buildExpirationAnalyticsContent() {
+    return const AnalyticsCard(
+      title: 'Expiration Analytics',
+      icon: Icons.event_busy,
+      child: Center(
+        heightFactor: 2,
+        child: Text('Expiration Analytics Coming Soon'),
+      ),
+    );
+  }
+
+  Widget _buildSalesHistoryContent() {
+    return const AnalyticsCard(
+      title: 'Sales History',
+      icon: Icons.attach_money,
+      child: Center(
+        heightFactor: 2,
+        child: Text('Sales History Coming Soon'),
+      ),
+    );
+  }
+
+  String _getAnalyticsTypeLabel(AnalyticsType type) {
+    switch (type) {
+      case AnalyticsType.popularItems:
+        return 'Popular';
+      case AnalyticsType.stockTrends:
+        return 'Stock';
+      case AnalyticsType.expirationAnalytics:
+        return 'Expiry';
+      case AnalyticsType.salesHistory:
+        return 'Sales';
+    }
   }
 }

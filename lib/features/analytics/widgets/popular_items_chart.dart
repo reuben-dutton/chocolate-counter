@@ -1,6 +1,4 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/analytics/models/analytics_data.dart';
 
 class PopularItemsChart extends StatelessWidget {
@@ -17,19 +15,19 @@ class PopularItemsChart extends StatelessWidget {
     
     if (popularItems.isEmpty) {
       return SizedBox(
-        height: 200,
+        height: 300,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.bar_chart_outlined,
-                size: 48,
+                Icons.analytics_outlined,
+                size: 64,
                 color: theme.colorScheme.onSurface.withAlpha(100),
               ),
               const SizedBox(height: 16),
               Text(
-                'No sales data available yet',
+                'No sales data available',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurface.withAlpha(150),
                 ),
@@ -40,91 +38,197 @@ class PopularItemsChart extends StatelessWidget {
       );
     }
     
-    // Sort items by sales count
+    // Calculate summary statistics
+    final totalSales = popularItems.fold(0, (sum, item) => sum + item.salesCount);
     final sortedItems = List<PopularItemData>.from(popularItems)
       ..sort((a, b) => b.salesCount.compareTo(a.salesCount));
-    
-    // Take top 5 items for better visualization
-    final topItems = sortedItems.take(10).toList();
-    
-    // Calculate total for percentage
-    final total = topItems.fold<int>(
-      0, (sum, item) => sum + item.salesCount
-    );
-    
-    // Use theme colors
-    final List<Color> chartColors = [
-      theme.colorScheme.primary,
-      theme.colorScheme.tertiary, 
-      theme.colorScheme.secondary,
-      theme.colorScheme.primaryContainer,
-      theme.colorScheme.tertiaryContainer,
-      theme.colorScheme.secondaryContainer,
-    ];
-    
+    final topItems = sortedItems.take(5).toList();
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          height: 220,
-          child: PieChart(
-            PieChartData(
-              sectionsSpace: 2,
-              centerSpaceRadius: 30,
-              sections: List.generate(topItems.length, (index) {
-                final item = topItems[index];
-                final percentage = (item.salesCount / total) * 100;
-                return PieChartSectionData(
-                  color: chartColors[index % chartColors.length],
-                  value: item.salesCount.toDouble(),
-                  title: '${percentage.toStringAsFixed(1)}%',
-                  radius: 90,
-                  titleStyle: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onPrimary,
-                  ),
-                );
-              }),
+        // Overall Summary
+        _buildSummaryCard(context, totalSales, sortedItems),
+        
+        // Top Sellers Section
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Text(
+            'Top Sellers',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
             ),
           ),
         ),
-        const SizedBox(height: ConfigService.defaultPadding),
-        // Legend
-        ...List.generate(topItems.length, (index) {
-          final item = topItems[index];
-          return Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: ConfigService.smallPadding,
-              horizontal: ConfigService.smallPadding,
+        
+        // Top Sellers List
+        Padding(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: topItems.map((item) {
+              final percentage = (item.salesCount / totalSales * 100).toStringAsFixed(1);
+              final index = topItems.indexOf(item);
+              
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withAlpha(25),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.itemName,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          LinearProgressIndicator(
+                            value: item.salesCount / topItems.first.salesCount,
+                            backgroundColor: theme.colorScheme.surface,
+                            color: theme.colorScheme.primary,
+                            minHeight: 6,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${item.salesCount}',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        Text(
+                          '$percentage%',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withAlpha(150),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard(BuildContext context, int totalSales, List<PopularItemData> sortedItems) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.all(4.0),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sales Insights',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
             ),
-            child: Row(
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: chartColors[index % chartColors.length],
-                    shape: BoxShape.circle,
-                  ),
+                _buildStatColumn(
+                  context,
+                  Icons.shopping_cart,
+                  'Total Sales',
+                  totalSales.toString(),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    item.itemName,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium,
-                  ),
+                _buildStatColumn(
+                  context,
+                  Icons.leaderboard,
+                  'Top Seller',
+                  sortedItems.isNotEmpty ? sortedItems.first.itemName : 'N/A',
                 ),
-                Text(
-                  '${item.salesCount}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                _buildStatColumn(
+                  context,
+                  Icons.add_chart,
+                  'Unique Items',
+                  sortedItems.length.toString(),
                 ),
               ],
             ),
-          );
-        }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatColumn(BuildContext context, IconData icon, String label, String value) {
+    final theme = Theme.of(context);
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withAlpha(25),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: theme.colorScheme.primary,
+            size: 24,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withAlpha(150),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ],
     );
   }

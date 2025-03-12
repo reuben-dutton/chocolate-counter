@@ -6,13 +6,13 @@ import 'package:food_inventory/features/analytics/bloc/analytics_state.dart';
 import 'package:food_inventory/features/analytics/models/analytics_data.dart';
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
 
-/// BLoC for analytics management
 class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
   final AnalyticsService _analyticsService;
 
-  AnalyticsBloc(this._analyticsService) : super(const AnalyticsInitial()) {
+  AnalyticsBloc(this._analyticsService) : super(const AnalyticsState()) {
     on<InitializeAnalyticsScreen>(_onInitializeAnalyticsScreen);
     on<LoadPopularItemsData>(_onLoadPopularItemsData);
+    on<ChangeAnalyticsType>(_onChangeAnalyticsType);
     on<ClearOperationState>(_onClearOperationState);
   }
 
@@ -60,6 +60,22 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
           ),
         ));
       }
+    }
+  }
+
+  Future<void> _onChangeAnalyticsType(
+    ChangeAnalyticsType event,
+    Emitter<AnalyticsState> emit,
+  ) async {
+    emit(AnalyticsState(selectedType: event.type));
+    
+    // Load data for the specific analytics type
+    switch (event.type) {
+      case AnalyticsType.popularItems:
+        add(const LoadPopularItemsData());
+      default:
+        // Add placeholder loading methods for other types later
+        break;
     }
   }
 

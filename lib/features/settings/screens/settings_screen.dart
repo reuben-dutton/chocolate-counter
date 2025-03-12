@@ -116,14 +116,11 @@ class SettingsScreen extends StatelessWidget {
     String text;
     switch (mode) {
       case ThemeMode.system:
-        text = 'Follow system settings';
-        break;
+        text = 'Use system settings';
       case ThemeMode.light:
         text = 'Light mode';
-        break;
       case ThemeMode.dark:
         text = 'Dark mode';
-        break;
     }
     return Text(text, style: const TextStyle(fontSize: 12));
   }

@@ -2,14 +2,24 @@ import 'package:equatable/equatable.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/features/analytics/models/analytics_data.dart';
 
-/// Base class for analytics states
-abstract class AnalyticsState extends Equatable {
+enum AnalyticsType {
+  popularItems,
+  stockTrends,
+  expirationAnalytics,
+  salesHistory
+}
+
+class AnalyticsState extends Equatable {
   final AppError? error;
+  final AnalyticsType selectedType;
   
-  const AnalyticsState({this.error});
+  const AnalyticsState({
+    this.error, 
+    this.selectedType = AnalyticsType.popularItems
+  });
   
   @override
-  List<Object?> get props => [error];
+  List<Object?> get props => [error, selectedType];
 }
 
 /// Initial state

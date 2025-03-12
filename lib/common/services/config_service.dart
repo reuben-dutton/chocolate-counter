@@ -11,7 +11,7 @@ class ConfigService {
   
   // UI constants
   static const double defaultPadding = 16.0;
-  static const double defaultBorderRadius = 12.0;
+  static const double defaultBorderRadius = 8.0;
   static const double smallPadding = 8.0;
   static const double smallIconSize = 18.0;
   static const double mediumIconSize = 24.0;

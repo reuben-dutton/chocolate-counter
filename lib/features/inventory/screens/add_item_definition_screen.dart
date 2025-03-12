@@ -38,6 +38,9 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
         });
       }
     } catch (e, stackTrace) {
+      if (!mounted) {
+        return;
+      }
       ErrorHandler.handleServiceError(
         context, 
         e, 
@@ -57,6 +60,9 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
         });
       }
     } catch (e, stackTrace) {
+      if (!mounted) {
+        return;
+      }
       ErrorHandler.handleServiceError(
         context, 
         e, 
@@ -221,6 +227,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
       
       // Dispatch create event
       context.read<InventoryBloc>().add(CreateItemDefinition(itemDefinition));
+      
       
       // The listener will handle success and navigation
     } catch (e, stackTrace) {

@@ -6,7 +6,6 @@ import 'package:food_inventory/data/models/inventory_movement.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/item_instance.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
-import 'package:sqflite/sqflite.dart';
 
 /// Data class for inventory item with counts
 class InventoryItemWithCounts {
