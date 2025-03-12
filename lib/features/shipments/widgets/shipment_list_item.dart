@@ -85,14 +85,14 @@ class ShipmentListItem extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                icon: Icon(
-                  Icons.delete_outline,
-                  color: theme.colorScheme.error,
-                  size: 22,
-                ),
-                onPressed: onDelete,
-              ),
+              // IconButton(
+              //   icon: Icon(
+              //     Icons.delete_outline,
+              //     color: theme.colorScheme.error,
+              //     size: 22,
+              //   ),
+              //   onPressed: onDelete,
+              // ),
             ],
           ),
         ),
