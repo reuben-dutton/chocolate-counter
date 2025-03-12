@@ -27,8 +27,9 @@ class InventoryMovementRepository extends BaseRepository<InventoryMovement> {
     return entity.id;
   }
   
-  /// Get all movements for a specific item with item definitions
+/// Get all movements for a specific item with item definitions
   Future<List<InventoryMovement>> getMovementsForItem(int itemDefinitionId, {Transaction? txn}) async {
+    // Get movements using the transaction-aware method from base repository
     final movements = await getWhere(
       where: 'itemDefinitionId = ?',
       whereArgs: [itemDefinitionId],
@@ -40,30 +41,44 @@ class InventoryMovementRepository extends BaseRepository<InventoryMovement> {
       return [];
     }
     
-    // Important: Pass the transaction to getById if it's provided
-    final itemDefinition = await _itemDefinitionRepository.getById(itemDefinitionId, txn: txn);
-    
-    // Attach the item definition to each movement
-    return movements.map((movement) {
-      return InventoryMovement(
-        id: movement.id,
-        itemDefinitionId: movement.itemDefinitionId,
-        quantity: movement.quantity,
-        timestamp: movement.timestamp,
-        type: movement.type,
-        itemDefinition: itemDefinition,
-      );
-    }).toList();
+    return _withTransactionIfNeeded(txn, (transaction) async {
+      // Get item definition using the same transaction
+      final itemDefinition = await _itemDefinitionRepository.getById(itemDefinitionId, txn: transaction);
+      
+      // Attach the item definition to each movement
+      return movements.map((movement) {
+        return InventoryMovement(
+          id: movement.id,
+          itemDefinitionId: movement.itemDefinitionId,
+          quantity: movement.quantity,
+          timestamp: movement.timestamp,
+          type: movement.type,
+          itemDefinition: itemDefinition,
+        );
+      }).toList();
+    });
   }
   
   /// Clear movement history for an item
   Future<int> clearMovementsForItem(int itemDefinitionId, {Transaction? txn}) async {
-    final db = txn ?? databaseService.database;
-    
-    return await db.delete(
-      tableName,
-      where: 'itemDefinitionId = ?',
-      whereArgs: [itemDefinitionId],
-    );
+    return _withTransactionIfNeeded(txn, (db) async {
+      return await db.delete(
+        tableName,
+        where: 'itemDefinitionId = ?',
+        whereArgs: [itemDefinitionId],
+      );
+    });
+  }
+
+  // Helper method for transaction management
+  Future<T> _withTransactionIfNeeded<T>(
+    Transaction? txn,
+    Future<T> Function(Transaction) operation
+  ) async {
+    if (txn != null) {
+      return await operation(txn);
+    } else {
+      return await withTransaction(operation);
+    }
   }
 }

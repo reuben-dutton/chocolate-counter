@@ -29,7 +29,7 @@ class ItemInstanceRepository extends BaseRepository<ItemInstance> {
 
   /// Get all instances for a specific item definition with their item details
   Future<List<ItemInstance>> getInstancesForItem(int itemDefinitionId, {Transaction? txn}) async {
-    // Get instances with the transaction
+    // Get instances with the transaction-aware method from base repository
     final instances = await getWhere(
       where: 'itemDefinitionId = ?',
       whereArgs: [itemDefinitionId],
@@ -41,49 +41,51 @@ class ItemInstanceRepository extends BaseRepository<ItemInstance> {
       return [];
     }
     
-    final itemDefinition = await _itemDefinitionRepository.getById(itemDefinitionId, txn: txn);
-    
-    // Attach the item definition to each instance
-    return instances.map((instance) {
-      return ItemInstance(
-        id: instance.id,
-        itemDefinitionId: instance.itemDefinitionId,
-        quantity: instance.quantity,
-        expirationDate: instance.expirationDate,
-        isInStock: instance.isInStock,
-        shipmentItemId: instance.shipmentItemId,
-        itemDefinition: itemDefinition,
-      );
-    }).toList();
+    return _withTransactionIfNeeded(txn, (transaction) async {
+      final itemDefinition = await _itemDefinitionRepository.getById(itemDefinitionId, txn: transaction);
+      
+      // Attach the item definition to each instance
+      return instances.map((instance) {
+        return ItemInstance(
+          id: instance.id,
+          itemDefinitionId: instance.itemDefinitionId,
+          quantity: instance.quantity,
+          expirationDate: instance.expirationDate,
+          isInStock: instance.isInStock,
+          shipmentItemId: instance.shipmentItemId,
+          itemDefinition: itemDefinition,
+        );
+      }).toList();
+    });
   }
   
   /// Get summary counts for stock and inventory items
   Future<Map<String, int>> getItemCounts(int itemDefinitionId, {Transaction? txn}) async {
-    final db = txn ?? databaseService.database;
-    
-    try {
-      // Get stock count - items with isInStock = 1
-      final stockResult = await db.rawQuery('''
-        SELECT COALESCE(SUM(quantity), 0) as count
-        FROM ${DatabaseService.tableItemInstances}
-        WHERE itemDefinitionId = ? AND isInStock = 1
-      ''', [itemDefinitionId]);
-      
-      // Get inventory count - items with isInStock = 0
-      final inventoryResult = await db.rawQuery('''
-        SELECT COALESCE(SUM(quantity), 0) as count
-        FROM ${DatabaseService.tableItemInstances}
-        WHERE itemDefinitionId = ? AND isInStock = 0
-      ''', [itemDefinitionId]);
-      
-      return {
-        'stock': stockResult.first['count'] as int,
-        'inventory': inventoryResult.first['count'] as int,
-      };
-    } catch (e) {
-      print('Error getting item counts: $e');
-      return {'stock': 0, 'inventory': 0};
-    }
+    return _withTransactionIfNeeded(txn, (db) async {
+      try {
+        // Get stock count - items with isInStock = 1
+        final stockResult = await db.rawQuery('''
+          SELECT COALESCE(SUM(quantity), 0) as count
+          FROM ${DatabaseService.tableItemInstances}
+          WHERE itemDefinitionId = ? AND isInStock = 1
+        ''', [itemDefinitionId]);
+        
+        // Get inventory count - items with isInStock = 0
+        final inventoryResult = await db.rawQuery('''
+          SELECT COALESCE(SUM(quantity), 0) as count
+          FROM ${DatabaseService.tableItemInstances}
+          WHERE itemDefinitionId = ? AND isInStock = 0
+        ''', [itemDefinitionId]);
+        
+        return {
+          'stock': stockResult.first['count'] as int,
+          'inventory': inventoryResult.first['count'] as int,
+        };
+      } catch (e) {
+        print('Error getting item counts: $e');
+        return {'stock': 0, 'inventory': 0};
+      }
+    });
   }
   
   /// Get instances for an item sorted by expiration date (for stock operations)
@@ -108,13 +110,25 @@ class ItemInstanceRepository extends BaseRepository<ItemInstance> {
   
   /// Update expiration dates for items linked to a shipment item
   Future<int> updateExpirationDatesByShipmentItemId(int shipmentItemId, DateTime? expirationDate, {Transaction? txn}) async {
-    final db = txn ?? databaseService.database;
-    
-    return await db.update(
-      tableName,
-      {'expirationDate': expirationDate?.millisecondsSinceEpoch},
-      where: 'shipmentItemId = ?',
-      whereArgs: [shipmentItemId],
-    );
+    return _withTransactionIfNeeded(txn, (db) async {
+      return await db.update(
+        tableName,
+        {'expirationDate': expirationDate?.millisecondsSinceEpoch},
+        where: 'shipmentItemId = ?',
+        whereArgs: [shipmentItemId],
+      );
+    });
+  }
+
+  // Helper method for transaction management
+  Future<T> _withTransactionIfNeeded<T>(
+    Transaction? txn,
+    Future<T> Function(Transaction) operation
+  ) async {
+    if (txn != null) {
+      return await operation(txn);
+    } else {
+      return await withTransaction(operation);
+    }
   }
 }

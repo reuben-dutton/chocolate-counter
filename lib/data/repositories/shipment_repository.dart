@@ -29,36 +29,52 @@ class ShipmentRepository extends BaseRepository<Shipment> {
   
   /// Get all shipments with their items
   Future<List<Shipment>> getAllWithItems({Transaction? txn}) async {
-    final shipments = await getAll(orderBy: 'date DESC', txn: txn);
-    
-    return Future.wait(
-      shipments.map((shipment) async {
-        final items = await _shipmentItemRepository.getItemsForShipment(shipment.id!, txn: txn);
-        return Shipment(
-          id: shipment.id,
-          name: shipment.name,
-          date: shipment.date,
-          items: items,
-        );
-      }).toList(),
-    );
+    return _withTransactionIfNeeded(txn, (transaction) async {
+      final shipments = await getAll(orderBy: 'date DESC', txn: transaction);
+      
+      return Future.wait(
+        shipments.map((shipment) async {
+          final items = await _shipmentItemRepository.getItemsForShipment(shipment.id!, txn: transaction);
+          return Shipment(
+            id: shipment.id,
+            name: shipment.name,
+            date: shipment.date,
+            items: items,
+          );
+        }).toList(),
+      );
+    });
   }
   
   /// Get a shipment with its items
   Future<Shipment?> getWithItems(int id, {Transaction? txn}) async {
-    final shipment = await getById(id, txn: txn);
-    
-    if (shipment == null) {
-      return null;
+    return _withTransactionIfNeeded(txn, (transaction) async {
+      final shipment = await getById(id, txn: transaction);
+      
+      if (shipment == null) {
+        return null;
+      }
+      
+      final items = await _shipmentItemRepository.getItemsForShipment(id, txn: transaction);
+      
+      return Shipment(
+        id: shipment.id,
+        name: shipment.name,
+        date: shipment.date,
+        items: items,
+      );
+    });
+  }
+  
+  // Helper method for transaction management
+  Future<T> _withTransactionIfNeeded<T>(
+    Transaction? txn,
+    Future<T> Function(Transaction) operation
+  ) async {
+    if (txn != null) {
+      return await operation(txn);
+    } else {
+      return await withTransaction(operation);
     }
-    
-    final items = await _shipmentItemRepository.getItemsForShipment(id, txn: txn);
-    
-    return Shipment(
-      id: shipment.id,
-      name: shipment.name,
-      date: shipment.date,
-      items: items,
-    );
   }
 }

@@ -1,3 +1,5 @@
+// In lib/data/repositories/base_repository.dart
+
 import 'package:food_inventory/common/services/database_service.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -21,74 +23,77 @@ abstract class BaseRepository<T> {
   /// Get ID from entity (for update operations)
   int? getId(T entity);
 
-  /// Get all entities
+  /// Get all entities with optional transaction
   Future<List<T>> getAll({String? orderBy, Transaction? txn}) async {
-    final db = txn ?? databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      orderBy: orderBy,
-    );
-    
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
+    return _withTransactionIfNeeded(txn, (db) async {
+      final List<Map<String, dynamic>> maps = await db.query(
+        tableName,
+        orderBy: orderBy,
+      );
+      
+      return List.generate(maps.length, (i) => fromMap(maps[i]));
+    });
   }
 
-  /// Get entity by ID
+  /// Get entity by ID with optional transaction
   Future<T?> getById(int id, {Transaction? txn}) async {
-    final db = txn ?? databaseService.database;
-    
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'id = ?',
-      whereArgs: [id],
-      limit: 1,
-    );
-    
-    if (maps.isEmpty) {
-      return null;
-    }
-    
-    return fromMap(maps.first);
+    return _withTransactionIfNeeded(txn, (db) async {
+      final List<Map<String, dynamic>> maps = await db.query(
+        tableName,
+        where: 'id = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+      
+      if (maps.isEmpty) {
+        return null;
+      }
+      
+      return fromMap(maps.first);
+    });
   }
 
   /// Create new entity with optional transaction
   Future<int> create(T entity, {Transaction? txn}) async {
-    final db = txn ?? databaseService.database;
-    final map = toMap(entity);
-    
-    // Remove ID field if it's null (for auto-increment)
-    if (map.containsKey('id') && map['id'] == null) {
-      map.remove('id');
-    }
-    
-    return await db.insert(tableName, map);
+    return _withTransactionIfNeeded(txn, (db) async {
+      final map = toMap(entity);
+      
+      // Remove ID field if it's null (for auto-increment)
+      if (map.containsKey('id') && map['id'] == null) {
+        map.remove('id');
+      }
+      
+      return await db.insert(tableName, map);
+    });
   }
 
   /// Update existing entity with optional transaction
   Future<int> update(T entity, {Transaction? txn}) async {
-    final db = txn ?? databaseService.database;
-    final id = getId(entity);
-    
-    if (id == null) {
-      throw Exception('Cannot update entity without ID');
-    }
-    
-    return await db.update(
-      tableName,
-      toMap(entity),
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return _withTransactionIfNeeded(txn, (db) async {
+      final id = getId(entity);
+      
+      if (id == null) {
+        throw Exception('Cannot update entity without ID');
+      }
+      
+      return await db.update(
+        tableName,
+        toMap(entity),
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
   }
 
   /// Delete entity by ID with optional transaction
   Future<int> delete(int id, {Transaction? txn}) async {
-    final db = txn ?? databaseService.database;
-    
-    return await db.delete(
-      tableName,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return _withTransactionIfNeeded(txn, (db) async {
+      return await db.delete(
+        tableName,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
   }
   
   /// Get all entities with custom where clause and optional transaction
@@ -98,30 +103,42 @@ abstract class BaseRepository<T> {
     String? orderBy,
     Transaction? txn,
   }) async {
-    final db = txn ?? databaseService.database;
-    
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: where,
-      whereArgs: whereArgs,
-      orderBy: orderBy,
-    );
-    
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
+    return _withTransactionIfNeeded(txn, (db) async {
+      final List<Map<String, dynamic>> maps = await db.query(
+        tableName,
+        where: where,
+        whereArgs: whereArgs,
+        orderBy: orderBy,
+      );
+      
+      return List.generate(maps.length, (i) => fromMap(maps[i]));
+    });
   }
 
   /// Execute a raw query with optional transaction
   Future<List<T>> rawQuery(String query, [List<dynamic>? arguments, Transaction? txn]) async {
-    final db = txn ?? databaseService.database;
-    
-    final List<Map<String, dynamic>> maps = await db.rawQuery(query, arguments);
-    
-    return List.generate(maps.length, (i) => fromMap(maps[i]));
+    return _withTransactionIfNeeded(txn, (db) async {
+      final List<Map<String, dynamic>> maps = await db.rawQuery(query, arguments);
+      
+      return List.generate(maps.length, (i) => fromMap(maps[i]));
+    });
   }
   
   /// Run a function within a transaction
   Future<R> withTransaction<R>(Future<R> Function(Transaction txn) action) async {
     final db = databaseService.database;
     return await db.transaction(action);
+  }
+  
+  /// Helper to use existing transaction or create a new one if needed
+  Future<R> _withTransactionIfNeeded<R>(
+    Transaction? txn, 
+    Future<R> Function(DatabaseExecutor db) action
+  ) async {
+    if (txn != null) {
+      return await action(txn);
+    } else {
+      return await withTransaction((transaction) => action(transaction));
+    }
   }
 }

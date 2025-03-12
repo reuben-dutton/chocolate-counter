@@ -122,23 +122,18 @@ class InventoryService {
     }
   }
   
-// Update stock count (record sale)
+  /// Update stock count (record sale)
   Future<void> updateStockCount(
     int itemDefinitionId, 
-    int decreaseAmount, {
-    DateTime? timestamp,
-    Transaction? txn,
-  }) async {
+    int decreaseAmount, 
+    {DateTime? timestamp, Transaction? txn}
+  ) async {
     final actualTimestamp = timestamp ?? DateTime.now();
     
     try {
-      if (txn != null) {
-        await _updateStock(itemDefinitionId, decreaseAmount, actualTimestamp, txn);
-      } else {
-        await _itemInstanceRepository.withTransaction((transaction) async {
-          await _updateStock(itemDefinitionId, decreaseAmount, actualTimestamp, transaction);
-        });
-      }
+      return _withTransactionIfNeeded(txn, (transaction) async {
+        await _updateStock(itemDefinitionId, decreaseAmount, actualTimestamp, transaction);
+      });
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to update stock count', e, stackTrace, 'InventoryService');
       rethrow;
@@ -186,23 +181,18 @@ class InventoryService {
     await _movementFactory.save(newMovement, txn: txn);
   }
   
-// Move items from inventory to stock
+  // Move items from inventory to stock with standardized transaction handling
   Future<void> moveInventoryToStock(
     int itemDefinitionId,
-    int moveAmount, {
-    DateTime? timestamp,
-    Transaction? txn,
-  }) async {
+    int moveAmount, 
+    {DateTime? timestamp, Transaction? txn}
+  ) async {
     final actualTimestamp = timestamp ?? DateTime.now();
     
     try {
-      if (txn != null) {
-        await _moveToStock(itemDefinitionId, moveAmount, actualTimestamp, txn);
-      } else {
-        await _itemInstanceRepository.withTransaction((transaction) async {
-          await _moveToStock(itemDefinitionId, moveAmount, actualTimestamp, transaction);
-        });
-      }
+      return _withTransactionIfNeeded(txn, (transaction) async {
+        await _moveToStock(itemDefinitionId, moveAmount, actualTimestamp, transaction);
+      });
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to move inventory to stock', e, stackTrace, 'InventoryService');
       rethrow;
@@ -305,6 +295,18 @@ class InventoryService {
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to find item by barcode', e, stackTrace, 'InventoryService');
       rethrow;
+    }
+  }
+
+  // Helper method for transaction management
+  Future<T> _withTransactionIfNeeded<T>(
+    Transaction? txn,
+    Future<T> Function(Transaction) operation
+  ) async {
+    if (txn != null) {
+      return await operation(txn);
+    } else {
+      return await _itemDefinitionRepository.withTransaction(operation);
     }
   }
 }
