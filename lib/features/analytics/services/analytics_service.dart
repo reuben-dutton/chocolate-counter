@@ -1,5 +1,3 @@
-// In lib/features/analytics/services/analytics_service.dart
-
 import 'package:food_inventory/features/analytics/models/analytics_data.dart';
 import 'package:food_inventory/features/analytics/repositories/analytics_repository.dart';
 import 'package:sqflite/sqflite.dart';
@@ -14,9 +12,7 @@ class AnalyticsService {
   Future<AnalyticsData> getPopularItemsData({Transaction? txn}) async {
     return _withTransactionIfNeeded(txn, (transaction) async {
       final rawData = await _analyticsRepository.getPopularItems(txn: transaction);
-      
-      // Get total stock count
-      final stockCount = await _analyticsRepository.getTotalStockCount(txn: transaction);
+      final totalStockCount = await _analyticsRepository.getTotalStockCount(txn: transaction);
       
       final List<PopularItemData> popularItems = [];
       
@@ -32,7 +28,7 @@ class AnalyticsService {
       
       return AnalyticsData(
         popularItems: popularItems,
-        totalStockCount: stockCount,
+        totalStockCount: totalStockCount,
       );
     });
   }

@@ -12,7 +12,6 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
   AnalyticsBloc(this._analyticsService) : super(const AnalyticsState()) {
     on<InitializeAnalyticsScreen>(_onInitializeAnalyticsScreen);
     on<LoadPopularItemsData>(_onLoadPopularItemsData);
-    on<LoadStockTrendsData>(_onLoadStockTrendsData);
     on<ChangeAnalyticsType>(_onChangeAnalyticsType);
     on<ClearOperationState>(_onClearOperationState);
   }
@@ -52,46 +51,9 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
         ));
       } else {
         emit(AnalyticsLoaded(
-          AnalyticsData(popularItems: const [], totalStockCount: 0),
+          const AnalyticsData(popularItems: []),
           error: AppError(
             message: 'Failed to load analytics data',
-            error: e,
-            stackTrace: stackTrace,
-            source: 'AnalyticsBloc'
-          ),
-        ));
-      }
-    }
-  }
-
-  Future<void> _onLoadStockTrendsData(
-    LoadStockTrendsData event,
-    Emitter<AnalyticsState> emit,
-  ) async {
-    try {
-      emit(const AnalyticsLoading());
-      
-      // For now, reuse the same data but we'll have different visualization
-      final data = await _analyticsService.getPopularItemsData();
-      
-      emit(AnalyticsLoaded(data));
-    } catch (e, stackTrace) {
-      ErrorHandler.logError('Error loading stock trends data', e, stackTrace, 'AnalyticsBloc');
-      
-      if (state is AnalyticsLoaded) {
-        emit((state as AnalyticsLoaded).copyWith(
-          error: AppError(
-            message: 'Failed to load stock trends',
-            error: e,
-            stackTrace: stackTrace,
-            source: 'AnalyticsBloc'
-          ),
-        ));
-      } else {
-        emit(AnalyticsLoaded(
-          AnalyticsData(popularItems: const [], totalStockCount: 0),
-          error: AppError(
-            message: 'Failed to load stock trends',
             error: e,
             stackTrace: stackTrace,
             source: 'AnalyticsBloc'
@@ -111,11 +73,9 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
     switch (event.type) {
       case AnalyticsType.popularItems:
         add(const LoadPopularItemsData());
-      case AnalyticsType.stockTrends:
-        add(const LoadStockTrendsData());
       default:
-        // For other types, just load popular items for now
-        add(const LoadPopularItemsData());
+        // Add placeholder loading methods for other types later
+        break;
     }
   }
 

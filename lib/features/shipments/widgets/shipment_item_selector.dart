@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
-import 'package:food_inventory/common/utils/gesture_handler.dart';
-import 'package:food_inventory/common/utils/navigation_utils.dart';
-import 'package:food_inventory/features/inventory/screens/add_item_definition_screen.dart';
 import 'package:food_inventory/features/shipments/widgets/selected_shipment_item_tile.dart';
 import 'package:food_inventory/features/shipments/widgets/available_item_tile.dart';
 import 'package:food_inventory/features/shipments/widgets/add_item_dialog.dart';
@@ -136,91 +133,41 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
           const SizedBox(height: 12),
         ],
         
-        // Available items with swipe up gesture for adding new item
+        // Available items
         Expanded(
-          child: _buildAvailableItemsSection(filteredItems, theme),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAvailableItemsSection(List<ItemDefinition> filteredItems, ThemeData theme) {
-    // Create gesture handler for swipe up to create new item
-    final gestureHandler = GestureHandler(
-      onCreateAction: _navigateToAddItemDefinition,
-      // Disable other gestures to avoid conflicts
-      onFilterAction: null,
-      onSettingsAction: null,
-      onNavigationSwipe: null,
-    );
-    
-    return gestureHandler.wrapWithGestures(
-      context,
-      Card(
-        color: theme.colorScheme.surface,
-        child: Padding(
-          padding: const EdgeInsets.all(4.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SectionHeaderWidget(
-                title: 'Available Items',
-                icon: Icons.list,
-                iconColor: theme.colorScheme.secondary,
-                actionIcon: Icons.add_circle,
-                actionTooltip: 'Add New Item',
-                onActionPressed: _navigateToAddItemDefinition,
+          child: Card(
+            color: theme.colorScheme.surface,
+            child: Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SectionHeaderWidget(
+                    title: 'Available Items',
+                    icon: Icons.list,
+                    iconColor: theme.colorScheme.secondary,
+                  ),
+                  const SizedBox(height: 4),
+                  Expanded(
+                    child: filteredItems.isEmpty
+                        ? const Center(child: Text('No matching items found'))
+                        : ListView.builder(
+                            itemCount: filteredItems.length,
+                            itemBuilder: (context, index) {
+                              // Extract each available item into a separate widget
+                              return AvailableItemTile(
+                                item: filteredItems[index],
+                                onAdd: _showAddItemDialog,
+                              );
+                            },
+                          ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Expanded(
-                child: filteredItems.isEmpty
-                    ? _buildEmptyItemsView(theme)
-                    : ListView.builder(
-                        itemCount: filteredItems.length,
-                        itemBuilder: (context, index) {
-                          // Extract each available item into a separate widget
-                          return AvailableItemTile(
-                            item: filteredItems[index],
-                            onAdd: _showAddItemDialog,
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      // Enable vertical swipes but disable horizontal swipes
-      enableHorizontalSwipe: false,
-      enableVerticalSwipe: true,
-    );
-  }
-
-  Widget _buildEmptyItemsView(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.inventory_2_outlined,
-            size: 48,
-            color: theme.colorScheme.onSurface.withAlpha(100),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No matching items found',
-            style: TextStyle(
-              color: theme.colorScheme.onSurface.withAlpha(150),
             ),
           ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.add, size: 16),
-            label: const Text('Create New Item'),
-            onPressed: _navigateToAddItemDefinition,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -299,24 +246,5 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
       _selectedItems = newItems;
     });
     widget.onItemsChanged(_selectedItems);
-  }
-  
-  void _navigateToAddItemDefinition() async {
-    // Navigate to add item screen and wait for result
-    final result = await NavigationUtils.navigateWithSlide(
-      context,
-      const AddItemDefinitionScreen(),
-    );
-    
-    // If we have a new item, refresh the available items
-    if (result != null) {
-      // Force widget to rebuild with new available items
-      // The parent widget should handle refreshing the available items list
-      
-      // Optionally, auto-add the newly created item
-      if (result is ItemDefinition && result.id != null) {
-        _showAddItemDialog(result);
-      }
-    }
   }
 }

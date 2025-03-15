@@ -7,14 +7,12 @@ class AnalyticsCard extends StatelessWidget {
   final IconData icon;
   final Widget child;
   final VoidCallback? onTap;
-  final int totalStockCount;  // Added the required parameter
 
   const AnalyticsCard({
     super.key,
     required this.title,
     required this.icon,
     required this.child,
-    required this.totalStockCount, // Made this required
     this.onTap,
   });
 
@@ -39,32 +37,10 @@ class AnalyticsCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  SectionHeaderWidget(
-                    title: title,
-                    icon: icon,
-                    iconColor: theme.colorScheme.primary,
-                  ),
-                  
-                  // Added a chip to display the total stock count
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'Total Stock: $totalStockCount',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+              SectionHeaderWidget(
+                title: title,
+                icon: icon,
+                iconColor: theme.colorScheme.primary,
               ),
               const SizedBox(height: ConfigService.defaultPadding),
               child,

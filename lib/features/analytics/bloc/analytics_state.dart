@@ -39,21 +39,17 @@ class AnalyticsLoaded extends AnalyticsState {
   const AnalyticsLoaded(this.data, {super.error});
   
   @override
-  List<Object?> get props => [data, error, selectedType];
+  List<Object?> get props => [data, error];
   
   AnalyticsLoaded copyWith({
     AnalyticsData? data,
     AppError? error,
-    AnalyticsType? selectedType,
   }) {
     return AnalyticsLoaded(
       data ?? this.data,
       error: error ?? this.error,
     );
   }
-
-  // Helper getters for data components
-  int get totalStockCount => data.totalStockCount;
 }
 
 /// State for operation results

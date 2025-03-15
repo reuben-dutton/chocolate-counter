@@ -13,12 +13,6 @@ void main() async {
   // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Set preferred orientations to portrait only for gesture-based navigation
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-  
   // Initialize services and repositories
   await ServiceLocator.init();
   
@@ -51,10 +45,6 @@ void main() async {
     MaterialApp(
       home: const FoodInventoryApp(),
       navigatorKey: navigatorKey,
-      // Disable swipe back gesture on iOS to prevent conflicts with our custom gestures
-      theme: ThemeData(
-        platform: TargetPlatform.android, // Force Android-style navigation
-      ),
     ),
   );
 }
