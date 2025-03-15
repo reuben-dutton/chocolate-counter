@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
+import 'package:food_inventory/common/utils/gesture_handler.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/features/settings/widgets/confirm_dialog.dart';
 import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
@@ -67,9 +68,13 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
                 ),
               ],
             ),
-            body: state is ShipmentLoading && state is! ShipmentItemsLoaded
-                ? const Center(child: CircularProgressIndicator())
-                : _buildContent(context, state, formattedDate, theme),
+            body: GestureHandler.wrapWithBackGesture(
+              context,
+              state is ShipmentLoading && state is! ShipmentItemsLoaded
+                  ? const Center(child: CircularProgressIndicator())
+                  : _buildContent(context, state, formattedDate, theme),
+              onBack: () => Navigator.pop(context),
+            ),
           );
         },
       ),

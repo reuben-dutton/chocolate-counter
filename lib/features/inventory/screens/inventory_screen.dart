@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:food_inventory/common/utils/gesture_handler.dart';
 import 'package:food_inventory/common/utils/navigation_utils.dart';
+import 'package:food_inventory/common/widgets/contextual_action_menu.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
+import 'package:food_inventory/features/inventory/screens/add_item_definition_screen.dart';
 import 'package:food_inventory/features/inventory/screens/item_detail_screen.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/inventory/widgets/inventory_list_item.dart';
@@ -18,6 +21,8 @@ class InventoryScreen extends StatefulWidget {
 class _InventoryScreenState extends State<InventoryScreen> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _isSearchVisible = false;
 
   @override
   void initState() {
@@ -32,6 +37,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -49,51 +55,72 @@ class _InventoryScreenState extends State<InventoryScreen> {
         },
         child: Scaffold(
           appBar: AppBar(
-            title: const Text('Stock & Inventory'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.settings, size: 24),
-                onPressed: () => _openSettings(context),
-              ),
-            ],
-          ),
-          body: Column(
-            children: [
-              // Search bar
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 4, 8, 2),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search items...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    suffixIcon: _searchQuery.isNotEmpty 
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: () => _searchController.clear(),
-                        )
-                      : null,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none,
+            title: _isSearchVisible 
+                ? TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    decoration: InputDecoration(
+                      hintText: 'Search items...',
+                      border: InputBorder.none,
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _isSearchVisible = false;
+                          });
+                        },
+                      ),
                     ),
-                    filled: true,
-                    fillColor: Colors.grey.withAlpha(25),
-                  ),
+                    autofocus: true,
+                  )
+                : const Text('Stock & Inventory'),
+            actions: [
+              if (!_isSearchVisible) 
+                IconButton(
+                  icon: const Icon(Icons.search, size: 24),
+                  onPressed: () => _toggleSearch(true),
                 ),
-              ),
-              
-              // Items list
-              Expanded(
-                child: _InventoryListView(searchQuery: _searchQuery),
-              ),
             ],
           ),
+          body: _buildGestureDetector(context),
         ),
       ),
     );
+  }
+  
+  Widget _buildGestureDetector(BuildContext context) {
+    // Create gesture handler for this screen
+    final gestureHandler = GestureHandler(
+      onCreateAction: _navigateToAddItem,
+      onFilterAction: () => _toggleSearch(true),
+      onSettingsAction: () => _openSettings(context),
+    );
+    
+    return gestureHandler.wrapWithGestures(
+      context,
+      _buildContent(),
+      // Disable horizontal swipes since parent handles that
+      enableHorizontalSwipe: false, 
+    );
+  }
+  
+  Widget _buildContent() {
+    return _InventoryListView(
+      searchQuery: _searchQuery,
+      onLongPress: _handleItemLongPress,
+    );
+  }
+  
+  void _toggleSearch(bool visible) {
+    setState(() {
+      _isSearchVisible = visible;
+      if (visible) {
+        _searchFocusNode.requestFocus();
+      } else {
+        _searchController.clear();
+      }
+    });
   }
 
   void _openSettings(BuildContext context) {
@@ -102,12 +129,58 @@ class _InventoryScreenState extends State<InventoryScreen> {
       const SettingsScreen(),
     );
   }
+  
+  void _navigateToAddItem() {
+    NavigationUtils.navigateWithSlide(
+      context,
+      const AddItemDefinitionScreen(),
+    );
+  }
+  
+  void _handleItemLongPress(BuildContext context, InventoryItemWithCounts item, Offset position) async {
+    final action = await ContextualActionMenu.showItemActions(
+      context,
+      position,
+      canMove: item.inventoryCount > 0,
+      hasStock: item.stockCount > 0,
+    );
+    
+    if (action == null) return;
+    
+    switch (action) {
+      case 'view':
+        NavigationUtils.navigateWithSlide(
+          context,
+          ItemDetailScreen(itemDefinition: item.itemDefinition),
+        ).then((_) {
+          // Refresh data when returning from details
+          context.read<InventoryBloc>().add(const LoadInventoryItems());
+        });
+        break;
+      case 'edit':
+        // Edit action would be handled here
+        break;
+      case 'sale':
+        // Sale action would be handled here
+        break;
+      case 'move':
+        // Move action would be handled here
+        break;
+      case 'delete':
+        // Delete action would be handled here
+        break;
+    }
+  }
 }
 
 class _InventoryListView extends StatelessWidget {
   final String searchQuery;
+  final Function(BuildContext context, InventoryItemWithCounts item, Offset position)? onLongPress;
   
-  const _InventoryListView({required this.searchQuery});
+  const _InventoryListView({
+    required this.searchQuery,
+    this.onLongPress,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -167,20 +240,30 @@ class _InventoryListView extends StatelessWidget {
               itemBuilder: (context, index) {
                 final item = items[index];
                 
-                return InventoryListItem(
-                  itemDefinition: item.itemDefinition,
-                  stockCount: item.stockCount,
-                  inventoryCount: item.inventoryCount,
-                  isEmptyItem: item.isEmptyItem,
-                  onTap: () {
-                    NavigationUtils.navigateWithSlide(
-                      context,
-                      ItemDetailScreen(itemDefinition: item.itemDefinition),
-                    ).then((_) {
-                      // Refresh data when returning from details
-                      context.read<InventoryBloc>().add(const LoadInventoryItems());
-                    });
-                  },
+                return GestureDetector(
+                  onLongPress: onLongPress != null ? () {
+                    // Get the global position for the context menu
+                    final RenderBox box = context.findRenderObject() as RenderBox;
+                    final position = box.localToGlobal(
+                      box.size.center(Offset.zero),
+                    );
+                    onLongPress!(context, item, position);
+                  } : null,
+                  child: InventoryListItem(
+                    itemDefinition: item.itemDefinition,
+                    stockCount: item.stockCount,
+                    inventoryCount: item.inventoryCount,
+                    isEmptyItem: item.isEmptyItem,
+                    onTap: () {
+                      NavigationUtils.navigateWithSlide(
+                        context,
+                        ItemDetailScreen(itemDefinition: item.itemDefinition),
+                      ).then((_) {
+                        // Refresh data when returning from details
+                        context.read<InventoryBloc>().add(const LoadInventoryItems());
+                      });
+                    },
+                  ),
                 );
               },
             ),

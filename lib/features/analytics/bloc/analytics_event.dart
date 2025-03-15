@@ -19,11 +19,15 @@ class LoadPopularItemsData extends AnalyticsEvent {
   const LoadPopularItemsData();
 }
 
+/// Event to load stock trends data
+class LoadStockTrendsData extends AnalyticsEvent {
+  const LoadStockTrendsData();
+}
+
 /// Event to clear operation state
 class ClearOperationState extends AnalyticsEvent {
   const ClearOperationState();
 }
-
 
 /// Event to change analytics type
 class ChangeAnalyticsType extends AnalyticsEvent {

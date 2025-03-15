@@ -12,10 +12,10 @@ class PopularItemData {
 /// Container for all analytics data
 class AnalyticsData {
   final List<PopularItemData> popularItems;
-  final int totalStockCount;
+  final int totalStockCount;  // Added totalStockCount field
   
   const AnalyticsData({
     required this.popularItems,
-    this.totalStockCount = 0,
+    this.totalStockCount = 0, // Default to 0
   });
 }

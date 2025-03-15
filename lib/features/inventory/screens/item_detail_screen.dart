@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
+import 'package:food_inventory/common/utils/gesture_handler.dart';
 import 'package:food_inventory/common/widgets/count_display_widget.dart';
 import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:food_inventory/common/widgets/section_header_widget.dart';
@@ -83,11 +84,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 ),
               ],
             ),
-            body: RefreshIndicator(
-              onRefresh: () async {
-                context.read<InventoryBloc>().add(LoadItemDetail(_currentItemDefinition.id!));
-              },
-              child: _buildContent(context, state, theme, imageService, dialogService),
+            body: GestureHandler.wrapWithBackGesture(
+              context,
+              RefreshIndicator(
+                onRefresh: () async {
+                  context.read<InventoryBloc>().add(LoadItemDetail(_currentItemDefinition.id!));
+                },
+                child: _buildContent(context, state, theme, imageService, dialogService),
+              ),
+              onBack: () => Navigator.pop(context),
             ),
           );
         },
