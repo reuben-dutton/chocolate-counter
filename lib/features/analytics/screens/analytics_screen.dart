@@ -57,40 +57,49 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 onRefresh: () async {
                   BlocProvider.of<AnalyticsBloc>(context).add(const LoadPopularItemsData());
                 },
-                child: CustomScrollView(
-                  slivers: [
-                    SliverAppBar(
-                      floating: true,
-                      snap: true,
-                      backgroundColor: theme.colorScheme.surface,
-                      foregroundColor: theme.colorScheme.onSurface,
-                      elevation: 0,
-                      automaticallyImplyLeading: false,
-                      flexibleSpace: SafeArea(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                          child: _buildAnalyticsTypeSelector(context, theme),
-                        ),
+                child: Column(
+                  children: [
+                    // Main content
+                    Expanded(
+                      child: CustomScrollView(
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: BlocBuilder<AnalyticsBloc, AnalyticsState>(
+                                builder: (context, state) {
+                                  switch (state.selectedType) {
+                                    case AnalyticsType.popularItems:
+                                      return _buildPopularItemsContent(context, state);
+                                    case AnalyticsType.stockTrends:
+                                      return _buildStockTrendsContent();
+                                    case AnalyticsType.expirationAnalytics:
+                                      return _buildExpirationAnalyticsContent();
+                                    case AnalyticsType.salesHistory:
+                                      return _buildSalesHistoryContent();
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: BlocBuilder<AnalyticsBloc, AnalyticsState>(
-                          builder: (context, state) {
-                            switch (state.selectedType) {
-                              case AnalyticsType.popularItems:
-                                return _buildPopularItemsContent(context, state);
-                              case AnalyticsType.stockTrends:
-                                return _buildStockTrendsContent();
-                              case AnalyticsType.expirationAnalytics:
-                                return _buildExpirationAnalyticsContent();
-                              case AnalyticsType.salesHistory:
-                                return _buildSalesHistoryContent();
-                            }
-                          },
-                        ),
+                    
+                    // Analytics type selector at the bottom
+                    Container(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surface,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            offset: const Offset(0, -2),
+                            blurRadius: 4,
+                          )
+                        ],
                       ),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: _buildAnalyticsTypeSelector(context, theme),
                     ),
                   ],
                 ),
@@ -106,6 +115,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return BlocBuilder<AnalyticsBloc, AnalyticsState>(
       builder: (context, state) {
         return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(30),

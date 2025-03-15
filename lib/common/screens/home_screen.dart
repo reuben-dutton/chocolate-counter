@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/features/analytics/screens/analytics_screen.dart';
 import 'package:food_inventory/features/inventory/screens/inventory_screen.dart';
 import 'package:food_inventory/features/shipments/screens/shipments_screen.dart';
+import 'package:food_inventory/features/settings/screens/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,20 +12,38 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 1;
+  int _currentIndex = 1; // Start with Inventory (center screen)
   late PageController _pageController;
+  
+  // Screen titles
+  final List<String> _screenTitles = [
+    'Settings',
+    'Analytics',
+    'Inventory',
+    'Shipments',
+  ];
+  
+  // Screen icons
+  final List<IconData> _screenIcons = [
+    Icons.settings,
+    Icons.analytics,
+    Icons.inventory_2,
+    Icons.local_shipping,
+  ];
 
   // Define screens as lazy loading widgets to avoid premature BLoC creation
   final List<Widget Function(BuildContext)> _screenBuilders = [
-    (context) => const InventoryScreen(),
+    (context) => const SettingsScreen(),
     (context) => const AnalyticsScreen(),
+    (context) => const InventoryScreen(),
     (context) => const ShipmentsScreen(),
   ];
 
   @override
   void initState() {
     super.initState();
-    // Set the initial page
+    // Set the initial page to Inventory (index 2)
+    _currentIndex = 2;
     _pageController = PageController(initialPage: _currentIndex);
   }
 
@@ -39,11 +58,13 @@ class _HomeScreenState extends State<HomeScreen> {
       _currentIndex = index;
     });
   }
-
-  void _onTabTapped(int index) {
-    // Animate to the selected page when tab is tapped
+  
+  void _goToSettings() {
+    setState(() {
+      _currentIndex = 0;
+    });
     _pageController.animateToPage(
-      index,
+      0,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
@@ -54,36 +75,65 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
+      body: Column(
         children: [
-          _screenBuilders[0](context),
-          _screenBuilders[1](context),
-          _screenBuilders[2](context),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: _onTabTapped,
-        backgroundColor: theme.colorScheme.surface,
-        elevation: 3,
-        shadowColor: Colors.black26,
-        destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined, color: theme.colorScheme.onSurface.withAlpha(175)),
-            selectedIcon: Icon(Icons.inventory_2, color: theme.colorScheme.primary),
-            label: 'Inventory',
+          // Horizontal indicator with title and icon
+          SafeArea(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 20, bottom: 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Icon for current screen
+                  Icon(
+                    _screenIcons[_currentIndex],
+                    size: 20,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  // Screen title
+                  Text(
+                    _screenTitles[_currentIndex],
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Page indicator dots
+                  Row(
+                    children: List.generate(4, (index) {
+                      return Container(
+                        width: 6,
+                        height: 6,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: index == _currentIndex 
+                              ? theme.colorScheme.primary 
+                              : theme.colorScheme.surfaceContainerHighest,
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.analytics_outlined, color: theme.colorScheme.onSurface.withAlpha(175)),
-            selectedIcon: Icon(Icons.analytics, color: theme.colorScheme.primary),
-            label: 'Analytics',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.local_shipping_outlined, color: theme.colorScheme.onSurface.withAlpha(175)),
-            selectedIcon: Icon(Icons.local_shipping, color: theme.colorScheme.primary),
-            label: 'Shipments',
+          
+          // Main content
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: _onPageChanged,
+              children: [
+                _screenBuilders[0](context),
+                _screenBuilders[1](context),
+                _screenBuilders[2](context),
+                _screenBuilders[3](context),
+              ],
+            ),
           ),
         ],
       ),

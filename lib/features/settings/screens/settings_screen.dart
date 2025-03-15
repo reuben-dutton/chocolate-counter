@@ -16,9 +16,6 @@ class SettingsScreen extends StatelessWidget {
         previous.hardwareAcceleration != current.hardwareAcceleration,
       builder: (context, state) {
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Settings'),
-          ),
           body: ListView(
             children: [
               ListTile(

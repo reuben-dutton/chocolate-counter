@@ -5,7 +5,6 @@ import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/screens/item_detail_screen.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/inventory/widgets/inventory_list_item.dart';
-import 'package:food_inventory/features/settings/screens/settings_screen.dart';
 import 'package:provider/provider.dart';
 
 class InventoryScreen extends StatefulWidget {
@@ -48,20 +47,26 @@ class _InventoryScreenState extends State<InventoryScreen> {
           }
         },
         child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Stock & Inventory'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.settings, size: 24),
-                onPressed: () => _openSettings(context),
-              ),
-            ],
-          ),
           body: Column(
             children: [
-              // Search bar
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 4, 8, 2),
+              // Items list
+              Expanded(
+                child: _InventoryListView(searchQuery: _searchQuery),
+              ),
+              
+              // Search bar at the bottom
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      offset: const Offset(0, -2),
+                      blurRadius: 4,
+                    )
+                  ],
+                ),
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
@@ -84,22 +89,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ),
                 ),
               ),
-              
-              // Items list
-              Expanded(
-                child: _InventoryListView(searchQuery: _searchQuery),
-              ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  void _openSettings(BuildContext context) {
-    NavigationUtils.navigateWithSlide(
-      context,
-      const SettingsScreen(),
     );
   }
 }
