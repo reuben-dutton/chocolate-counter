@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
+import 'package:food_inventory/features/inventory/screens/add_item_definition_screen.dart';
 import 'package:food_inventory/features/inventory/screens/item_detail_screen.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/inventory/widgets/inventory_list_item.dart';
@@ -56,7 +57,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               
               // Search bar at the bottom
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   boxShadow: [
@@ -67,26 +68,38 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     )
                   ],
                 ),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search items...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    suffixIcon: _searchQuery.isNotEmpty 
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: () => _searchController.clear(),
-                        )
-                      : null,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Search items...',
+                          prefixIcon: const Icon(Icons.search, size: 20),
+                          suffixIcon: _searchQuery.isNotEmpty 
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18),
+                                onPressed: () => _searchController.clear(),
+                              )
+                            : null,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.withAlpha(25),
+                        ),
+                      ),
                     ),
-                    filled: true,
-                    fillColor: Colors.grey.withAlpha(25),
-                  ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.add_box),
+                      tooltip: 'Add Item',
+                      onPressed: () => _navigateToAddItemDefinition(context),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -94,6 +107,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
         ),
       ),
     );
+  }
+  
+  void _navigateToAddItemDefinition(BuildContext context) {
+    NavigationUtils.navigateWithSlide(
+      context,
+      const AddItemDefinitionScreen(),
+    ).then((_) {
+      context.read<InventoryBloc>().add(const LoadInventoryItems());
+    });
   }
 }
 
@@ -156,6 +178,7 @@ class _InventoryListView extends StatelessWidget {
               context.read<InventoryBloc>().add(const LoadInventoryItems());
             },
             child: ListView.builder(
+              padding: const EdgeInsets.only(top: 8, bottom: 8, left: 4, right: 4),
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];

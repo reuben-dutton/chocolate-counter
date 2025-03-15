@@ -29,10 +29,24 @@ class ShipmentsScreen extends StatelessWidget {
         },
         child: Scaffold(
           body: _ShipmentsList(),
-          floatingActionButton: _ShipmentsActionButtons(),
+          floatingActionButton: FloatingActionButton(
+            heroTag: 'addShipment',
+            onPressed: () => _navigateToAddShipment(context),
+            tooltip: 'Add Shipment',
+            child: const Icon(Icons.add),
+          ),
         ),
       ),
     );
+  }
+
+  void _navigateToAddShipment(BuildContext context) {
+    NavigationUtils.navigateWithSlide(
+      context,
+      const AddShipmentScreen(),
+    ).then((_) {
+      context.read<ShipmentBloc>().add(const LoadShipments());
+    });
   }
 }
 
@@ -72,6 +86,7 @@ class _ShipmentsList extends StatelessWidget {
           }
 
           return ListView.builder(
+            padding: const EdgeInsets.only(top: 8, bottom: 8, left: 4, right: 4),
             itemCount: shipments.length,
             itemBuilder: (context, index) {
               final shipment = shipments[index];
@@ -111,46 +126,6 @@ class _ShipmentsList extends StatelessWidget {
     );
   }
 
-  void _navigateToAddShipment(BuildContext context) {
-    NavigationUtils.navigateWithSlide(
-      context,
-      const AddShipmentScreen(),
-    ).then((_) {
-      context.read<ShipmentBloc>().add(const LoadShipments());
-    });
-  }
-}
-
-class _ShipmentsActionButtons extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        FloatingActionButton.small(
-          heroTag: 'addItemDefinition',
-          onPressed: () => _navigateToAddItemDefinition(context),
-          tooltip: 'Add Item',
-          child: const Icon(Icons.add_box, size: 20),
-        ),
-        const SizedBox(height: 8),
-        FloatingActionButton(
-          heroTag: 'addShipment',
-          onPressed: () => _navigateToAddShipment(context),
-          tooltip: 'Add Shipment',
-          child: const Icon(Icons.add),
-        ),
-      ],
-    );
-  }
-  
-  void _navigateToAddItemDefinition(BuildContext context) {
-    NavigationUtils.navigateWithSlide(
-      context,
-      const AddItemDefinitionScreen(),
-    );
-  }
-  
   void _navigateToAddShipment(BuildContext context) {
     NavigationUtils.navigateWithSlide(
       context,

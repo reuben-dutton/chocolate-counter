@@ -30,24 +30,24 @@ class InventoryListItem extends StatelessWidget {
       opacity: isEmptyItem ? 0.5 : 1.0,
       child: Card(
         color: theme.colorScheme.surface,
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 2,
+        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        elevation: 1,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
             child: Row(
               children: [
                 ItemImageWidget(
                   imagePath: itemDefinition.imageUrl,
                   itemName: itemDefinition.name,
-                  radius: 24,
+                  radius: 22,
                   imageService: imageService,
                   memoryEfficient: true,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,7 +79,7 @@ class InventoryListItem extends StatelessWidget {
                 ),
                 Icon(
                   Icons.chevron_right, 
-                  size: 20, 
+                  size: 18, 
                   color: theme.colorScheme.onSurface.withAlpha(128)
                 ),
               ],

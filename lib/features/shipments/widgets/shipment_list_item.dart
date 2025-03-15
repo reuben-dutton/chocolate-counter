@@ -22,32 +22,32 @@ class ShipmentListItem extends StatelessWidget {
     
     return Card(
       color: theme.colorScheme.surface,
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      elevation: 1,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(8),
           child: Row(
             children: [
               Container(
-                width: 50,
-                height: 50,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.secondary.withAlpha(25),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(
                   child: Icon(
                     Icons.local_shipping,
                     color: theme.colorScheme.secondary,
-                    size: 24,
+                    size: 22,
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,14 +85,11 @@ class ShipmentListItem extends StatelessWidget {
                   ],
                 ),
               ),
-              // IconButton(
-              //   icon: Icon(
-              //     Icons.delete_outline,
-              //     color: theme.colorScheme.error,
-              //     size: 22,
-              //   ),
-              //   onPressed: onDelete,
-              // ),
+              Icon(
+                Icons.chevron_right, 
+                size: 18, 
+                color: theme.colorScheme.onSurface.withAlpha(128)
+              ),
             ],
           ),
         ),

@@ -98,7 +98,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           )
                         ],
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                       child: _buildAnalyticsTypeSelector(context, theme),
                     ),
                   ],
@@ -115,10 +115,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return BlocBuilder<AnalyticsBloc, AnalyticsState>(
       builder: (context, state) {
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(30),
+            color: Colors.grey.withAlpha(25),
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -134,7 +133,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       color: isSelected 
                           ? theme.colorScheme.primary 
                           : Colors.transparent,
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       _getAnalyticsTypeLabel(type),

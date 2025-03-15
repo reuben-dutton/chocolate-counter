@@ -58,17 +58,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _currentIndex = index;
     });
   }
-  
-  void _goToSettings() {
-    setState(() {
-      _currentIndex = 0;
-    });
-    _pageController.animateToPage(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
