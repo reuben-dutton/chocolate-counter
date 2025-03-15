@@ -88,7 +88,7 @@ class _SwipeDetector extends StatelessWidget {
   const _SwipeDetector({
     required this.child,
     required this.onSwipeRight,
-    this.threshold = 60.0,
+    this.threshold = 30.0,
   });
 
   @override

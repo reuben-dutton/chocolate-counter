@@ -44,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // Set the initial page to Inventory (index 2)
     _currentIndex = 2;
-    _pageController = PageController(initialPage: _currentIndex);
+    _pageController = PageController(initialPage: _currentIndex, viewportFraction: 1);
   }
 
   @override

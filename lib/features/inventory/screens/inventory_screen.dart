@@ -62,7 +62,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   color: Theme.of(context).colorScheme.surface,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withAlpha(13),
                       offset: const Offset(0, -2),
                       blurRadius: 4,
                     )

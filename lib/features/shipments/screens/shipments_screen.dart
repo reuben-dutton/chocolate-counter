@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/utils/navigation_utils.dart';
-import 'package:food_inventory/features/inventory/screens/add_item_definition_screen.dart';
 import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
 import 'package:food_inventory/features/shipments/screens/add_shipment_screen.dart';
 import 'package:food_inventory/features/shipments/screens/shipment_detail_screen.dart';

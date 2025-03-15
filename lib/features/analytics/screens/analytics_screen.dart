@@ -92,7 +92,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         color: theme.colorScheme.surface,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withAlpha(13),
                             offset: const Offset(0, -2),
                             blurRadius: 4,
                           )
