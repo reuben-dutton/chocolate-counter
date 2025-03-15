@@ -21,11 +21,20 @@ class AddItemDialog extends StatefulWidget {
 class _AddItemDialogState extends State<AddItemDialog> {
   int quantity = 1;
   DateTime? expirationDate;
+  final TextEditingController _priceController = TextEditingController(text: '0.00');
+  
+  @override
+  void dispose() {
+    _priceController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return AlertDialog(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: theme.colorScheme.surface,
       title: Row(
         children: [
           const Icon(Icons.add_circle, size: 20),
@@ -97,6 +106,56 @@ class _AddItemDialogState extends State<AddItemDialog> {
               },
             ),
           ),
+          
+          // Add price input with increment/decrement
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Unit Price:',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.remove_circle_outline),
+                onPressed: () {
+                  final currentPrice = double.tryParse(_priceController.text) ?? 0.0;
+                  if (currentPrice >= 0.1) {
+                    setState(() {
+                      _priceController.text = (currentPrice - 0.1).toStringAsFixed(2);
+                    });
+                  }
+                },
+              ),
+              Container(
+                width: 70,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.attach_money, size: 16),
+                    Text(
+                      _priceController.text,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline),
+                onPressed: () {
+                  final currentPrice = double.tryParse(_priceController.text) ?? 0.0;
+                  setState(() {
+                    _priceController.text = (currentPrice + 0.1).toStringAsFixed(2);
+                  });
+                },
+              ),
+            ],
+          ),
         ],
       ),
       actions: [
@@ -111,6 +170,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
             Navigator.of(context).pop({
               'quantity': quantity,
               'expirationDate': expirationDate,
+              'unitPrice': double.tryParse(_priceController.text) ?? 0.0,
             });
           },
         ),

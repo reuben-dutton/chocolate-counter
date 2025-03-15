@@ -7,7 +7,7 @@ class ConfigService {
   static const String appVersion = '1.0.0';
   
   // Database constants
-  static const int dbVersion = 2;
+  static const int dbVersion = 3; // Updated version for unitPrice field
   
   // UI constants
   static const double defaultPadding = 16.0;
@@ -82,5 +82,10 @@ class ConfigService {
   
   static String formatDateTime(DateTime date) {
     return '${formatDate(date)} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+  
+  // Currency format
+  static String formatCurrency(double value) {
+    return '\$${value.toStringAsFixed(2)}';
   }
 }

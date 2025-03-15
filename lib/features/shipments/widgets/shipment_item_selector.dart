@@ -130,7 +130,8 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                         return SelectedShipmentItemTile(
                           key: ValueKey(_selectedItems[index].itemDefinitionId),
                           item: _selectedItems[index],
-                          onEdit: (quantity, expirationDate) => _updateItem(index, quantity, expirationDate),
+                          onEdit: (quantity, expirationDate, unitPrice) => 
+                              _updateItem(index, quantity, expirationDate, unitPrice),
                           onRemove: () => _removeItem(index),
                         );
                       },
@@ -203,7 +204,6 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
     });
   }
 
-  // Existing methods (_showAddItemDialog, _addItem, _updateItem, _removeItem) remain the same
   void _showAddItemDialog(ItemDefinition item) async {
     if (_dialogService == null) return;
     
@@ -216,17 +216,27 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
     );
     
     if (result != null) {
-      _addItem(item, result['quantity'], result['expirationDate']);
+      _addItem(
+        item, 
+        result['quantity'], 
+        result['expirationDate'],
+        result['unitPrice']
+      );
     }
   }
   
-  void _addItem(ItemDefinition item, int quantity, DateTime? expirationDate) {
+  void _addItem(ItemDefinition item, int quantity, DateTime? expirationDate, double unitPrice) {
     final existingIndex = _selectedItems.indexWhere(
       (selected) => selected.itemDefinitionId == item.id,
     );
     
     if (existingIndex != -1) {
-      _updateItem(existingIndex, _selectedItems[existingIndex].quantity + quantity, expirationDate);
+      _updateItem(
+        existingIndex, 
+        _selectedItems[existingIndex].quantity + quantity, 
+        expirationDate,
+        unitPrice
+      );
     } else {
       final newItems = List<ShipmentItem>.from(_selectedItems);
       newItems.add(
@@ -235,6 +245,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
           itemDefinitionId: item.id!,
           quantity: quantity,
           expirationDate: expirationDate,
+          unitPrice: unitPrice,
           itemDefinition: item,
         ),
       );
@@ -246,13 +257,14 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
     }
   }
   
-  void _updateItem(int index, int quantity, DateTime? expirationDate) {
+  void _updateItem(int index, int quantity, DateTime? expirationDate, double? unitPrice) {
     final updatedItem = ShipmentItem(
       id: _selectedItems[index].id,
       shipmentId: _selectedItems[index].shipmentId,
       itemDefinitionId: _selectedItems[index].itemDefinitionId,
       quantity: quantity,
       expirationDate: expirationDate,
+      unitPrice: unitPrice,
       itemDefinition: _selectedItems[index].itemDefinition,
     );
     

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/data/models/shipment.dart';
+import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/features/settings/widgets/confirm_dialog.dart';
 import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
@@ -83,6 +85,9 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
       items = state.shipmentItems;
     }
     
+    // Calculate the total cost of the shipment
+    double totalCost = _calculateShipmentTotal(items);
+    
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -131,6 +136,21 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
                         ],
                       ),
                     ],
+                    // Add total cost row
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.monetization_on, size: 14),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Total Cost: ${ConfigService.formatCurrency(totalCost)}',
+                          style: const TextStyle(
+                            fontSize: 14, 
+                            fontWeight: FontWeight.bold
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -144,6 +164,17 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
         ),
       ),
     );
+  }
+
+  // Calculate total cost of shipment
+  double _calculateShipmentTotal(List<dynamic> items) {
+    double total = 0.0;
+    for (var item in items) {
+      if (item is ShipmentItem && item.unitPrice != null) {
+        total += item.unitPrice! * item.quantity;
+      }
+    }
+    return total;
   }
 
   void _deleteShipment(BuildContext context) async {

@@ -6,6 +6,7 @@ class ShipmentItem {
   final int itemDefinitionId;
   final int quantity;
   final DateTime? expirationDate;
+  final double? unitPrice; // Added unit price field
   
   // Transient property
   final ItemDefinition? itemDefinition;
@@ -16,6 +17,7 @@ class ShipmentItem {
     required this.itemDefinitionId,
     required this.quantity,
     this.expirationDate,
+    this.unitPrice, // Added to constructor
     this.itemDefinition,
   });
 
@@ -26,6 +28,7 @@ class ShipmentItem {
     required int itemDefinitionId,
     required int quantity,
     DateTime? expirationDate,
+    double? unitPrice, // Added to factory method
     ItemDefinition? itemDefinition,
   }) {
     return ShipmentItem(
@@ -34,6 +37,7 @@ class ShipmentItem {
       itemDefinitionId: itemDefinitionId,
       quantity: quantity,
       expirationDate: expirationDate,
+      unitPrice: unitPrice, // Include in return
       itemDefinition: itemDefinition,
     );
   }
@@ -45,6 +49,7 @@ class ShipmentItem {
       'itemDefinitionId': itemDefinitionId,
       'quantity': quantity,
       'expirationDate': expirationDate?.millisecondsSinceEpoch,
+      'unitPrice': unitPrice, // Add to map
     };
   }
 
@@ -57,6 +62,7 @@ class ShipmentItem {
       expirationDate: map['expirationDate'] != null 
           ? DateTime.fromMillisecondsSinceEpoch(map['expirationDate']) 
           : null,
+      unitPrice: map['unitPrice'], // Extract from map
       itemDefinition: itemDef,
     );
   }
@@ -68,6 +74,7 @@ class ShipmentItem {
     int? itemDefinitionId,
     int? quantity,
     DateTime? expirationDate,
+    double? unitPrice, // Add parameter
     ItemDefinition? itemDefinition,
   }) {
     return ShipmentItem(
@@ -76,6 +83,7 @@ class ShipmentItem {
       itemDefinitionId: itemDefinitionId ?? this.itemDefinitionId,
       quantity: quantity ?? this.quantity,
       expirationDate: expirationDate ?? this.expirationDate,
+      unitPrice: unitPrice ?? this.unitPrice, // Include in return
       itemDefinition: itemDefinition ?? this.itemDefinition,
     );
   }

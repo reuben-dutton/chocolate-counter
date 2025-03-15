@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/shipments/widgets/edit_item_dialog.dart';
 import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
@@ -10,7 +11,7 @@ import 'package:provider/provider.dart';
 // Extracted widget for selected items to prevent parent rebuilds
 class SelectedShipmentItemTile extends StatelessWidget {
   final ShipmentItem item;
-  final Function(int quantity, DateTime? expirationDate) onEdit;
+  final Function(int quantity, DateTime? expirationDate, double? unitPrice) onEdit;
   final VoidCallback onRemove;
 
   const SelectedShipmentItemTile({
@@ -43,13 +44,28 @@ class SelectedShipmentItemTile extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 14),
         ),
-        subtitle: item.expirationDate != null
-            ? ExpirationDateWidget(
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (item.expirationDate != null)
+              ExpirationDateWidget(
                 expirationDate: item.expirationDate,
                 fontSize: 12,
                 iconSize: 12,
-              )
-            : null,
+              ),
+            if (item.unitPrice != null)
+              Row(
+                children: [
+                  Icon(Icons.attach_money, size: 12, color: theme.colorScheme.secondary),
+                  const SizedBox(width: 4),
+                  Text(
+                    ConfigService.formatCurrency(item.unitPrice!),
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+          ],
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -98,7 +114,11 @@ class SelectedShipmentItemTile extends StatelessWidget {
     );
     
     if (result != null) {
-      onEdit(result['quantity'], result['expirationDate']);
+      onEdit(
+        result['quantity'], 
+        result['expirationDate'],
+        result['unitPrice']
+      );
     }
   }
 }

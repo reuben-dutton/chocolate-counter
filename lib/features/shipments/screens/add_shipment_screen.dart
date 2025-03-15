@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
-import 'package:food_inventory/data/models/item_definition.dart';
+import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart' as inventory;
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
+import 'package:food_inventory/features/shipments/screens/select_items_screen.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
-import 'package:food_inventory/features/shipments/widgets/shipment_item_selector.dart';
+import 'package:food_inventory/features/shipments/widgets/selected_shipment_item_tile.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -21,12 +23,11 @@ class AddShipmentScreen extends StatefulWidget {
 }
 
 class _AddShipmentScreenState extends State<AddShipmentScreen> {
-  // Step 1: Select items
-  List<ItemDefinition> _availableItems = [];
+  // Selected items
   final List<ShipmentItem> _selectedItems = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
   
-  // Step 2: Shipment details
+  // Shipment details
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   DateTime _shipmentDate = DateTime.now();
@@ -49,8 +50,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => inventory.InventoryBloc(inventoryService)
-            ..add(const inventory.LoadInventoryItems()),
+          create: (context) => inventory.InventoryBloc(inventoryService),
         ),
         BlocProvider(
           create: (context) => ShipmentBloc(shipmentService),
@@ -58,9 +58,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
       ],
       child: BlocListener<inventory.InventoryBloc, inventory.InventoryState>(
         listenWhen: (previous, current) => 
-          current is inventory.InventoryItemsLoaded || 
-          current is inventory.InventoryLoading ||
-          (current.error != null && previous.error != current.error),
+          current.error != null && previous.error != current.error,
         listener: (context, inventoryState) {
           if (inventoryState.error != null) {
             ErrorHandler.showErrorSnackBar(
@@ -68,17 +66,6 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
               inventoryState.error!.message, 
               error: inventoryState.error!.error
             );
-          }
-          
-          if (inventoryState is inventory.InventoryLoading) {
-            setState(() {
-              _isLoading = true;
-            });
-          } else if (inventoryState is inventory.InventoryItemsLoaded) {
-            setState(() {
-              _isLoading = false;
-              _availableItems = inventoryState.items.map((item) => item.itemDefinition).toList();
-            });
           }
         },
         child: BlocConsumer<ShipmentBloc, ShipmentState>(
@@ -107,7 +94,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
             
             return Scaffold(
               appBar: AppBar(
-                title: Text(_currentStep == 0 ? 'Select Items' : 'Shipment Details'),
+                title: Text(_currentStep == 0 ? 'Add Items' : 'Shipment Details'),
                 actions: [
                   if (_currentStep == 1)
                     IconButton(
@@ -218,47 +205,117 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
   }
 
   Widget _buildItemsStep() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_availableItems.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
-              SizedBox(height: 16),
-              Text(
-                'No items available. Please add some item definitions first.',
-                textAlign: TextAlign.center,
+    final theme = Theme.of(context);
+    
+    return Stack(
+      children: [
+        // Selected items list
+        _selectedItems.isEmpty 
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.shopping_bag_outlined,
+                      size: 64,
+                      color: theme.colorScheme.onSurface.withAlpha(100),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('No items selected'),
+                    const SizedBox(height: 16),
+                    const Text('Tap the button below to add items')
+                  ],
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(8.0),
+                itemCount: _selectedItems.length,
+                itemBuilder: (context, index) {
+                  return SelectedShipmentItemTile(
+                    key: ValueKey(_selectedItems[index].itemDefinitionId),
+                    item: _selectedItems[index],
+                    onEdit: (quantity, expirationDate, unitPrice) => _updateItem(index, quantity, expirationDate, unitPrice),
+                    onRemove: () => _removeItem(index),
+                  );
+                },
               ),
-            ],
+        
+        // Add item button
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: FloatingActionButton(
+            child: const Icon(Icons.add),
+            onPressed: () => _navigateToSelectItems(context),
           ),
         ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: ShipmentItemSelector(
-        availableItems: _availableItems,
-        selectedItems: _selectedItems,
-        onItemsChanged: (items) {
-          setState(() {
-            _selectedItems.clear();
-            _selectedItems.addAll(items);
-          });
-        },
-      ),
+      ],
     );
+  }
+  
+  void _navigateToSelectItems(BuildContext context) async {
+    final result = await NavigationUtils.navigateWithSlide<ShipmentItem>(
+      context,
+      SelectItemsScreen(),
+    );
+    
+    if (result != null) {
+      _addItem(result);
+    }
+  }
+  
+  void _addItem(ShipmentItem item) {
+    final existingIndex = _selectedItems.indexWhere(
+      (selected) => selected.itemDefinitionId == item.itemDefinitionId,
+    );
+    
+    if (existingIndex != -1) {
+      _updateItem(
+        existingIndex, 
+        _selectedItems[existingIndex].quantity + item.quantity, 
+        item.expirationDate,
+        item.unitPrice
+      );
+    } else {
+      setState(() {
+        _selectedItems.add(item);
+      });
+    }
+  }
+  
+  void _updateItem(int index, int quantity, DateTime? expirationDate, double? unitPrice) {
+    setState(() {
+      final updatedItem = ShipmentItem(
+        id: _selectedItems[index].id,
+        shipmentId: _selectedItems[index].shipmentId,
+        itemDefinitionId: _selectedItems[index].itemDefinitionId,
+        quantity: quantity,
+        expirationDate: expirationDate,
+        unitPrice: unitPrice,
+        itemDefinition: _selectedItems[index].itemDefinition,
+      );
+      
+      _selectedItems[index] = updatedItem;
+    });
+  }
+  
+  void _removeItem(int index) {
+    setState(() {
+      _selectedItems.removeAt(index);
+    });
   }
 
   Widget _buildDetailsStep(DialogService dialogService) {
     final dateFormat = DateFormat('yyyy-MM-dd');
     final theme = Theme.of(context);
+    
+    // Calculate total cost
+    double totalCost = 0.0;
+    for (var item in _selectedItems) {
+      if (item.unitPrice != null) {
+        totalCost += item.unitPrice! * item.quantity;
+      }
+    }
     
     return SingleChildScrollView(
       child: Padding(
@@ -344,6 +401,20 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.monetization_on, size: 16),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Total Cost: ${ConfigService.formatCurrency(totalCost)}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -400,8 +471,11 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodyMedium,
                               ),
-                              subtitle: item.expirationDate != null
-                                  ? Row(
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (item.expirationDate != null)
+                                    Row(
                                       children: [
                                         Icon(
                                           Icons.event_available, 
@@ -414,8 +488,24 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                                           style: theme.textTheme.bodySmall,
                                         ),
                                       ],
-                                    )
-                                  : null,
+                                    ),
+                                  if (item.unitPrice != null)
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.attach_money, 
+                                          size: 12, 
+                                          color: theme.colorScheme.secondary
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${ConfigService.formatCurrency(item.unitPrice!)} × ${item.quantity}',
+                                          style: theme.textTheme.bodySmall,
+                                        ),
+                                      ],
+                                    ),
+                                ],
+                              ),
                               trailing: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(

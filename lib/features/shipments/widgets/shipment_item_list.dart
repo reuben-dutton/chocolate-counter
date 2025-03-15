@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/widgets/expiration_date_widget.dart';
 import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
@@ -19,6 +20,7 @@ class ShipmentItemList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imageService = Provider.of<ImageService>(context, listen: false);
+    final theme = Theme.of(context);
     
     return ListView.builder(
       shrinkWrap: true,
@@ -41,10 +43,34 @@ class ShipmentItemList extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          subtitle: ExpirationDateWidget(
-            expirationDate: item.expirationDate,
-            iconSize: 12,
-            fontSize: 12,
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ExpirationDateWidget(
+                expirationDate: item.expirationDate,
+                iconSize: 12,
+                fontSize: 12,
+              ),
+              if (item.unitPrice != null) 
+                Row(
+                  children: [
+                    Icon(Icons.attach_money, size: 12, color: theme.colorScheme.secondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      ConfigService.formatCurrency(item.unitPrice!),
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Total: ${ConfigService.formatCurrency(item.unitPrice! * item.quantity)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,

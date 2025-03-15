@@ -4,7 +4,7 @@ import 'package:food_inventory/common/services/error_handler.dart';
 
 class DatabaseService {
   static const String databaseName = 'food_inventory.db';
-  static const int databaseVersion = 2;
+  static const int databaseVersion = 3; // Increased version number for migration
   
   // Tables
   static const String tableItemDefinitions = 'item_definitions';
@@ -66,6 +66,7 @@ class DatabaseService {
           itemDefinitionId INTEGER NOT NULL,
           quantity INTEGER NOT NULL,
           expirationDate INTEGER,
+          unitPrice REAL,
           FOREIGN KEY (shipmentId) REFERENCES $tableShipments (id) ON DELETE CASCADE,
           FOREIGN KEY (itemDefinitionId) REFERENCES $tableItemDefinitions (id) ON DELETE CASCADE
         )
@@ -111,6 +112,13 @@ class DatabaseService {
         await db.execute('''
           ALTER TABLE $tableItemInstances ADD COLUMN shipmentItemId INTEGER
             REFERENCES $tableShipmentItems (id) ON DELETE SET NULL
+        ''');
+      }
+      
+      // Migration from version 2 to 3 - add unitPrice column to shipment_items
+      if (oldVersion < 3) {
+        await db.execute('''
+          ALTER TABLE $tableShipmentItems ADD COLUMN unitPrice REAL
         ''');
       }
     } catch (e, stackTrace) {
