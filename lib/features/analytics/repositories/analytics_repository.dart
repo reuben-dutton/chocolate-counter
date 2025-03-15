@@ -1,5 +1,3 @@
-// In lib/features/analytics/repositories/analytics_repository.dart
-
 import 'package:food_inventory/common/services/database_service.dart';
 import 'package:food_inventory/data/models/inventory_movement.dart';
 import 'package:sqflite/sqflite.dart';
@@ -34,6 +32,22 @@ class AnalyticsRepository {
       ''');
       
       return results;
+    });
+  }
+
+  /// Get total stock count for all items
+  Future<int> getTotalStockCount({Transaction? txn}) async {
+    return _withTransactionIfNeeded(txn, (db) async {
+      final result = await db.rawQuery('''
+        SELECT 
+          COALESCE(SUM(quantity), 0) as totalStock
+        FROM 
+          ${DatabaseService.tableItemInstances}
+        WHERE 
+          isInStock = 1
+      ''');
+      
+      return result.first['totalStock'] as int? ?? 0;
     });
   }
   

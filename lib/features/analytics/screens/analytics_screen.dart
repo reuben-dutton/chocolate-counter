@@ -164,6 +164,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         icon: Icons.bar_chart,
         child: PopularItemsChart(
           popularItems: state.data.popularItems,
+          totalStockCount: state.data.totalStockCount,
         ),
       );
     }

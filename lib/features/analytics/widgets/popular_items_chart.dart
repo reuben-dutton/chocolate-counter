@@ -3,10 +3,12 @@ import 'package:food_inventory/features/analytics/models/analytics_data.dart';
 
 class PopularItemsChart extends StatelessWidget {
   final List<PopularItemData> popularItems;
+  final int totalStockCount;
 
   const PopularItemsChart({
     super.key, 
-    required this.popularItems
+    required this.popularItems,
+    required this.totalStockCount
   });
 
   @override
@@ -48,7 +50,7 @@ class PopularItemsChart extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Overall Summary
-        _buildSummaryCard(context, totalSales, sortedItems),
+        _buildSummaryCard(context, totalSales, sortedItems, totalStockCount),
         
         // Top Sellers Section
         Padding(
@@ -145,7 +147,7 @@ class PopularItemsChart extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(BuildContext context, int totalSales, List<PopularItemData> sortedItems) {
+  Widget _buildSummaryCard(BuildContext context, int totalSales, List<PopularItemData> sortedItems, int totalStockCount) {
     final theme = Theme.of(context);
 
     return Padding(
@@ -178,9 +180,9 @@ class PopularItemsChart extends StatelessWidget {
                 ),
                 _buildStatColumn(
                   context,
-                  Icons.leaderboard,
-                  'Top Seller',
-                  sortedItems.isNotEmpty ? sortedItems.first.itemName : 'N/A',
+                  Icons.inventory_2,
+                  'Total Stock',
+                  totalStockCount.toString(),
                 ),
                 _buildStatColumn(
                   context,

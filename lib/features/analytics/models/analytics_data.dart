@@ -12,8 +12,10 @@ class PopularItemData {
 /// Container for all analytics data
 class AnalyticsData {
   final List<PopularItemData> popularItems;
+  final int totalStockCount;
   
   const AnalyticsData({
     required this.popularItems,
+    this.totalStockCount = 0,
   });
 }
