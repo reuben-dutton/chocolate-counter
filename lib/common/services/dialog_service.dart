@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/widgets/modal_bottom_sheet.dart';
 import 'package:food_inventory/features/settings/widgets/confirm_dialog.dart';
 
-/// Service for handling dialogs throughout the application
+/// Service for handling dialogs and bottom sheets throughout the application
 class DialogService {
   /// Show a confirmation dialog
   Future<bool?> showConfirmDialog({
@@ -17,6 +18,57 @@ class DialogService {
         content: content,
         icon: icon,
       ),
+    );
+  }
+  
+  /// Show a confirmation as bottom sheet
+  Future<bool?> showConfirmBottomSheet({
+    required BuildContext context,
+    required String title,
+    required String content,
+    IconData? icon,
+  }) async {
+    return ModalBottomSheet.show<bool>(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final isDestructive = icon == Icons.delete_forever || icon == Icons.delete_sweep;
+        
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ModalBottomSheet.buildHeader(
+              context: context,
+              title: title,
+              icon: icon ?? Icons.warning_rounded,
+              iconColor: isDestructive
+                ? theme.colorScheme.error
+                : theme.colorScheme.secondary,
+              onClose: () => Navigator.of(context).pop(false),
+            ),
+            
+            // Content
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Text(
+                content,
+                style: theme.textTheme.bodyMedium,
+              ),
+            ),
+            
+            // Actions
+            const SizedBox(height: 24),
+            ModalBottomSheet.buildActions(
+              context: context,
+              onCancel: () => Navigator.of(context).pop(false),
+              onConfirm: () => Navigator.of(context).pop(true),
+              confirmText: isDestructive ? 'Delete' : 'Confirm',
+              isDestructiveAction: isDestructive,
+            ),
+          ],
+        );
+      },
     );
   }
   
@@ -157,6 +209,94 @@ class DialogService {
     );
   }
   
+  /// Show a quantity dialog as bottom sheet
+  Future<int?> showQuantityBottomSheet({
+    required BuildContext context,
+    required String title,
+    required int currentQuantity,
+    required int maxQuantity,
+    IconData? icon,
+  }) async {
+    int quantity = currentQuantity;
+    TextEditingController controller = TextEditingController(text: quantity.toString());
+    
+    return ModalBottomSheet.show<int>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final theme = Theme.of(context);
+            
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                ModalBottomSheet.buildHeader(
+                  context: context,
+                  title: title,
+                  icon: icon ?? Icons.inventory_2,
+                  onClose: () => Navigator.of(context).pop(),
+                ),
+                
+                // Content
+                Text('Maximum: $maxQuantity'),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: quantity > 1 
+                          ? () => setState(() {
+                              quantity--;
+                              controller.text = quantity.toString();
+                            })
+                          : null,
+                    ),
+                    SizedBox(
+                      width: 50,
+                      child: TextField(
+                        controller: controller,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        onChanged: (value) {
+                          final newValue = int.tryParse(value);
+                          if (newValue != null && newValue > 0 && newValue <= maxQuantity) {
+                            setState(() {
+                              quantity = newValue;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: quantity < maxQuantity
+                          ? () => setState(() {
+                              quantity++;
+                              controller.text = quantity.toString();
+                            })
+                          : null,
+                    ),
+                  ],
+                ),
+                
+                // Actions
+                const SizedBox(height: 24),
+                ModalBottomSheet.buildActions(
+                  context: context,
+                  onCancel: () => Navigator.of(context).pop(),
+                  onConfirm: () => Navigator.of(context).pop(quantity),
+                  confirmText: 'Confirm',
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+  
   /// Show a simple message dialog with a single action
   Future<void> showMessageDialog({
     required BuildContext context,
@@ -179,6 +319,47 @@ class DialogService {
     );
   }
   
+  /// Show a message as bottom sheet
+  Future<void> showMessageBottomSheet({
+    required BuildContext context,
+    required String title,
+    required String message,
+    String buttonText = 'OK',
+  }) async {
+    return ModalBottomSheet.show(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ModalBottomSheet.buildHeader(
+              context: context,
+              title: title,
+              icon: Icons.info_outline,
+              onClose: () => Navigator.of(context).pop(),
+            ),
+            
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Text(message),
+            ),
+            
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(buttonText),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
   /// Show a loading dialog
   Future<void> showLoadingDialog({
     required BuildContext context,
@@ -197,6 +378,29 @@ class DialogService {
           ],
         ),
       ),
+    );
+  }
+  
+  /// Show a loading bottom sheet
+  Future<void> showLoadingBottomSheet({
+    required BuildContext context,
+    required String message,
+  }) async {
+    return ModalBottomSheet.show(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(message),
+            const SizedBox(height: 16),
+          ],
+        );
+      },
     );
   }
 }

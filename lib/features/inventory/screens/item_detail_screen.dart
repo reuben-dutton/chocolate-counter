@@ -14,7 +14,7 @@ import 'package:food_inventory/features/inventory/screens/item_edit_screen.dart'
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/inventory/widgets/inventory_movement_list.dart';
-import 'package:food_inventory/features/inventory/widgets/inventory_to_stock_dialog.dart';
+import 'package:food_inventory/features/inventory/widgets/inventory_to_stock_bottom_sheet.dart';
 import 'package:food_inventory/features/inventory/widgets/item_expiration_list.dart';
 import 'package:provider/provider.dart';
 
@@ -312,7 +312,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   void _deleteItem(BuildContext context, DialogService dialogService) async {
     try {
-      final confirm = await dialogService.showConfirmDialog(
+      // Use bottom sheet confirmation instead of dialog
+      final confirm = await dialogService.showConfirmBottomSheet(
         context: context,
         title: 'Delete Item',
         content: 'Are you sure you want to delete this item? This will also remove it from shipments, and delete all stock and inventory counts.',
@@ -386,7 +387,8 @@ class _ItemActions extends StatelessWidget {
   
   void _updateStock(BuildContext context, int currentStock, DialogService dialogService) async {
     try {
-      final result = await dialogService.showQuantityDialog(
+      // Use the bottom sheet version of the quantity dialog
+      final result = await dialogService.showQuantityBottomSheet(
         context: context,
         title: 'Record Sale',
         currentQuantity: 1,
@@ -407,11 +409,10 @@ class _ItemActions extends StatelessWidget {
 
   void _moveToStock(BuildContext context, int currentInventory) async {
     try {
-      final result = await showDialog<int>(
-        context: context,
-        builder: (context) => InventoryToStockDialog(
-          currentInventory: currentInventory,
-        ),
+      // Use the bottom sheet instead of dialog
+      final result = await showInventoryToStockBottomSheet(
+        context,
+        currentInventory,
       );
 
       if (result != null) {

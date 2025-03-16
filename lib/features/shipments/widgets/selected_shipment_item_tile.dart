@@ -3,7 +3,7 @@ import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/features/shipments/widgets/edit_item_dialog.dart';
+import 'package:food_inventory/features/shipments/widgets/edit_item_bottom_sheet.dart';
 import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:food_inventory/common/widgets/expiration_date_widget.dart';
 import 'package:provider/provider.dart';
@@ -87,7 +87,7 @@ class SelectedShipmentItemTile extends StatelessWidget {
               icon: const Icon(Icons.edit, size: 16),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
-              onPressed: () => _showEditDialog(context),
+              onPressed: () => _showEditBottomSheet(context),
             ),
             const SizedBox(width: 4),
             IconButton(
@@ -102,15 +102,14 @@ class SelectedShipmentItemTile extends StatelessWidget {
     );
   }
 
-  Future<void> _showEditDialog(BuildContext context) async {
+  Future<void> _showEditBottomSheet(BuildContext context) async {
     final dialogService = Provider.of<DialogService>(context, listen: false);
     
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => EditItemDialog(
-        item: item,
-        dialogService: dialogService,
-      ),
+    // Use the helper method to show the bottom sheet instead of dialog
+    final result = await showEditItemBottomSheet(
+      context,
+      item,
+      dialogService,
     );
     
     if (result != null) {

@@ -4,7 +4,7 @@ import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/widgets/expiration_date_widget.dart';
 import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/features/shipments/widgets/expiration_edit_dialog.dart';
+import 'package:food_inventory/features/shipments/widgets/expiration_edit_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
 class ShipmentItemList extends StatelessWidget {
@@ -83,7 +83,7 @@ class ShipmentItemList extends StatelessWidget {
                   constraints: const BoxConstraints(),
                   visualDensity: VisualDensity.compact,
                   tooltip: 'Edit expiration date',
-                  onPressed: () => _showExpirationEditDialog(context, item),
+                  onPressed: () => _showExpirationEditBottomSheet(context, item),
                 ),
               const SizedBox(width: 8),
               Chip(
@@ -104,12 +104,13 @@ class ShipmentItemList extends StatelessWidget {
     );
   }
   
-  void _showExpirationEditDialog(BuildContext context, ShipmentItem item) async {
+  void _showExpirationEditBottomSheet(BuildContext context, ShipmentItem item) async {
     if (item.id == null) return;
     
-    final newExpirationDate = await showDialog<DateTime?>(
-      context: context,
-      builder: (context) => ExpirationEditDialog(item: item),
+    // Use the bottom sheet instead of dialog
+    final newExpirationDate = await showExpirationEditBottomSheet(
+      context,
+      item,
     );
     
     // If a date was selected and the callback exists, trigger it

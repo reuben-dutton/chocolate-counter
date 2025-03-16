@@ -10,7 +10,7 @@ import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart' as i
 import 'package:food_inventory/features/inventory/screens/add_item_definition_screen.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
-import 'package:food_inventory/features/shipments/widgets/add_item_dialog.dart';
+import 'package:food_inventory/features/shipments/widgets/add_item_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
 class SelectItemsScreen extends StatefulWidget {
@@ -177,9 +177,9 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
         subtitle: item.barcode != null ? Text('Barcode: ${item.barcode}') : null,
         trailing: IconButton(
           icon: const Icon(Icons.add_circle, color: Colors.green),
-          onPressed: () => _showAddItemDialog(context, item, dialogService),
+          onPressed: () => _showAddItemBottomSheet(context, item, dialogService),
         ),
-        onTap: () => _showAddItemDialog(context, item, dialogService),
+        onTap: () => _showAddItemBottomSheet(context, item, dialogService),
       ),
     );
   }
@@ -193,13 +193,12 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
     });
   }
 
-  Future<void> _showAddItemDialog(BuildContext context, ItemDefinition item, DialogService dialogService) async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => AddItemDialog(
-        item: item,
-        dialogService: dialogService,
-      ),
+  Future<void> _showAddItemBottomSheet(BuildContext context, ItemDefinition item, DialogService dialogService) async {
+    // Use the helper method to show the bottom sheet instead of dialog
+    final result = await showAddItemBottomSheet(
+      context,
+      item,
+      dialogService,
     );
     
     if (result != null) {

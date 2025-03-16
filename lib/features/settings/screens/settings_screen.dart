@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/database_service.dart';
+import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/features/settings/bloc/preferences_bloc.dart';
-import 'package:food_inventory/features/settings/widgets/database_reset_dialog.dart';
+import 'package:food_inventory/features/settings/widgets/database_reset_bottom_sheet.dart';
+import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -123,38 +125,26 @@ class SettingsScreen extends StatelessWidget {
   }
   
   Future<void> _confirmDatabaseReset(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => const DatabaseResetDialog(),
-    );
+    final confirmed = await showDatabaseResetBottomSheet(context);
     
     if (confirmed == true) {
       final databaseService = ServiceLocator.instance<DatabaseService>();
+      final dialogService = Provider.of<DialogService>(context, listen: false);
       
-      // Show a loading dialog while resetting
+      // Show a loading bottom sheet while resetting
       if (context.mounted) {
-        showDialog(
+        await dialogService.showLoadingBottomSheet(
           context: context,
-          barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            title: Text('Resetting Database'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Please wait...'),
-              ],
-            ),
-          ),
+          message: 'Resetting Database',
         );
       }
       
       // Reset the database
       await databaseService.resetDatabase();
       
-      // Restart the app by popping to the first route and showing a confirmation
+      // Close the loading sheet and navigate back
       if (context.mounted) {
+        Navigator.of(context).pop(); // Close loading sheet
         Navigator.of(context).popUntil((route) => route.isFirst);
         
         // Show a confirmation message

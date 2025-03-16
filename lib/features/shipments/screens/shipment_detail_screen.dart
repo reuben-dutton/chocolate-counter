@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/config_service.dart';
+import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
-import 'package:food_inventory/features/settings/widgets/confirm_dialog.dart';
 import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:food_inventory/features/shipments/widgets/shipment_item_list.dart';
@@ -179,13 +179,13 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
 
   void _deleteShipment(BuildContext context) async {
     try {
-      final confirm = await showDialog<bool>(
+      // Use bottom sheet confirmation instead of dialog
+      final dialogService = Provider.of<DialogService>(context, listen: false);
+      final confirm = await dialogService.showConfirmBottomSheet(
         context: context,
-        builder: (context) => ConfirmDialog(
-          title: 'Delete Shipment',
-          content: 'Are you sure you want to delete this shipment? This action cannot be undone, but inventory counts will not be affected.',
-          icon: Icons.delete_forever,
-        ),
+        title: 'Delete Shipment',
+        content: 'Are you sure you want to delete this shipment? This action cannot be undone, but inventory counts will not be affected.',
+        icon: Icons.delete_forever,
       );
 
       if (confirm == true) {

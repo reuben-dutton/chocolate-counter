@@ -9,28 +9,52 @@ import 'package:food_inventory/features/shipments/services/shipment_service.dart
 import 'package:food_inventory/features/shipments/widgets/shipment_list_item.dart';
 import 'package:provider/provider.dart';
 
-class ShipmentsScreen extends StatelessWidget {
+class ShipmentsScreen extends StatefulWidget {
   const ShipmentsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<ShipmentsScreen> createState() => _ShipmentsScreenState();
+}
+
+class _ShipmentsScreenState extends State<ShipmentsScreen> {
+  late ShipmentBloc _shipmentBloc;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize the bloc in didChangeDependencies to ensure context is ready
     final shipmentService = Provider.of<ShipmentService>(context, listen: false);
-    
-    return BlocProvider(
-      create: (context) => ShipmentBloc(shipmentService)
-        ..add(const InitializeShipmentsScreen()),
+    _shipmentBloc = ShipmentBloc(shipmentService);
+    _shipmentBloc.add(const InitializeShipmentsScreen());
+  }
+
+  @override
+  void dispose() {
+    _shipmentBloc.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<ShipmentBloc>.value(
+      value: _shipmentBloc,
       child: BlocListener<ShipmentBloc, ShipmentState>(
         listenWhen: (previous, current) => 
           current.error != null && previous.error != current.error ||
           (current is OperationResult && current.success),
         listener: (context, state) {
           if (state.error != null) {
-            context.read<ShipmentBloc>().handleError(context, state.error!);
+            _shipmentBloc.handleError(context, state.error!);
           }
           
           // Refresh the list when an operation is successful
           if (state is OperationResult && state.success) {
-            context.read<ShipmentBloc>().add(const LoadShipments());
+            _shipmentBloc.add(const LoadShipments());
           }
         },
         child: Scaffold(
@@ -52,10 +76,7 @@ class ShipmentsScreen extends StatelessWidget {
       const AddShipmentScreen(),
     ).then((result) {
       // Always force a refresh when returning from add shipment screen
-      // This ensures we catch changes even if the BLoC state handling missed it
-      if (context.mounted) {
-        context.read<ShipmentBloc>().add(const LoadShipments());
-      }
+      _shipmentBloc.add(const LoadShipments());
     });
   }
 }
@@ -88,7 +109,15 @@ class _ShipmentsList extends StatelessWidget {
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add),
                     label: const Text('Add Shipment'),
-                    onPressed: () => _navigateToAddShipment(context),
+                    onPressed: () {
+                      NavigationUtils.navigateWithSlide(
+                        context,
+                        const AddShipmentScreen(),
+                      ).then((_) {
+                        // Refresh data when returning from add screen
+                        context.read<ShipmentBloc>().add(const LoadShipments());
+                      });
+                    },
                   ),
                 ],
               ),
@@ -139,17 +168,5 @@ class _ShipmentsList extends StatelessWidget {
         return const Center(child: CircularProgressIndicator());
       },
     );
-  }
-
-  void _navigateToAddShipment(BuildContext context) {
-    NavigationUtils.navigateWithSlide(
-      context,
-      const AddShipmentScreen(),
-    ).then((result) {
-      // Always force a refresh when returning from add shipment screen
-      if (context.mounted) {
-        context.read<ShipmentBloc>().add(const LoadShipments());
-      }
-    });
   }
 }
