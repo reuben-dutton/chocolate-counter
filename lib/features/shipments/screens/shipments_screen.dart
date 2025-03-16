@@ -129,7 +129,7 @@ class _ShipmentsList extends StatelessWidget {
               context.read<ShipmentBloc>().add(const LoadShipments());
             },
             child: ListView.builder(
-              padding: const EdgeInsets.only(top: 8, bottom: 8, left: 4, right: 4),
+              padding: const EdgeInsets.only(top: 0, bottom: 8, left: 4, right: 4),
               itemCount: shipments.length,
               itemBuilder: (context, index) {
                 final shipment = shipments[index];

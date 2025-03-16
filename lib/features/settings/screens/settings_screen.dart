@@ -19,6 +19,7 @@ class SettingsScreen extends StatelessWidget {
       builder: (context, state) {
         return Scaffold(
           body: ListView(
+            padding: const EdgeInsets.only(top: 0, bottom: 8, left: 4, right: 4),
             children: [
               ListTile(
                 leading: const Icon(Icons.palette, size: 20),

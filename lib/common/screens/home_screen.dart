@@ -1,8 +1,13 @@
+// lib/common/screens/home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/features/analytics/screens/analytics_screen.dart';
 import 'package:food_inventory/features/inventory/screens/inventory_screen.dart';
 import 'package:food_inventory/features/shipments/screens/shipments_screen.dart';
 import 'package:food_inventory/features/settings/screens/settings_screen.dart';
+import 'package:food_inventory/features/inventory/services/inventory_service.dart';
+import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -32,11 +37,11 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   // Define screens as lazy loading widgets to avoid premature BLoC creation
-  final List<Widget Function(BuildContext)> _screenBuilders = [
-    (context) => const SettingsScreen(),
-    (context) => const AnalyticsScreen(),
-    (context) => const InventoryScreen(),
-    (context) => const ShipmentsScreen(),
+  final List<Widget> _screenWidgets = [
+    const SettingsScreen(),
+    const AnalyticsScreen(),
+    const InventoryScreen(),
+    const ShipmentsScreen(),
   ];
 
   @override
@@ -70,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
           SafeArea(
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(top: 20, bottom: 0),
+              padding: const EdgeInsets.only(top: 16, bottom: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -116,12 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: PageView(
               controller: _pageController,
               onPageChanged: _onPageChanged,
-              children: [
-                _screenBuilders[0](context),
-                _screenBuilders[1](context),
-                _screenBuilders[2](context),
-                _screenBuilders[3](context),
-              ],
+              children: _screenWidgets,
             ),
           ),
         ],

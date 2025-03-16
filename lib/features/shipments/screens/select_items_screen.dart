@@ -1,3 +1,4 @@
+// lib/features/shipments/screens/select_items_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
@@ -25,6 +26,7 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
   String _searchQuery = '';
   List<ItemDefinition> _availableItems = [];
   bool _isLoading = true;
+  late inventory.InventoryBloc _inventoryBloc;
 
   @override
   void initState() {
@@ -37,20 +39,27 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final inventoryService = Provider.of<InventoryService>(context, listen: false);
+    _inventoryBloc = inventory.InventoryBloc(inventoryService);
+    _inventoryBloc.add(const inventory.LoadInventoryItems());
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
+    _inventoryBloc.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final inventoryService = Provider.of<InventoryService>(context, listen: false);
     final dialogService = Provider.of<DialogService>(context, listen: false);
     final theme = Theme.of(context);
 
-    return BlocProvider(
-      create: (context) => inventory.InventoryBloc(inventoryService)
-        ..add(const inventory.LoadInventoryItems()),
+    return BlocProvider.value(
+      value: _inventoryBloc,
       child: BlocListener<inventory.InventoryBloc, inventory.InventoryState>(
         listenWhen: (previous, current) =>
             current is inventory.InventoryItemsLoaded ||
@@ -189,7 +198,7 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
       context,
       const AddItemDefinitionScreen(),
     ).then((_) {
-      context.read<inventory.InventoryBloc>().add(const inventory.LoadInventoryItems());
+      _inventoryBloc.add(const inventory.LoadInventoryItems());
     });
   }
 

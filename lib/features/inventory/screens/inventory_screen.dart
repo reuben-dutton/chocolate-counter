@@ -1,3 +1,4 @@
+// lib/features/inventory/screens/inventory_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/utils/navigation_utils.dart';
@@ -18,6 +19,7 @@ class InventoryScreen extends StatefulWidget {
 class _InventoryScreenState extends State<InventoryScreen> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  late InventoryBloc _inventoryBloc;
 
   @override
   void initState() {
@@ -30,21 +32,30 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
   
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize the bloc in didChangeDependencies to ensure context is ready
+    final inventoryService = Provider.of<InventoryService>(context, listen: false);
+    _inventoryBloc = InventoryBloc(inventoryService);
+    _inventoryBloc.add(const InitializeInventoryScreen());
+  }
+  
+  @override
   void dispose() {
     _searchController.dispose();
+    _inventoryBloc.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => InventoryBloc(Provider.of<InventoryService>(context, listen: false))
-        ..add(const InitializeInventoryScreen()),
+    return BlocProvider.value(
+      value: _inventoryBloc,
       child: BlocListener<InventoryBloc, InventoryState>(
         listenWhen: (previous, current) => current.error != null && previous.error != current.error,
         listener: (context, state) {
           if (state.error != null) {
-            context.read<InventoryBloc>().handleError(context, state.error!);
+            _inventoryBloc.handleError(context, state.error!);
           }
         },
         child: Scaffold(
@@ -114,7 +125,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
       context,
       const AddItemDefinitionScreen(),
     ).then((_) {
-      context.read<InventoryBloc>().add(const LoadInventoryItems());
+      // Use _inventoryBloc directly instead of context.read
+      _inventoryBloc.add(const LoadInventoryItems());
     });
   }
 }
@@ -178,7 +190,7 @@ class _InventoryListView extends StatelessWidget {
               context.read<InventoryBloc>().add(const LoadInventoryItems());
             },
             child: ListView.builder(
-              padding: const EdgeInsets.only(top: 8, bottom: 8, left: 4, right: 4),
+              padding: const EdgeInsets.only(top: 0, bottom: 8, left: 4, right: 4),
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
