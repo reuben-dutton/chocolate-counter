@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/widgets/modal_bottom_sheet.dart';
 
 class DatabaseResetBottomSheet extends StatelessWidget {
@@ -20,7 +21,7 @@ class DatabaseResetBottomSheet extends StatelessWidget {
           onClose: () => Navigator.of(context).pop(false),
         ),
         
-        const SizedBox(height: 8),
+        const SizedBox(height: ConfigService.smallPadding),
         Text(
           'WARNING: This will permanently delete ALL your data',
           style: TextStyle(
@@ -28,12 +29,12 @@ class DatabaseResetBottomSheet extends StatelessWidget {
             color: theme.colorScheme.error,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: ConfigService.defaultPadding),
         const Text(
           'This includes all items, shipments, inventory, and settings. '
           'This action cannot be undone.',
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: ConfigService.mediumPadding),
         Text(
           'The app will restart after resetting.',
           style: TextStyle(
@@ -42,7 +43,7 @@ class DatabaseResetBottomSheet extends StatelessWidget {
           ),
         ),
         
-        const SizedBox(height: 24),
+        const SizedBox(height: ConfigService.largePadding),
         ModalBottomSheet.buildActions(
           context: context,
           onCancel: () => Navigator.of(context).pop(false),

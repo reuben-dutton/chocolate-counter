@@ -10,6 +10,7 @@ import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/common/services/preferences_service.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:get_it/get_it.dart';
 
@@ -26,11 +27,14 @@ class ServiceLocator {
     final preferencesService = PreferencesService();
     await preferencesService.initialize();
     
+    final configService = ConfigService();
+    
     // Register base services
     instance.registerSingleton<DatabaseService>(databaseService);
     instance.registerSingleton<PreferencesService>(preferencesService);
     instance.registerSingleton<DialogService>(DialogService());
     instance.registerSingleton<ImageService>(ImageService());
+    instance.registerSingleton<ConfigService>(configService);
     
     // Register repositories
     instance.registerSingleton<ItemDefinitionRepository>(

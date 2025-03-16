@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/widgets/count_display_widget.dart';
@@ -74,11 +75,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.edit, size: 22),
+                  icon: const Icon(Icons.edit, size: ConfigService.defaultIconSize),
                   onPressed: () => _editItem(context),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, size: 22),
+                  icon: const Icon(Icons.delete, size: ConfigService.defaultIconSize),
                   onPressed: () => _deleteItem(context, dialogService),
                 ),
               ],
@@ -118,13 +119,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             ),
             
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(ConfigService.defaultPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Item name 
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
+                    padding: const EdgeInsets.only(bottom: ConfigService.smallPadding),
                     child: Text(
                       _currentItemDefinition.name,
                       style: theme.textTheme.titleLarge?.copyWith(
@@ -136,15 +137,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   // Barcode (if available)
                   if (_currentItemDefinition.barcode != null)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
+                      padding: const EdgeInsets.all(ConfigService.defaultPadding),
                       child: Row(
                         children: [
-                          Icon(Icons.qr_code, size: 18, color: theme.colorScheme.primary),
-                          const SizedBox(width: 8),
+                          Icon(Icons.qr_code, size: ConfigService.mediumIconSize, color: theme.colorScheme.primary),
+                          SizedBox(height: ConfigService.smallPadding),
                           Text(
                             _currentItemDefinition.barcode!,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurface.withAlpha(175),
+                              color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaHigh),
                             ),
                           ),
                         ],
@@ -154,7 +155,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   // Item counts
                   _buildCounts(theme, itemData.counts),
                   
-                  const SizedBox(height: 16),
+                  const SizedBox(height: ConfigService.defaultPadding),
 
                   // Actions
                   _ItemActions(
@@ -163,12 +164,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     inventoryCount: itemData.counts['inventory'] ?? 0,
                   ),
                   
-                  const SizedBox(height: 24),
+                  SizedBox(height: ConfigService.largePadding),
                   
                   // Expiration dates
                   _buildExpirationDates(theme, itemData.instances),
                   
-                  const SizedBox(height: 24),
+                  SizedBox(height: ConfigService.largePadding),
                   
                   // Movement history
                   _buildMovementHistory(theme, itemData.movements),
@@ -191,7 +192,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 8),
+        SizedBox(height: ConfigService.smallPadding),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -232,7 +233,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           icon: Icons.event_available,
           iconColor: theme.colorScheme.secondary,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: ConfigService.mediumPadding),
         ItemExpirationList(instances: typedInstances),
       ],
     );
@@ -248,20 +249,20 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             icon: Icons.history,
             iconColor: theme.colorScheme.primary,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: ConfigService.defaultPadding),
           Center(
             child: Column(
               children: [
                 Icon(
                   Icons.history_toggle_off, 
-                  size: 48, 
-                  color: theme.colorScheme.onSurface.withAlpha(75)
+                  size: ConfigService.largeIconSize, 
+                  color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaMedium)
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: ConfigService.smallPadding),
                 Text(
                   'No movement history yet',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withAlpha(128),
+                    color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaDefault),
                   ),
                 ),
               ],
@@ -282,7 +283,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           icon: Icons.history,
           iconColor: theme.colorScheme.secondary,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: ConfigService.mediumPadding),
         InventoryMovementList(movements: typedMovements),
       ],
     );
@@ -356,25 +357,25 @@ class _ItemActions extends StatelessWidget {
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                icon: Icon(Icons.remove_shopping_cart, size: 18, color: theme.colorScheme.onSecondary),
+                icon: Icon(Icons.remove_shopping_cart, size: ConfigService.mediumIconSize, color: theme.colorScheme.onSecondary),
                 label: const Text('Record Sale'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.secondary,
                   foregroundColor: theme.colorScheme.onSecondary,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: ConfigService.mediumPadding),
                 ),
                 onPressed: stockCount > 0 ? () => _updateStock(context, stockCount, dialogService) : null,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: ConfigService.mediumPadding),
             Expanded(
               child: ElevatedButton.icon(
-                icon: Icon(Icons.move_up, size: 18, color: theme.colorScheme.onTertiary),
+                icon: Icon(Icons.move_up, size: ConfigService.mediumIconSize, color: theme.colorScheme.onTertiary),
                 label: const Text('Move to Stock'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.tertiary,
                   foregroundColor: theme.colorScheme.onTertiary,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: ConfigService.mediumPadding),
                 ),
                 onPressed: inventoryCount > 0 ? () => _moveToStock(context, inventoryCount) : null,
               ),

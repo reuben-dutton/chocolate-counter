@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/data/models/item_instance.dart';
 import 'package:food_inventory/common/widgets/expiration_date_widget.dart';
 import 'package:intl/intl.dart';
@@ -38,8 +39,8 @@ class ItemExpirationList extends StatelessWidget {
         
         return ListTile(
           dense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-          leading: const Icon(Icons.calendar_today, size: 18),
+          contentPadding: const EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: 0),
+          leading: const Icon(Icons.calendar_today, size: ConfigService.mediumIconSize),
           title: ExpirationDateWidget(
             expirationDate: expDate,
             showIcon: false,

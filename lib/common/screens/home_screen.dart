@@ -1,5 +1,6 @@
 // lib/common/screens/home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/analytics/screens/analytics_screen.dart';
 import 'package:food_inventory/features/inventory/screens/inventory_screen.dart';
 import 'package:food_inventory/features/shipments/screens/shipments_screen.dart';
@@ -78,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Icon for current screen
                   Icon(
                     _screenIcons[_currentIndex],
-                    size: 20,
+                    size: ConfigService.defaultIconSize,
                     color: theme.colorScheme.primary,
                   ),
                   const SizedBox(width: 8),

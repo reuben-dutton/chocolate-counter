@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/features/analytics/bloc/analytics_bloc.dart';
 import 'package:food_inventory/features/analytics/bloc/analytics_event.dart';
@@ -65,7 +66,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         slivers: [
                           SliverToBoxAdapter(
                             child: Padding(
-                              padding: const EdgeInsets.all(4.0),
+                              padding: const EdgeInsets.all(ConfigService.tinyPadding),
                               child: BlocBuilder<AnalyticsBloc, AnalyticsState>(
                                 builder: (context, state) {
                                   switch (state.selectedType) {
@@ -98,7 +99,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           )
                         ],
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      padding: const EdgeInsets.symmetric(vertical: ConfigService.smallPadding, horizontal: ConfigService.smallPadding),
                       child: _buildAnalyticsTypeSelector(context, theme),
                     ),
                   ],
@@ -116,8 +117,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       builder: (context, state) {
         return Container(
           decoration: BoxDecoration(
-            color: Colors.grey.withAlpha(25),
-            borderRadius: BorderRadius.circular(20),
+            color: Colors.grey.withAlpha(ConfigService.alphaLight),
+            borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -127,13 +128,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 child: GestureDetector(
                   onTap: () => context.read<AnalyticsBloc>().add(ChangeAnalyticsType(type)),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    duration: ConfigService.animationDurationFast,
+                    padding: const EdgeInsets.symmetric(vertical: ConfigService.mediumPadding, horizontal: ConfigService.smallPadding),
                     decoration: BoxDecoration(
                       color: isSelected 
                           ? theme.colorScheme.primary 
                           : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
                     ),
                     child: Text(
                       _getAnalyticsTypeLabel(type),
@@ -158,7 +159,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget _buildPopularItemsContent(BuildContext context, AnalyticsState state) {
     if (state is AnalyticsLoading) {
       return const AnalyticsCard(
-        title: 'Most Popular Items',
+        title: 'At A Glance',
         icon: Icons.bar_chart,
         child: Center(
           heightFactor: 2,
@@ -169,7 +170,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     
     if (state is AnalyticsLoaded) {
       return AnalyticsCard(
-        title: 'Most Popular Items',
+        title: 'At A Glance',
         icon: Icons.bar_chart,
         child: PopularItemsChart(
           popularItems: state.data.popularItems,
@@ -179,7 +180,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
     
     return const AnalyticsCard(
-      title: 'Most Popular Items',
+      title: 'At A Glance',
       icon: Icons.bar_chart,
       child: Center(
         heightFactor: 2,

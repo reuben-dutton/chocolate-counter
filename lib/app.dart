@@ -5,6 +5,7 @@ import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/common/services/preferences_service.dart';
 import 'package:food_inventory/common/services/database_service.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/analytics/repositories/analytics_repository.dart';
@@ -26,6 +27,7 @@ class FoodInventoryApp extends StatelessWidget {
     final shipmentService = ServiceLocator.instance<ShipmentService>();
     final preferencesService = ServiceLocator.instance<PreferencesService>();
     final databaseService = ServiceLocator.instance<DatabaseService>();
+    final configService = ServiceLocator.instance<ConfigService>();
     
     // Create analytics repository
     final analyticsRepository = AnalyticsRepository(databaseService);
@@ -38,6 +40,9 @@ class FoodInventoryApp extends StatelessWidget {
         // Services
         ChangeNotifierProvider<PreferencesService>.value(
           value: preferencesService,
+        ),
+        ChangeNotifierProvider<ConfigService>.value(
+          value: configService,
         ),
         Provider<ImageService>.value(value: imageService),
         Provider<DialogService>.value(value: dialogService),
@@ -64,7 +69,7 @@ class FoodInventoryApp extends StatelessWidget {
           final themeMode = state.themeMode;
           
           return MaterialApp(
-            title: 'Food Inventory',
+            title: ConfigService.appName,
             theme: theme.light(),
             darkTheme: theme.dark(),
             themeMode: themeMode,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 
 class SectionHeaderWidget extends StatelessWidget {
   final String title;
@@ -28,19 +29,20 @@ class SectionHeaderWidget extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 18, color: effectiveIconColor),
-            const SizedBox(width: 8),
+            Icon(icon, size: ConfigService.mediumIconSize, color: effectiveIconColor),
+            SizedBox(width: ConfigService.smallPadding),
             Text(
               title,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
+                fontSize: 22,
               ),
             ),
           ],
         ),
         if (onActionPressed != null && actionIcon != null)
           IconButton(
-            icon: Icon(actionIcon, size: 18),
+            icon: Icon(actionIcon, size: ConfigService.mediumIconSize),
             tooltip: actionTooltip,
             onPressed: onActionPressed,
           ),

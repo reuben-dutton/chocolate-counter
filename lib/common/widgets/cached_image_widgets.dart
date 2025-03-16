@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:provider/provider.dart';
 
@@ -80,7 +81,7 @@ class ItemImageWidget extends StatelessWidget {
     Key? key,
     required this.imagePath,
     required this.itemName,
-    this.radius = 24.0,
+    this.radius = ConfigService.avatarRadiusMedium,
     this.imageService,
     this.memoryEfficient = true,
   }) : super(key: key);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
@@ -74,7 +75,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
           child: Card(
             color: theme.colorScheme.surface,
             child: Padding(
-              padding: const EdgeInsets.all(4.0),
+              padding: const EdgeInsets.all(ConfigService.tinyPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -83,7 +84,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                     icon: Icons.list,
                     iconColor: theme.colorScheme.secondary,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: ConfigService.tinyPadding),
                   Expanded(
                     child: filteredItems.isEmpty
                         ? const Center(child: Text('No matching items found'))
@@ -105,11 +106,11 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
         
         // Selected items
         if (_selectedItems.isNotEmpty) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: ConfigService.mediumPadding),
           Card(
             color: theme.colorScheme.surface,
             child: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(ConfigService.smallPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -118,7 +119,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                     icon: Icons.check_circle,
                     iconColor: theme.colorScheme.primary,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: ConfigService.tinyPadding),
                   Container(
                     constraints: BoxConstraints(
                       maxHeight: _selectedItems.length > 2 ? 150 : 100,
@@ -141,12 +142,12 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: ConfigService.mediumPadding),
         ],
         
         // Search and Add Item section
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
             boxShadow: [
@@ -164,25 +165,25 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Search items...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
+                    prefixIcon: const Icon(Icons.search, size: ConfigService.defaultIconSize),
                     suffixIcon: _searchQuery.isNotEmpty 
                       ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
+                          icon: const Icon(Icons.clear, size: ConfigService.mediumIconSize),
                           onPressed: () => _searchController.clear(),
                         )
                       : null,
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: Colors.grey.withAlpha(25),
+                    fillColor: Colors.grey.withAlpha(ConfigService.alphaLight),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: ConfigService.smallPadding),
               IconButton(
                 icon: const Icon(Icons.add_box),
                 tooltip: 'Add New Item',

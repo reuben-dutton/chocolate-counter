@@ -30,7 +30,7 @@ class ShipmentItemList extends StatelessWidget {
         final item = items[index] as ShipmentItem;
         return ListTile(
           dense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          contentPadding: const EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: ConfigService.tinyPadding),
           leading: ItemImageWidget(
             imagePath: item.itemDefinition?.imageUrl,
             itemName: item.itemDefinition?.name ?? 'Unknown Item',
@@ -48,19 +48,19 @@ class ShipmentItemList extends StatelessWidget {
             children: [
               ExpirationDateWidget(
                 expirationDate: item.expirationDate,
-                iconSize: 12,
+                iconSize: ConfigService.tinyIconSize,
                 fontSize: 12,
               ),
               if (item.unitPrice != null) 
                 Row(
                   children: [
-                    Icon(Icons.attach_money, size: 12, color: theme.colorScheme.secondary),
-                    const SizedBox(width: 4),
+                    Icon(Icons.attach_money, size: ConfigService.tinyIconSize, color: theme.colorScheme.secondary),
+                    const SizedBox(width: ConfigService.tinyPadding),
                     Text(
                       ConfigService.formatCurrency(item.unitPrice!),
                       style: TextStyle(fontSize: 12),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: ConfigService.smallPadding),
                     Text(
                       'Total: ${ConfigService.formatCurrency(item.unitPrice! * item.quantity)}',
                       style: TextStyle(
@@ -78,14 +78,14 @@ class ShipmentItemList extends StatelessWidget {
               // Add edit button for expiration date if the callback is provided
               if (onExpirationDateChanged != null)
                 IconButton(
-                  icon: const Icon(Icons.edit_calendar, size: 16),
-                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.edit_calendar, size: ConfigService.smallIconSize),
+                  padding: EdgeInsets.all(ConfigService.tinyPadding),
                   constraints: const BoxConstraints(),
                   visualDensity: VisualDensity.compact,
                   tooltip: 'Edit expiration date',
                   onPressed: () => _showExpirationEditBottomSheet(context, item),
                 ),
-              const SizedBox(width: 8),
+              const SizedBox(width: ConfigService.smallPadding),
               Chip(
                 padding: const EdgeInsets.all(0),
                 visualDensity: VisualDensity.compact,

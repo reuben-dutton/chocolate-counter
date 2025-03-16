@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/database_service.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/service_locator.dart';
@@ -19,10 +20,10 @@ class SettingsScreen extends StatelessWidget {
       builder: (context, state) {
         return Scaffold(
           body: ListView(
-            padding: const EdgeInsets.only(top: 0, bottom: 8, left: 4, right: 4),
+            padding: const EdgeInsets.only(top: 0, bottom: ConfigService.smallPadding, left: ConfigService.tinyPadding, right: ConfigService.tinyPadding),
             children: [
               ListTile(
-                leading: const Icon(Icons.palette, size: 20),
+                leading: const Icon(Icons.palette, size: ConfigService.defaultIconSize),
                 title: const Text('Theme'),
                 subtitle: _getThemeSubtitle(state.themeMode),
                 trailing: DropdownButton<ThemeMode>(
@@ -56,7 +57,7 @@ class SettingsScreen extends StatelessWidget {
               SwitchListTile(
                 title: const Text('Hardware Acceleration'),
                 subtitle: const Text('Use GPU for rendering (disabling may help on some devices, but is undefined behaviour)'),
-                secondary: const Icon(Icons.speed, size: 20),
+                secondary: const Icon(Icons.speed, size: ConfigService.defaultIconSize),
                 value: state.hardwareAcceleration,
                 onChanged: (bool value) {
                   context.read<PreferencesBloc>().add(SetHardwareAcceleration(value));
@@ -65,7 +66,7 @@ class SettingsScreen extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Restart the app for this change to take effect'),
-                      duration: Duration(seconds: 3),
+                      duration: ConfigService.snackBarDuration,
                     ),
                   );
                 },
@@ -74,7 +75,7 @@ class SettingsScreen extends StatelessWidget {
               
               // Debug section
               const Padding(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                padding: EdgeInsets.fromLTRB(ConfigService.defaultPadding, ConfigService.defaultPadding, ConfigService.defaultPadding, ConfigService.smallPadding),
                 child: Text(
                   'Debug Options',
                   style: TextStyle(
@@ -86,7 +87,7 @@ class SettingsScreen extends StatelessWidget {
               ),
               ListTile(
                 leading: Icon(Icons.delete_forever, 
-                  size: 20, 
+                  size: ConfigService.defaultIconSize, 
                   color: Colors.red
                 ),
                 title: const Text('Reset Database'),
@@ -96,12 +97,12 @@ class SettingsScreen extends StatelessWidget {
               const Divider(),
               
               const AboutListTile(
-                icon: Icon(Icons.info_outline, size: 20),
+                icon: Icon(Icons.info_outline, size: ConfigService.defaultIconSize),
                 applicationName: 'Food Inventory',
                 applicationVersion: '1.0.0',
                 applicationIcon: Icon(Icons.inventory),
                 aboutBoxChildren: [
-                  SizedBox(height: 10),
+                  SizedBox(height: ConfigService.mediumPadding),
                   Text('A comprehensive app for tracking food inventory and stock.'),
                 ],
               ),

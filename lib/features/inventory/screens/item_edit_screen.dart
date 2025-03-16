@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
@@ -157,7 +158,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
                           _buildImagePreview(),
                           
                           Padding(
-                            padding: const EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.all(ConfigService.defaultPadding),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -167,7 +168,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
                                     labelText: 'Item Name *',
                                     hintText: 'e.g., Snickers Bar',
                                     isDense: true,
-                                    prefixIcon: Icon(Icons.label, size: 18),
+                                    prefixIcon: Icon(Icons.label, size: ConfigService.mediumIconSize),
                                   ),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
@@ -176,40 +177,40 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: ConfigService.mediumPadding),
                                 TextFormField(
                                   controller: _barcodeController,
                                   decoration: const InputDecoration(
                                     labelText: 'Barcode (Optional)',
                                     hintText: 'e.g., 012345678912',
                                     isDense: true,
-                                    prefixIcon: Icon(Icons.qr_code, size: 18),
+                                    prefixIcon: Icon(Icons.qr_code, size: ConfigService.mediumIconSize),
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: ConfigService.defaultPadding),
                                 
                                 // Image controls
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     ElevatedButton.icon(
-                                      icon: const Icon(Icons.camera_alt, size: 16),
+                                      icon: const Icon(Icons.camera_alt, size: ConfigService.smallIconSize),
                                       label: const Text('Camera'),
                                       onPressed: _takePhoto,
                                     ),
-                                    const SizedBox(width: 16),
+                                    const SizedBox(width: ConfigService.defaultPadding),
                                     OutlinedButton.icon(
-                                      icon: const Icon(Icons.photo_library, size: 16),
+                                      icon: const Icon(Icons.photo_library, size: ConfigService.smallIconSize),
                                       label: const Text('Gallery'),
                                       onPressed: _pickPhoto,
                                     ),
                                   ],
                                 ),
                                 if (_imageFile != null || _existingImagePath != null) ...[
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: ConfigService.smallPadding),
                                   Center(
                                     child: TextButton.icon(
-                                      icon: const Icon(Icons.delete, color: Colors.red, size: 16),
+                                      icon: const Icon(Icons.delete, color: Colors.red, size: ConfigService.smallIconSize),
                                       label: const Text('Remove Image', 
                                         style: TextStyle(color: Colors.red, fontSize: 12)
                                       ),
@@ -254,7 +255,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
         color: Colors.grey.shade300,
         child: const Icon(
           Icons.camera_alt,
-          size: 60,
+          size: ConfigService.xLargeIconSize,
           color: Colors.white,
         ),
       );

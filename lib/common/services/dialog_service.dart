@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/widgets/modal_bottom_sheet.dart';
 import 'package:food_inventory/features/settings/widgets/confirm_dialog.dart';
 
@@ -50,7 +51,7 @@ class DialogService {
             
             // Content
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              padding: const EdgeInsets.symmetric(vertical: ConfigService.defaultPadding),
               child: Text(
                 content,
                 style: theme.textTheme.bodyMedium,
@@ -58,7 +59,7 @@ class DialogService {
             ),
             
             // Actions
-            const SizedBox(height: 24),
+            const SizedBox(height: ConfigService.largePadding),
             ModalBottomSheet.buildActions(
               context: context,
               onCancel: () => Navigator.of(context).pop(false),
@@ -142,8 +143,8 @@ class DialogService {
             backgroundColor: theme.colorScheme.surface,
             title: Row(
               children: [
-                Icon(icon ?? Icons.inventory_2, size: 20),
-                const SizedBox(width: 8),
+                Icon(icon ?? Icons.inventory_2, size: ConfigService.defaultIconSize),
+                const SizedBox(width: ConfigService.smallPadding),
                 Text(title),
               ],
             ),
@@ -151,7 +152,7 @@ class DialogService {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('Maximum: $maxQuantity'),
-                const SizedBox(height: 8),
+                const SizedBox(height: ConfigService.smallPadding),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -240,7 +241,7 @@ class DialogService {
                 
                 // Content
                 Text('Maximum: $maxQuantity'),
-                const SizedBox(height: 16),
+                const SizedBox(height: ConfigService.defaultPadding),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -282,7 +283,7 @@ class DialogService {
                 ),
                 
                 // Actions
-                const SizedBox(height: 24),
+                const SizedBox(height: ConfigService.largePadding),
                 ModalBottomSheet.buildActions(
                   context: context,
                   onCancel: () => Navigator.of(context).pop(),
@@ -340,11 +341,11 @@ class DialogService {
             ),
             
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              padding: const EdgeInsets.symmetric(vertical: ConfigService.defaultPadding),
               child: Text(message),
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: ConfigService.largePadding),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -373,7 +374,7 @@ class DialogService {
           mainAxisSize: MainAxisSize.min,
           children: [
             const CircularProgressIndicator(),
-            const SizedBox(height: 16),
+            const SizedBox(height: ConfigService.defaultPadding),
             Text(message),
           ],
         ),
@@ -395,9 +396,9 @@ class DialogService {
           mainAxisSize: MainAxisSize.min,
           children: [
             const CircularProgressIndicator(),
-            const SizedBox(height: 16),
+            const SizedBox(height: ConfigService.defaultPadding),
             Text(message),
-            const SizedBox(height: 16),
+            const SizedBox(height: ConfigService.defaultPadding),
           ],
         );
       },

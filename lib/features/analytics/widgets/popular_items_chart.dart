@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/analytics/models/analytics_data.dart';
 
 class PopularItemsChart extends StatelessWidget {
@@ -24,14 +25,14 @@ class PopularItemsChart extends StatelessWidget {
             children: [
               Icon(
                 Icons.analytics_outlined,
-                size: 64,
-                color: theme.colorScheme.onSurface.withAlpha(100),
+                size: ConfigService.xLargeIconSize,
+                color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaModerate)
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: ConfigService.defaultPadding),
               Text(
                 'No sales data available',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withAlpha(150),
+                  color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaDefault),
                 ),
               ),
             ],
@@ -54,7 +55,7 @@ class PopularItemsChart extends StatelessWidget {
         
         // Top Sellers Section
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          padding: const EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.mediumPadding),
           child: Text(
             'Top Sellers',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -73,15 +74,15 @@ class PopularItemsChart extends StatelessWidget {
               final index = topItems.indexOf(item);
               
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                padding: const EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.smallPadding),
                 child: Row(
                   children: [
                     Container(
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withAlpha(25),
-                        borderRadius: BorderRadius.circular(10),
+                        color: theme.colorScheme.primary.withAlpha(ConfigService.alphaLight),
+                        borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
                       ),
                       child: Center(
                         child: Text(
@@ -94,7 +95,7 @@ class PopularItemsChart extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: ConfigService.defaultPadding),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,18 +108,18 @@ class PopularItemsChart extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: ConfigService.tinyPadding),
                           LinearProgressIndicator(
                             value: item.salesCount / topItems.first.salesCount,
                             backgroundColor: theme.colorScheme.surface,
                             color: theme.colorScheme.primary,
                             minHeight: 6,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: ConfigService.defaultPadding),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -132,7 +133,7 @@ class PopularItemsChart extends StatelessWidget {
                         Text(
                           '$percentage%',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withAlpha(150),
+                            color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaDefault),
                           ),
                         ),
                       ],
@@ -151,24 +152,16 @@ class PopularItemsChart extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.all(4.0),
+      padding: const EdgeInsets.all(ConfigService.tinyPadding),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(ConfigService.defaultPadding),
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Sales Insights',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -204,10 +197,10 @@ class PopularItemsChart extends StatelessWidget {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(ConfigService.mediumPadding),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withAlpha(25),
-            borderRadius: BorderRadius.circular(12),
+            color: theme.colorScheme.primary.withAlpha(ConfigService.alphaLight),
+            borderRadius: BorderRadius.circular(ConfigService.mediumPadding),
           ),
           child: Icon(
             icon,
@@ -215,14 +208,14 @@ class PopularItemsChart extends StatelessWidget {
             size: 24,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: ConfigService.smallPadding),
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withAlpha(150),
+            color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaDefault),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: ConfigService.smallPadding),
         Text(
           value,
           style: theme.textTheme.bodyMedium?.copyWith(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 
 /// Helper for navigation with custom transitions
 class NavigationUtils {
@@ -8,7 +9,7 @@ class NavigationUtils {
     Widget destination, {
     bool fullscreenDialog = false,
     bool replace = false,
-    Duration duration = const Duration(milliseconds: 300),
+    Duration duration = ConfigService.animationDuration,
   }) {
     final PageRouteBuilder<T> route = PageRouteBuilder<T>(
       pageBuilder: (context, animation, secondaryAnimation) => destination,
@@ -45,7 +46,7 @@ class NavigationUtils {
   static Future<T?> navigateAndRemoveUntil<T>(
     BuildContext context,
     Widget destination, {
-    Duration duration = const Duration(milliseconds: 300),
+    Duration duration = ConfigService.animationDuration,
   }) {
     final PageRouteBuilder<T> route = PageRouteBuilder<T>(
       pageBuilder: (context, animation, secondaryAnimation) => destination,

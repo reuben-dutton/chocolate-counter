@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
@@ -102,10 +103,10 @@ class _ShipmentsList extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.local_shipping_outlined, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
+                  const Icon(Icons.local_shipping_outlined, size: ConfigService.xLargeIconSize, color: Colors.grey),
+                  const SizedBox(height: ConfigService.defaultPadding),
                   const Text('No shipments found'),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: ConfigService.defaultPadding),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add),
                     label: const Text('Add Shipment'),
@@ -129,7 +130,8 @@ class _ShipmentsList extends StatelessWidget {
               context.read<ShipmentBloc>().add(const LoadShipments());
             },
             child: ListView.builder(
-              padding: const EdgeInsets.only(top: 0, bottom: 8, left: 4, right: 4),
+              // top padding set to 0 as we have padding in the menu indicators
+              padding: const EdgeInsets.only(top: 0, bottom: ConfigService.smallPadding, left: ConfigService.tinyPadding, right: ConfigService.tinyPadding),
               itemCount: shipments.length,
               itemBuilder: (context, index) {
                 final shipment = shipments[index];

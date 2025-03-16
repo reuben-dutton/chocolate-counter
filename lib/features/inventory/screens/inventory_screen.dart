@@ -1,6 +1,7 @@
 // lib/features/inventory/screens/inventory_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
 import 'package:food_inventory/features/inventory/screens/add_item_definition_screen.dart';
@@ -68,7 +69,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               
               // Search bar at the bottom
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   boxShadow: [
@@ -86,25 +87,25 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         controller: _searchController,
                         decoration: InputDecoration(
                           hintText: 'Search items...',
-                          prefixIcon: const Icon(Icons.search, size: 20),
+                          prefixIcon: const Icon(Icons.search, size: ConfigService.defaultIconSize),
                           suffixIcon: _searchQuery.isNotEmpty 
                             ? IconButton(
-                                icon: const Icon(Icons.clear, size: 18),
+                                icon: const Icon(Icons.clear, size: ConfigService.mediumIconSize),
                                 onPressed: () => _searchController.clear(),
                               )
                             : null,
                           isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
                             borderSide: BorderSide.none,
                           ),
                           filled: true,
-                          fillColor: Colors.grey.withAlpha(25),
+                          fillColor: Colors.grey.withAlpha(ConfigService.alphaLight),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: ConfigService.smallPadding),
                     IconButton(
                       icon: const Icon(Icons.add_box),
                       tooltip: 'Add Item',
@@ -156,8 +157,8 @@ class _InventoryListView extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
+                  Icon(Icons.inventory_2_outlined, size: ConfigService.xLargeIconSize, color: Colors.grey),
+                  SizedBox(height: ConfigService.defaultPadding),
                   Text('No items found. Add some by creating a shipment.'),
                 ],
               ),
@@ -177,8 +178,8 @@ class _InventoryListView extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.search_off, size: 48, color: Colors.grey),
-                  const SizedBox(height: 16),
+                  const Icon(Icons.search_off, size: ConfigService.largeIconSize, color: Colors.grey),
+                  const SizedBox(height: ConfigService.defaultPadding),
                   Text('No results found for "$searchQuery"'),
                 ],
               ),
@@ -190,7 +191,8 @@ class _InventoryListView extends StatelessWidget {
               context.read<InventoryBloc>().add(const LoadInventoryItems());
             },
             child: ListView.builder(
-              padding: const EdgeInsets.only(top: 0, bottom: 8, left: 4, right: 4),
+              // needs to be 0 padding at the top as we have padding from the menu indicator
+              padding: const EdgeInsets.only(top: 0, bottom: ConfigService.smallPadding, left: ConfigService.tinyPadding, right: ConfigService.tinyPadding),
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];

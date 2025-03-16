@@ -64,7 +64,7 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.delete, size: 20),
+                  icon: const Icon(Icons.delete, size: ConfigService.defaultIconSize),
                   onPressed: () => _deleteShipment(context),
                 ),
               ],
@@ -90,7 +90,7 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
     
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(ConfigService.smallPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -98,25 +98,25 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
             Card(
               color: theme.colorScheme.surface,
               child: Padding(
-                padding: const EdgeInsets.all(12.0),
+                padding: const EdgeInsets.all(ConfigService.mediumPadding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.info_outline, size: 16),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.info_outline, size: ConfigService.smallIconSize),
+                        const SizedBox(width: ConfigService.smallPadding),
                         Text(
                           'Shipment Information',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: ConfigService.mediumPadding),
                     Row(
                       children: [
-                        const Icon(Icons.calendar_today, size: 14),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.calendar_today, size: ConfigService.smallIconSize),
+                        const SizedBox(width: ConfigService.smallPadding),
                         Text(
                           'Date: $formattedDate',
                           style: const TextStyle(fontSize: 14),
@@ -124,11 +124,11 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
                       ],
                     ),
                     if (widget.shipment.name != null) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: ConfigService.tinyPadding),
                       Row(
                         children: [
-                          const Icon(Icons.label, size: 14),
-                          const SizedBox(width: 8),
+                          const Icon(Icons.label, size: ConfigService.smallIconSize),
+                          const SizedBox(width: ConfigService.smallPadding),
                           Text(
                             'Name: ${widget.shipment.name}',
                             style: const TextStyle(fontSize: 14),
@@ -137,11 +137,11 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
                       ),
                     ],
                     // Add total cost row
-                    const SizedBox(height: 4),
+                    const SizedBox(height: ConfigService.tinyPadding),
                     Row(
                       children: [
-                        const Icon(Icons.monetization_on, size: 14),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.monetization_on, size: ConfigService.smallIconSize),
+                        const SizedBox(width: ConfigService.smallPadding),
                         Text(
                           'Total Cost: ${ConfigService.formatCurrency(totalCost)}',
                           style: const TextStyle(
@@ -156,7 +156,7 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
               ),
             ),
             
-            const SizedBox(height: 12),
+            const SizedBox(height: ConfigService.mediumPadding),
             
             // Items list
             _ShipmentItemsList(shipmentId: widget.shipment.id!, items: items),
@@ -221,7 +221,7 @@ class _ShipmentItemsList extends StatelessWidget {
     return Card(
       color: theme.colorScheme.surface,
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(ConfigService.mediumPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -230,8 +230,8 @@ class _ShipmentItemsList extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.inventory_2, size: 16),
-                    const SizedBox(width: 8),
+                    const Icon(Icons.inventory_2, size: ConfigService.smallIconSize),
+                    const SizedBox(width: ConfigService.smallPadding),
                     Text(
                       'Items (${items.length})',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14),
@@ -242,8 +242,8 @@ class _ShipmentItemsList extends StatelessWidget {
                   message: 'Tap the calendar icon to edit expiration dates',
                   child: Row(
                     children: [
-                      const Icon(Icons.edit_calendar, size: 16),
-                      const SizedBox(width: 4),
+                      const Icon(Icons.edit_calendar, size: ConfigService.smallIconSize),
+                      const SizedBox(width: ConfigService.mediumPadding),
                       Text(
                         'Edit dates', 
                         style: TextStyle(
@@ -256,10 +256,10 @@ class _ShipmentItemsList extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: ConfigService.smallPadding),
             if (items.isEmpty)
               const Padding(
-                padding: EdgeInsets.all(8.0),
+                padding: EdgeInsets.all(ConfigService.smallPadding),
                 child: Text('No items in this shipment.'),
               )
             else

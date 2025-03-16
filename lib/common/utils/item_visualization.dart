@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 
 class ItemVisualization {
   // Comprehensive list of food-related icons from Material and Font Awesome
@@ -58,9 +59,9 @@ class ItemVisualization {
   static List<Color> getEarthyColors(BuildContext context) {
     final theme = Theme.of(context);
     return [
-      theme.colorScheme.secondary..withAlpha(175),
+      theme.colorScheme.secondary..withAlpha(ConfigService.alphaHigh),
       theme.colorScheme.secondaryContainer,
-      theme.colorScheme.tertiary..withAlpha(175),
+      theme.colorScheme.tertiary..withAlpha(ConfigService.alphaHigh),
       theme.colorScheme.tertiaryContainer,
     ];
   }

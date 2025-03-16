@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/common/widgets/count_chip_widget.dart';
@@ -30,24 +31,24 @@ class InventoryListItem extends StatelessWidget {
       opacity: isEmptyItem ? 0.5 : 1.0,
       child: Card(
         color: theme.colorScheme.surface,
-        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.tinyPadding),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ConfigService.mediumPadding)),
         elevation: 1,
         child: InkWell(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(ConfigService.smallPadding),
             child: Row(
               children: [
                 ItemImageWidget(
                   imagePath: itemDefinition.imageUrl,
                   itemName: itemDefinition.name,
-                  radius: 22,
+                  radius: ConfigService.avatarRadiusMedium,
                   imageService: imageService,
                   memoryEfficient: true,
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: ConfigService.mediumPadding),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,7 +59,7 @@ class InventoryListItem extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleMedium,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: ConfigService.tinyPadding),
                       Row(
                         children: [
                           CountChipWidget(
@@ -66,7 +67,7 @@ class InventoryListItem extends StatelessWidget {
                             count: stockCount,
                             color: theme.colorScheme.secondary,
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: ConfigService.smallPadding),
                           CountChipWidget(
                             icon: Icons.inventory_2,
                             count: inventoryCount,
@@ -79,8 +80,8 @@ class InventoryListItem extends StatelessWidget {
                 ),
                 Icon(
                   Icons.chevron_right, 
-                  size: 18, 
-                  color: theme.colorScheme.onSurface.withAlpha(128)
+                  size: ConfigService.mediumIconSize, 
+                  color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaDefault)
                 ),
               ],
             ),

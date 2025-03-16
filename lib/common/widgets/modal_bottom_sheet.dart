@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 
 /// A utility class for showing modal bottom sheets consistently across the app
 class ModalBottomSheet {
@@ -18,7 +19,7 @@ class ModalBottomSheet {
       enableDrag: enableDrag,
       backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(ConfigService.borderRadiusLarge)),
       ),
       builder: (context) {
         // Add padding to avoid the bottom inset (keyboard, navigation bar)
@@ -29,12 +30,12 @@ class ModalBottomSheet {
           child: useScrollView 
             ? SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+                  padding: EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.defaultPadding), // previously +4
                   child: builder(context),
                 ),
               )
             : Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+                padding: EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.defaultPadding), // previously +4
                 child: builder(context),
               ),
         );
@@ -62,8 +63,8 @@ class ModalBottomSheet {
               child: Row(
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 24, color: effectiveIconColor),
-                    const SizedBox(width: 12),
+                    Icon(icon, size: ConfigService.defaultIconSize, color: effectiveIconColor),
+                    const SizedBox(width: ConfigService.mediumPadding),
                   ],
                   Flexible(
                     child: Text(
@@ -107,7 +108,7 @@ class ModalBottomSheet {
             onPressed: loading ? null : onCancel,
             child: Text(cancelText),
           ),
-        const SizedBox(width: 16),
+        const SizedBox(width: ConfigService.defaultPadding),
         if (onConfirm != null)
           loading
           ? const CircularProgressIndicator()

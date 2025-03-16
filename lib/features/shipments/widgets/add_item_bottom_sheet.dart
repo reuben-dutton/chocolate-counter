@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/widgets/expiration_date_widget.dart';
 import 'package:food_inventory/common/widgets/modal_bottom_sheet.dart';
@@ -46,27 +47,27 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
         ),
         
         // Quantity selector
-        const SizedBox(height: 16),
+        const SizedBox(height: ConfigService.defaultPadding),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('Quantity: '),
             IconButton(
-              icon: const Icon(Icons.remove_circle_outline, size: 20),
+              icon: const Icon(Icons.remove_circle_outline, size: ConfigService.defaultIconSize),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
               onPressed: quantity > 1
                   ? () => setState(() => quantity--)
                   : null,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: ConfigService.smallPadding),
             Text(
               '$quantity',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: ConfigService.smallPadding),
             IconButton(
-              icon: const Icon(Icons.add_circle_outline, size: 20),
+              icon: const Icon(Icons.add_circle_outline, size: ConfigService.defaultIconSize),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
               onPressed: () => setState(() => quantity++),
@@ -75,7 +76,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
         ),
         
         // Expiration date selector
-        const SizedBox(height: 16),
+        const SizedBox(height: ConfigService.defaultPadding),
         ListTile(
           dense: true,
           contentPadding: EdgeInsets.zero,
@@ -85,7 +86,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
             showIcon: false,
           ),
           trailing: IconButton(
-            icon: const Icon(Icons.calendar_today, size: 20),
+            icon: const Icon(Icons.calendar_today, size: ConfigService.defaultIconSize),
             onPressed: () async {
               final DateTime? picked = await widget.dialogService.showCustomDatePicker(
                 context: context,
@@ -104,7 +105,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
         ),
         
         // Add price input with increment/decrement
-        const SizedBox(height: 16),
+        const SizedBox(height: ConfigService.defaultPadding),
         Row(
           children: [
             const Expanded(
@@ -133,7 +134,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.attach_money, size: 16),
+                  const Icon(Icons.attach_money, size: ConfigService.smallIconSize),
                   Expanded(
                     child: Text(
                       _priceController.text,
@@ -156,7 +157,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
         ),
         
         // Action buttons
-        const SizedBox(height: 24),
+        const SizedBox(height: ConfigService.largePadding),
         ModalBottomSheet.buildActions(
           context: context,
           onCancel: () => Navigator.of(context).pop(),

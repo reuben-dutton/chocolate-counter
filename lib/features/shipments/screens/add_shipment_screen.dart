@@ -109,7 +109,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                 children: [
                   // Stepper indicator
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(vertical: ConfigService.smallPadding),
                     child: Row(
                       children: [
                         Expanded(
@@ -139,12 +139,12 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                   
                   // Fixed bottom buttons
                   Container(
-                    padding: const EdgeInsets.all(12.0),
+                    padding: const EdgeInsets.all(ConfigService.mediumPadding),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surface,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withAlpha(25),
+                          color: Colors.black.withAlpha(ConfigService.alphaLight),
                           spreadRadius: 1,
                           blurRadius: 3,
                           offset: const Offset(0, -2),
@@ -155,7 +155,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         TextButton.icon(
-                          icon: const Icon(Icons.arrow_back, size: 16),
+                          icon: const Icon(Icons.arrow_back, size: ConfigService.smallIconSize),
                           label: Text(_currentStep > 0 ? 'Back' : 'Cancel'),
                           onPressed: _isProcessing
                               ? null
@@ -173,7 +173,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                         ElevatedButton.icon(
                           icon: Icon(
                             _currentStep == 0 ? Icons.arrow_forward : Icons.save,
-                            size: 16,
+                            size: ConfigService.smallIconSize,
                           ),
                           label: Text(_currentStep == 0 ? 'Continue' : 'Save'),
                           onPressed: _isProcessing
@@ -220,18 +220,18 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                   children: [
                     Icon(
                       Icons.shopping_bag_outlined,
-                      size: 64,
-                      color: theme.colorScheme.onSurface.withAlpha(100),
+                      size: ConfigService.xLargeIconSize,
+                      color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaModerate),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: ConfigService.defaultPadding),
                     const Text('No items selected'),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: ConfigService.defaultPadding),
                     const Text('Tap the button below to add items')
                   ],
                 ),
               )
             : ListView.builder(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(ConfigService.smallPadding),
                 itemCount: _selectedItems.length,
                 itemBuilder: (context, index) {
                   return SelectedShipmentItemTile(
@@ -322,7 +322,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
     
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(ConfigService.defaultPadding),
         child: Form(
           key: _formKey,
           child: Column(
@@ -334,10 +334,10 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Shipment Name (Optional)',
                   hintText: 'e.g., Monthly Grocery Delivery',
-                  prefixIcon: Icon(Icons.label, size: 18),
+                  prefixIcon: Icon(Icons.label, size: ConfigService.mediumIconSize),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: ConfigService.defaultPadding),
               
               // Shipment date
               InkWell(
@@ -345,7 +345,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                 child: InputDecorator(
                   decoration: const InputDecoration(
                     labelText: 'Shipment Date',
-                    prefixIcon: Icon(Icons.calendar_today, size: 18),
+                    prefixIcon: Icon(Icons.calendar_today, size: ConfigService.mediumIconSize),
                   ),
                   child: Text(
                     dateFormat.format(_shipmentDate),
@@ -354,21 +354,21 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: ConfigService.largePadding),
               
               // Summary
               Card(
                 color: theme.colorScheme.surface,
                 elevation: 1,
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(ConfigService.defaultPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.summarize, size: 18, color: theme.colorScheme.primary),
-                          const SizedBox(width: 8),
+                          Icon(Icons.summarize, size: ConfigService.mediumIconSize, color: theme.colorScheme.primary),
+                          const SizedBox(width: ConfigService.smallPadding),
                           Text(
                             'Shipment Summary',
                             style: theme.textTheme.titleMedium,
@@ -381,8 +381,8 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                           Expanded(
                             child: Row(
                               children: [
-                                const Icon(Icons.inventory_2, size: 16),
-                                const SizedBox(width: 8),
+                                const Icon(Icons.inventory_2, size: ConfigService.smallIconSize),
+                                const SizedBox(width: ConfigService.smallPadding),
                                 Text(
                                   'Items: ${_selectedItems.length}', 
                                   style: theme.textTheme.bodyMedium
@@ -393,8 +393,8 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                           Expanded(
                             child: Row(
                               children: [
-                                const Icon(Icons.shopping_bag, size: 16),
-                                const SizedBox(width: 8),
+                                const Icon(Icons.shopping_bag, size: ConfigService.smallIconSize),
+                                const SizedBox(width: ConfigService.smallPadding),
                                 Text(
                                   'Total: ${_selectedItems.fold<int>(0, (sum, item) => sum + item.quantity)}',
                                   style: theme.textTheme.bodyMedium,
@@ -404,11 +404,11 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: ConfigService.smallPadding),
                       Row(
                         children: [
-                          const Icon(Icons.monetization_on, size: 16),
-                          const SizedBox(width: 8),
+                          const Icon(Icons.monetization_on, size: ConfigService.smallIconSize),
+                          const SizedBox(width: ConfigService.smallPadding),
                           Text(
                             'Total Cost: ${ConfigService.formatCurrency(totalCost)}',
                             style: TextStyle(
@@ -423,21 +423,21 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: ConfigService.largePadding),
               
               // Selected items list
               Card(
                 color: theme.colorScheme.surface,
                 elevation: 1,
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(ConfigService.defaultPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.list, size: 18, color: theme.colorScheme.primary),
-                          const SizedBox(width: 8),
+                          Icon(Icons.list, size: ConfigService.mediumIconSize, color: theme.colorScheme.primary),
+                          const SizedBox(width: ConfigService.smallPadding),
                           Text(
                             'Selected Items',
                             style: theme.textTheme.titleMedium,
@@ -450,7 +450,7 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                         constraints: const BoxConstraints(maxHeight: 300),
                         decoration: BoxDecoration(
                           border: Border.all(color: theme.colorScheme.outlineVariant),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
                         ),
                         child: ListView.separated(
                           shrinkWrap: true,
@@ -463,10 +463,10 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                             final item = _selectedItems[index];
                             return ListTile(
                               dense: true,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: ConfigService.mediumPadding, vertical: ConfigService.tinyPadding),
                               leading: Icon(
                                 Icons.inventory_2,
-                                size: 20,
+                                size: ConfigService.defaultIconSize,
                                 color: theme.colorScheme.primary,
                               ),
                               title: Text(
@@ -482,10 +482,10 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                                       children: [
                                         Icon(
                                           Icons.event_available, 
-                                          size: 12, 
+                                          size: ConfigService.tinyIconSize, 
                                           color: theme.colorScheme.secondary
                                         ),
-                                        const SizedBox(width: 4),
+                                        const SizedBox(width: ConfigService.tinyPadding),
                                         Text(
                                           dateFormat.format(item.expirationDate!),
                                           style: theme.textTheme.bodySmall,
@@ -497,10 +497,10 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                                       children: [
                                         Icon(
                                           Icons.attach_money, 
-                                          size: 12, 
+                                          size: ConfigService.tinyIconSize, 
                                           color: theme.colorScheme.secondary
                                         ),
-                                        const SizedBox(width: 4),
+                                        const SizedBox(width: ConfigService.tinyPadding),
                                         Text(
                                           '${ConfigService.formatCurrency(item.unitPrice!)} × ${item.quantity}',
                                           style: theme.textTheme.bodySmall,
@@ -510,10 +510,10 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                                 ],
                               ),
                               trailing: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: ConfigService.mediumPadding, vertical: ConfigService.tinyPadding),
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
                                 ),
                                 child: Text(
                                   '${item.quantity}',

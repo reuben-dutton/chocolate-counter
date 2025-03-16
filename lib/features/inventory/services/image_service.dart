@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/utils/item_visualization.dart';
 import 'package:image_picker/image_picker.dart';
@@ -262,7 +263,7 @@ class ImageService {
   }
   
   /// Build a widget to display an item image with fallback
-  Widget buildItemImage(String? imagePath, String itemName, BuildContext context, {double radius = 24.0}) {
+  Widget buildItemImage(String? imagePath, String itemName, BuildContext context, {double radius = ConfigService.avatarRadiusMedium}) {
     if (imagePath == null) {
       final color = ItemVisualization.getColorForItem(itemName, context);
       final icon = ItemVisualization.getIconForItem(itemName);
@@ -318,7 +319,7 @@ class ImageService {
         width: double.infinity,
         height: height,
         color: color,
-        child: Icon(icon, size: 80, color: Colors.white),
+        child: Icon(icon, size: ConfigService.xxLargeIconSize, color: Colors.white),
       );
     }
 
@@ -330,7 +331,7 @@ class ImageService {
           width: double.infinity,
           height: height,
           color: Colors.grey.shade300,
-          child: const Icon(Icons.image_not_supported, size: 80, color: Colors.white),
+          child: const Icon(Icons.image_not_supported, size: ConfigService.xxLargeIconSize, color: Colors.white),
         );
       }
       
@@ -346,7 +347,7 @@ class ImageService {
             width: double.infinity,
             height: height,
             color: Colors.grey.shade300,
-            child: const Icon(Icons.image_not_supported, size: 80, color: Colors.white),
+            child: const Icon(Icons.image_not_supported, size: ConfigService.xxLargeIconSize, color: Colors.white),
           );
         },
       );
@@ -357,7 +358,7 @@ class ImageService {
         width: double.infinity,
         height: height,
         color: Colors.grey.shade300,
-        child: const Icon(Icons.image_not_supported, size: 80, color: Colors.white),
+        child: const Icon(Icons.image_not_supported, size: ConfigService.xxLargeIconSize, color: Colors.white),
       );
     }
   }

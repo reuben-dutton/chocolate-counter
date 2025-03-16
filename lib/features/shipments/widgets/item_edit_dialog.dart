@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 
 class ItemEditDialog extends StatefulWidget {
@@ -39,8 +40,8 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          const Icon(Icons.edit, size: 20),
-          const SizedBox(width: 8),
+          const Icon(Icons.edit, size: ConfigService.defaultIconSize),
+          const SizedBox(width: ConfigService.smallPadding),
           const Text('Edit Item')
         ],
       ),
@@ -53,7 +54,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
               decoration: const InputDecoration(
                 labelText: 'Name',
                 isDense: true,
-                prefixIcon: Icon(Icons.label, size: 18),
+                prefixIcon: Icon(Icons.label, size: ConfigService.mediumIconSize),
               ),
             ),
             TextField(
@@ -61,7 +62,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
               decoration: const InputDecoration(
                 labelText: 'Barcode (Optional)',
                 isDense: true,
-                prefixIcon: Icon(Icons.qr_code, size: 18),
+                prefixIcon: Icon(Icons.qr_code, size: ConfigService.mediumIconSize),
               ),
             ),
             TextField(
@@ -69,7 +70,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
               decoration: const InputDecoration(
                 labelText: 'Image URL (Optional)',
                 isDense: true,
-                prefixIcon: Icon(Icons.image, size: 18),
+                prefixIcon: Icon(Icons.image, size: ConfigService.mediumIconSize),
               ),
             ),
           ],

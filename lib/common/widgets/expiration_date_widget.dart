@@ -13,7 +13,7 @@ class ExpirationDateWidget extends StatelessWidget {
     super.key,
     required this.expirationDate,
     this.showIcon = true,
-    this.iconSize = 12,
+    this.iconSize = ConfigService.tinyIconSize,
     this.fontSize = 12,
     DateFormat? dateFormat,
   }) : dateFormat = dateFormat ?? DateFormat('yyyy-MM-dd');
@@ -43,7 +43,7 @@ class ExpirationDateWidget extends StatelessWidget {
             size: iconSize,
             color: color,
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: ConfigService.tinyPadding),
         ],
         Text(
           dateFormat.format(expirationDate!),
@@ -53,7 +53,7 @@ class ExpirationDateWidget extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: ConfigService.tinyPadding),
         if (daysUntil < 0) 
           Text(
             '(Expired)',

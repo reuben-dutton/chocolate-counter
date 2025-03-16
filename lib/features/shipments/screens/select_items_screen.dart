@@ -1,6 +1,7 @@
 // lib/features/shipments/screens/select_items_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/utils/navigation_utils.dart';
@@ -93,26 +94,26 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
             children: [
               // Search bar at the top
               Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(ConfigService.smallPadding),
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Search items...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
+                    prefixIcon: const Icon(Icons.search, size: ConfigService.defaultIconSize),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
+                            icon: const Icon(Icons.clear, size: ConfigService.mediumIconSize),
                             onPressed: () => _searchController.clear(),
                           )
                         : null,
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    contentPadding: const EdgeInsets.all(ConfigService.smallPadding),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: Colors.grey.withAlpha(25),
+                    fillColor: Colors.grey.withAlpha(ConfigService.alphaLight),
                   ),
                 ),
               ),
@@ -146,10 +147,10 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
           children: [
             Icon(
               Icons.inventory_2_outlined,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
+              size: ConfigService.xLargeIconSize,
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(ConfigService.alphaModerate),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: ConfigService.defaultPadding),
             const Text('No matching items found'),
           ],
         ),
@@ -157,7 +158,7 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(ConfigService.smallPadding),
       itemCount: filteredItems.length,
       itemBuilder: (context, index) {
         final item = filteredItems[index];
@@ -170,7 +171,7 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
     final imageService = Provider.of<ImageService>(context, listen: false);
     
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+      margin: const EdgeInsets.symmetric(vertical: ConfigService.tinyPadding, horizontal: 0),
       child: ListTile(
         leading: ItemImageWidget(
           imagePath: item.imageUrl,

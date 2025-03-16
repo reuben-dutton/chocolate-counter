@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 
 class CountChipWidget extends StatelessWidget {
   final IconData icon;
@@ -13,7 +14,7 @@ class CountChipWidget extends StatelessWidget {
     required this.icon,
     required this.count,
     required this.color,
-    this.iconSize = 14,
+    this.iconSize = ConfigService.smallIconSize,
     this.fontSize = 13,
     this.text, // Optional text to display instead of count
   });
@@ -21,16 +22,16 @@ class CountChipWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.tinyPadding),
       decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(16),
+        color: color.withAlpha(ConfigService.alphaLight),
+        borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge), // previously -4
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: iconSize, color: color),
-          const SizedBox(width: 4),
+          const SizedBox(width: ConfigService.tinyPadding),
           Text(
             text ?? '$count',
             style: TextStyle(

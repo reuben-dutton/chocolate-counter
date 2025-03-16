@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
@@ -110,7 +111,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
               ],
             ),
             body: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(ConfigService.smallPadding),
               child: Form(
                 key: _formKey,
                 child: SingleChildScrollView(
@@ -123,7 +124,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
                           labelText: 'Item Name *',
                           hintText: 'e.g., Snickers Bar',
                           isDense: true,
-                          prefixIcon: Icon(Icons.label, size: 18),
+                          prefixIcon: Icon(Icons.label, size: ConfigService.mediumIconSize),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -132,17 +133,17 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: ConfigService.mediumPadding),
                       TextFormField(
                         controller: _barcodeController,
                         decoration: const InputDecoration(
                           labelText: 'Barcode (Optional)',
                           hintText: 'e.g., 012345678912',
                           isDense: true,
-                          prefixIcon: Icon(Icons.qr_code, size: 18),
+                          prefixIcon: Icon(Icons.qr_code, size: ConfigService.mediumIconSize),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: ConfigService.defaultPadding),
                       
                       // Image picker
                       Center(
@@ -152,17 +153,17 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
                               'Item Image (Optional)',
                               style: TextStyle(fontSize: 14),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: ConfigService.smallPadding),
                             Container(
                               width: 180,
                               height: 180,
                               decoration: BoxDecoration(
                                 border: Border.all(color: Colors.grey),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
                               ),
                               child: _imageFile != null
                                   ? ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
                                       child: Image.file(
                                         _imageFile!,
                                         fit: BoxFit.cover,
@@ -170,22 +171,22 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
                                     )
                                   : const Icon(
                                       Icons.camera_alt,
-                                      size: 60,
+                                      size: ConfigService.xLargeIconSize,
                                       color: Colors.grey,
                                     ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: ConfigService.defaultPadding),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 ElevatedButton.icon(
-                                  icon: const Icon(Icons.camera_alt, size: 18),
+                                  icon: const Icon(Icons.camera_alt, size: ConfigService.mediumIconSize),
                                   label: const Text('Camera'),
                                   onPressed: () => _takePhoto(imageService),
                                 ),
-                                const SizedBox(width: 16),
+                                const SizedBox(width: ConfigService.defaultPadding),
                                 OutlinedButton.icon(
-                                  icon: const Icon(Icons.photo_library, size: 18),
+                                  icon: const Icon(Icons.photo_library, size: ConfigService.mediumIconSize),
                                   label: const Text('Gallery'),
                                   onPressed: () => _pickPhoto(imageService),
                                 ),
@@ -194,7 +195,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: ConfigService.largePadding),
                       if (_isCreating)
                         const Center(child: CircularProgressIndicator()),
                     ],

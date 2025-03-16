@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/widgets/modal_bottom_sheet.dart';
 import 'package:intl/intl.dart';
 
@@ -89,19 +90,19 @@ class _InventoryToStockBottomSheetState extends State<InventoryToStockBottomShee
         ),
         
         // Timestamp selector
-        const SizedBox(height: 16),
+        const SizedBox(height: ConfigService.defaultPadding),
         InkWell(
           onTap: () => _selectDateTime(context),
           child: InputDecorator(
             decoration: const InputDecoration(
               labelText: 'Timestamp',
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
             ),
             child: Row(
               children: [
-                const Icon(Icons.calendar_today, size: 16),
-                const SizedBox(width: 4),
+                const Icon(Icons.calendar_today, size: ConfigService.smallIconSize),
+                const SizedBox(width: ConfigService.tinyPadding),
                 Text(
                   dateFormat.format(_timestamp),
                   style: const TextStyle(fontSize: 14),
@@ -112,7 +113,7 @@ class _InventoryToStockBottomSheetState extends State<InventoryToStockBottomShee
         ),
         
         // Actions
-        const SizedBox(height: 24),
+        const SizedBox(height: ConfigService.largePadding),
         ModalBottomSheet.buildActions(
           context: context,
           onCancel: () => Navigator.of(context).pop(),

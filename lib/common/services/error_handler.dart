@@ -75,12 +75,12 @@ class ErrorHandler {
           children: [
             Text(message),
             if (errorDetails != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: ConfigService.mediumPadding),
               const Text(
                 'Technical details:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: ConfigService.tinyPadding),
               Text(
                 errorDetails,
                 style: const TextStyle(fontSize: 12),

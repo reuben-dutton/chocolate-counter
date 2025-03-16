@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
@@ -21,7 +22,7 @@ class AvailableItemTile extends StatelessWidget {
     
     return ListTile(
       dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: 0),
       leading: ItemImageWidget(
         imagePath: item.imageUrl,
         itemName: item.name,
@@ -35,7 +36,7 @@ class AvailableItemTile extends StatelessWidget {
         style: const TextStyle(fontSize: 14),
       ),
       trailing: IconButton(
-        icon: const Icon(Icons.add_circle, size: 20),
+        icon: const Icon(Icons.add_circle, size: ConfigService.defaultIconSize),
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(),
         onPressed: () => onAdd(item),
