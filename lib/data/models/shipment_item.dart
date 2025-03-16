@@ -28,7 +28,7 @@ class ShipmentItem {
     required int itemDefinitionId,
     required int quantity,
     DateTime? expirationDate,
-    double? unitPrice, // Added to factory method
+    double? unitPrice,
     ItemDefinition? itemDefinition,
   }) {
     return ShipmentItem(
@@ -37,7 +37,7 @@ class ShipmentItem {
       itemDefinitionId: itemDefinitionId,
       quantity: quantity,
       expirationDate: expirationDate,
-      unitPrice: unitPrice, // Include in return
+      unitPrice: unitPrice,
       itemDefinition: itemDefinition,
     );
   }
@@ -49,7 +49,7 @@ class ShipmentItem {
       'itemDefinitionId': itemDefinitionId,
       'quantity': quantity,
       'expirationDate': expirationDate?.millisecondsSinceEpoch,
-      'unitPrice': unitPrice, // Add to map
+      'unitPrice': unitPrice,
     };
   }
 
@@ -74,7 +74,7 @@ class ShipmentItem {
     int? itemDefinitionId,
     int? quantity,
     DateTime? expirationDate,
-    double? unitPrice, // Add parameter
+    double? unitPrice,
     ItemDefinition? itemDefinition,
   }) {
     return ShipmentItem(

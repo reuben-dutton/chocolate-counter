@@ -96,6 +96,7 @@ class ShipmentService {
         shipmentId: shipmentId,
         itemDefinitionId: item.itemDefinitionId,
         quantity: item.quantity,
+        unitPrice: item.unitPrice,
         expirationDate: item.expirationDate,
         itemDefinition: item.itemDefinition
       );

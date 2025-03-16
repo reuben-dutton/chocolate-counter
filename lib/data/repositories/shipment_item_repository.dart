@@ -63,6 +63,7 @@ class ShipmentItemRepository extends BaseRepository<ShipmentItem> {
           shipmentId: item.shipmentId,
           itemDefinitionId: item.itemDefinitionId,
           quantity: item.quantity,
+          unitPrice: item.unitPrice,
           expirationDate: item.expirationDate,
           itemDefinition: itemDefinitions[item.itemDefinitionId],
         );

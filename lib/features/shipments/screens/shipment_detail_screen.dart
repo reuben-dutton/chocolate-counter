@@ -170,6 +170,8 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
   double _calculateShipmentTotal(List<dynamic> items) {
     double total = 0.0;
     for (var item in items) {
+      print('Item type: ${item.runtimeType}');
+      print('Item unit price: ${item is ShipmentItem ? item.unitPrice : "N/A"}');
       if (item is ShipmentItem && item.unitPrice != null) {
         total += item.unitPrice! * item.quantity;
       }
