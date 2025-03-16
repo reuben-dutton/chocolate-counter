@@ -1,13 +1,9 @@
 // lib/common/screens/home_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/features/analytics/screens/analytics_screen.dart';
 import 'package:food_inventory/features/inventory/screens/inventory_screen.dart';
 import 'package:food_inventory/features/shipments/screens/shipments_screen.dart';
 import 'package:food_inventory/features/settings/screens/settings_screen.dart';
-import 'package:food_inventory/features/inventory/services/inventory_service.dart';
-import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
-import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
