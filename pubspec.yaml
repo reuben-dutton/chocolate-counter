@@ -49,6 +49,8 @@ dependencies:
 
   flutter_cache_manager: ^3.3.1  # Efficient image caching
   octo_image: ^2.0.0     # Advanced image handling with placeholders
+  flutter_image_compress: ^2.1.0
+  compute: ^1.0.2  # For compute() function
 
   # data analytics
   fl_chart: ^0.70.2
