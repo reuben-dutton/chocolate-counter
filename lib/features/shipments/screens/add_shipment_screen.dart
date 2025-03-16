@@ -86,7 +86,9 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
             
             if (shipmentState is OperationResult && shipmentState.success) {
               ErrorHandler.showSuccessSnackBar(context, 'Shipment added successfully');
-              Navigator.pop(context);
+              
+              // Return true to indicate success to the calling screen before we pop
+              Navigator.pop(context, true);
             }
           },
           builder: (context, shipmentState) {
@@ -163,7 +165,8 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
                                       _currentStep--;
                                     });
                                   } else {
-                                    Navigator.pop(context);
+                                    // Return false to indicate cancellation
+                                    Navigator.pop(context, false);
                                   }
                                 },
                         ),

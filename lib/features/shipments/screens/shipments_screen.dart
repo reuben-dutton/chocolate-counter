@@ -20,10 +20,17 @@ class ShipmentsScreen extends StatelessWidget {
       create: (context) => ShipmentBloc(shipmentService)
         ..add(const InitializeShipmentsScreen()),
       child: BlocListener<ShipmentBloc, ShipmentState>(
-        listenWhen: (previous, current) => current.error != null && previous.error != current.error,
+        listenWhen: (previous, current) => 
+          current.error != null && previous.error != current.error ||
+          (current is OperationResult && current.success),
         listener: (context, state) {
           if (state.error != null) {
             context.read<ShipmentBloc>().handleError(context, state.error!);
+          }
+          
+          // Refresh the list when an operation is successful
+          if (state is OperationResult && state.success) {
+            context.read<ShipmentBloc>().add(const LoadShipments());
           }
         },
         child: Scaffold(
@@ -43,8 +50,12 @@ class ShipmentsScreen extends StatelessWidget {
     NavigationUtils.navigateWithSlide(
       context,
       const AddShipmentScreen(),
-    ).then((_) {
-      context.read<ShipmentBloc>().add(const LoadShipments());
+    ).then((result) {
+      // Always force a refresh when returning from add shipment screen
+      // This ensures we catch changes even if the BLoC state handling missed it
+      if (context.mounted) {
+        context.read<ShipmentBloc>().add(const LoadShipments());
+      }
     });
   }
 }
@@ -84,38 +95,43 @@ class _ShipmentsList extends StatelessWidget {
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.only(top: 8, bottom: 8, left: 4, right: 4),
-            itemCount: shipments.length,
-            itemBuilder: (context, index) {
-              final shipment = shipments[index];
-              return ShipmentListItem(
-                shipment: shipment,
-                onTap: () {
-                  NavigationUtils.navigateWithSlide(
-                    context,
-                    ShipmentDetailScreen(shipment: shipment),
-                  ).then((_) {
-                    // Refresh data when returning from details
-                    context.read<ShipmentBloc>().add(const LoadShipments());
-                  });
-                },
-                onDelete: () async {
-                  try {
-                    context.read<ShipmentBloc>().add(DeleteShipment(shipment.id!));
-                    ErrorHandler.showSuccessSnackBar(context, 'Shipment deleted');
-                  } catch (e, stackTrace) {
-                    ErrorHandler.handleServiceError(
-                      context, 
-                      e,
-                      service: 'Shipment',
-                      operation: 'deletion',
-                      stackTrace: stackTrace
-                    );
-                  }
-                },
-              );
+          return RefreshIndicator(
+            onRefresh: () async {
+              context.read<ShipmentBloc>().add(const LoadShipments());
             },
+            child: ListView.builder(
+              padding: const EdgeInsets.only(top: 8, bottom: 8, left: 4, right: 4),
+              itemCount: shipments.length,
+              itemBuilder: (context, index) {
+                final shipment = shipments[index];
+                return ShipmentListItem(
+                  shipment: shipment,
+                  onTap: () {
+                    NavigationUtils.navigateWithSlide(
+                      context,
+                      ShipmentDetailScreen(shipment: shipment),
+                    ).then((_) {
+                      // Refresh data when returning from details
+                      context.read<ShipmentBloc>().add(const LoadShipments());
+                    });
+                  },
+                  onDelete: () async {
+                    try {
+                      context.read<ShipmentBloc>().add(DeleteShipment(shipment.id!));
+                      ErrorHandler.showSuccessSnackBar(context, 'Shipment deleted');
+                    } catch (e, stackTrace) {
+                      ErrorHandler.handleServiceError(
+                        context, 
+                        e,
+                        service: 'Shipment',
+                        operation: 'deletion',
+                        stackTrace: stackTrace
+                      );
+                    }
+                  },
+                );
+              },
+            ),
           );
         }
         
@@ -129,8 +145,11 @@ class _ShipmentsList extends StatelessWidget {
     NavigationUtils.navigateWithSlide(
       context,
       const AddShipmentScreen(),
-    ).then((_) {
-      context.read<ShipmentBloc>().add(const LoadShipments());
+    ).then((result) {
+      // Always force a refresh when returning from add shipment screen
+      if (context.mounted) {
+        context.read<ShipmentBloc>().add(const LoadShipments());
+      }
     });
   }
 }
