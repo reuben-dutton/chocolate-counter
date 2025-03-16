@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
+import 'package:food_inventory/features/shipments/widgets/add_item_bottom_sheet.dart';
 import 'package:food_inventory/features/shipments/widgets/selected_shipment_item_tile.dart';
 import 'package:food_inventory/features/shipments/widgets/available_item_tile.dart';
-import 'package:food_inventory/features/shipments/widgets/add_item_dialog.dart';
 import 'package:food_inventory/common/widgets/section_header_widget.dart';
 import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart' as inventory;
 import 'package:food_inventory/features/inventory/screens/add_item_definition_screen.dart';
@@ -209,7 +209,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
     
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) => AddItemDialog(
+      builder: (context) => AddItemBottomSheet(
         item: item,
         dialogService: _dialogService!,
       ),
