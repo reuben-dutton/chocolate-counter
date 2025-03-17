@@ -6,6 +6,7 @@ import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/features/settings/bloc/preferences_bloc.dart';
 import 'package:food_inventory/features/settings/widgets/database_reset_bottom_sheet.dart';
+import 'package:food_inventory/features/settings/widgets/theme_mode_selector.dart';
 import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -34,35 +35,9 @@ class SettingsScreen extends StatelessWidget {
               right: _fixedTinyPadding
             ),
             children: [
-              ListTile(
-                leading: const Icon(Icons.palette, size: ConfigService.defaultIconSize),
-                title: const Text('Theme'),
-                subtitle: _getThemeSubtitle(state.themeMode),
-                trailing: DropdownButton<ThemeMode>(
-                  value: state.themeMode,
-                  onChanged: (ThemeMode? newValue) {
-                    if (newValue != null) {
-                      context.read<PreferencesBloc>().add(SetThemeMode(newValue));
-                    }
-                  },
-                  underline: const SizedBox.shrink(),
-                  icon: const Icon(Icons.arrow_drop_down),
-                  items: const [
-                    DropdownMenuItem(
-                      value: ThemeMode.system,
-                      child: Text('System'),
-                    ),
-                    DropdownMenuItem(
-                      value: ThemeMode.light,
-                      child: Text('Light'),
-                    ),
-                    DropdownMenuItem(
-                      value: ThemeMode.dark,
-                      child: Text('Dark'),
-                    ),
-                  ],
-                ),
-              ),
+              // Theme mode selector (new widget)
+              const ThemeModeSelector(),
+              
               const Divider(),
 
               // UI Density Toggle
@@ -148,19 +123,6 @@ class SettingsScreen extends StatelessWidget {
         );
       },
     );
-  }
-  
-  Widget _getThemeSubtitle(ThemeMode mode) {
-    String text;
-    switch (mode) {
-      case ThemeMode.system:
-        text = 'Use system settings';
-      case ThemeMode.light:
-        text = 'Light mode';
-      case ThemeMode.dark:
-        text = 'Dark mode';
-    }
-    return Text(text, style: const TextStyle(fontSize: 12));
   }
   
   Future<void> _confirmDatabaseReset(BuildContext context) async {
