@@ -5,6 +5,7 @@ class PreferencesService extends ChangeNotifier {
   // Keys for preferences
   static const String _themeKey = 'app_theme_mode';
   static const String _hardwareAccelerationKey = 'hardware_acceleration';
+  static const String _compactUiDensityKey = 'compact_ui_density';
   
   // Private instance of SharedPreferences
   late SharedPreferences _prefs;
@@ -15,9 +16,13 @@ class PreferencesService extends ChangeNotifier {
   // Store hardware acceleration preference
   bool _hardwareAcceleration = true;
   
+  // Store compact UI density preference
+  bool _compactUiDensity = false;
+  
   // Getters
   ThemeMode get themeMode => _themeMode;
   bool get hardwareAcceleration => _hardwareAcceleration;
+  bool get compactUiDensity => _compactUiDensity;
   
   // Initialize the preferences service
   Future<void> initialize() async {
@@ -37,11 +42,15 @@ class PreferencesService extends ChangeNotifier {
 
       // Retrieve hardware acceleration setting, default to true if not set
       _hardwareAcceleration = _prefs.getBool(_hardwareAccelerationKey) ?? true;
+      
+      // Retrieve compact UI density setting, default to false if not set
+      _compactUiDensity = _prefs.getBool(_compactUiDensityKey) ?? false;
     } catch (e) {
       // Log error and fall back to default values
       print('Error initializing preferences: $e');
       _themeMode = ThemeMode.system;
       _hardwareAcceleration = true;
+      _compactUiDensity = false;
     }
   }
   
@@ -74,6 +83,22 @@ class PreferencesService extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('Error saving hardware acceleration setting: $e');
+    }
+  }
+  
+  // Method to change and persist compact UI density setting
+  Future<void> setCompactUiDensity(bool enabled) async {
+    try {
+      // Update the current setting
+      _compactUiDensity = enabled;
+      
+      // Persist the setting
+      await _prefs.setBool(_compactUiDensityKey, enabled);
+      
+      // Notify listeners of the change
+      notifyListeners();
+    } catch (e) {
+      print('Error saving compact UI density setting: $e');
     }
   }
 }

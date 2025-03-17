@@ -22,7 +22,7 @@ class AvailableItemTile extends StatelessWidget {
     
     return ListTile(
       dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: 0),
+      contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: 0),
       leading: ItemImageWidget(
         imagePath: item.imageUrl,
         itemName: item.name,

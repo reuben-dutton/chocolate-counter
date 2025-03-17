@@ -31,14 +31,14 @@ class InventoryListItem extends StatelessWidget {
       opacity: isEmptyItem ? 0.5 : 1.0,
       child: Card(
         color: theme.colorScheme.surface,
-        margin: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.tinyPadding),
+        margin: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.tinyPadding),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ConfigService.mediumPadding)),
         elevation: 1,
         child: InkWell(
           borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(ConfigService.smallPadding),
+            padding: EdgeInsets.all(ConfigService.smallPadding),
             child: Row(
               children: [
                 ItemImageWidget(
@@ -48,7 +48,7 @@ class InventoryListItem extends StatelessWidget {
                   imageService: imageService,
                   memoryEfficient: true,
                 ),
-                const SizedBox(width: ConfigService.mediumPadding),
+                SizedBox(width: ConfigService.mediumPadding),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,7 +59,7 @@ class InventoryListItem extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleMedium,
                       ),
-                      const SizedBox(height: ConfigService.tinyPadding),
+                      SizedBox(height: ConfigService.tinyPadding),
                       Row(
                         children: [
                           CountChipWidget(
@@ -67,7 +67,7 @@ class InventoryListItem extends StatelessWidget {
                             count: stockCount,
                             color: theme.colorScheme.secondary,
                           ),
-                          const SizedBox(width: ConfigService.smallPadding),
+                          SizedBox(width: ConfigService.smallPadding),
                           CountChipWidget(
                             icon: Icons.inventory_2,
                             count: inventoryCount,

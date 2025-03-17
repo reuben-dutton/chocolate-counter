@@ -29,7 +29,7 @@ class InventoryMovementList extends StatelessWidget {
         final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
         
         return ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: ConfigService.tinyPadding),
+          contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: ConfigService.tinyPadding),
           dense: true,
           leading: _getMovementIcon(movement.type, theme),
           title: Text(
@@ -44,7 +44,7 @@ class InventoryMovementList extends StatelessWidget {
             style: theme.textTheme.bodySmall?.copyWith(fontSize: 12),
           ),
           trailing: Container(
-            padding: const EdgeInsets.symmetric(horizontal: ConfigService.mediumPadding, vertical: ConfigService.smallPadding),
+            padding: EdgeInsets.symmetric(horizontal: ConfigService.mediumPadding, vertical: ConfigService.smallPadding),
             decoration: BoxDecoration(
               color: theme.colorScheme.secondary,
               borderRadius: BorderRadius.circular(ConfigService.smallIconSize),
@@ -67,7 +67,7 @@ class InventoryMovementList extends StatelessWidget {
     switch (type) {
       case MovementType.stockSale:
         return Container(
-          padding: const EdgeInsets.all(ConfigService.smallPadding),
+          padding: EdgeInsets.all(ConfigService.smallPadding),
           decoration: BoxDecoration(
             color: theme.colorScheme.secondary.withAlpha(ConfigService.alphaLight),
             shape: BoxShape.circle,
@@ -80,7 +80,7 @@ class InventoryMovementList extends StatelessWidget {
         );
       case MovementType.inventoryToStock:
         return Container(
-          padding: const EdgeInsets.all(ConfigService.smallPadding),
+          padding: EdgeInsets.all(ConfigService.smallPadding),
           decoration: BoxDecoration(
             color: theme.colorScheme.secondary.withAlpha(ConfigService.alphaLight),
             shape: BoxShape.circle,
@@ -93,7 +93,7 @@ class InventoryMovementList extends StatelessWidget {
         );
       case MovementType.shipmentToInventory:
         return Container(
-          padding: const EdgeInsets.all(ConfigService.smallPadding),
+          padding: EdgeInsets.all(ConfigService.smallPadding),
           decoration: BoxDecoration(
             color: theme.colorScheme.secondary.withAlpha(ConfigService.alphaLight),
             shape: BoxShape.circle,

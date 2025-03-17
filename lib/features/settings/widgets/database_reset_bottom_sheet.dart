@@ -21,7 +21,7 @@ class DatabaseResetBottomSheet extends StatelessWidget {
           onClose: () => Navigator.of(context).pop(false),
         ),
         
-        const SizedBox(height: ConfigService.smallPadding),
+        SizedBox(height: ConfigService.smallPadding),
         Text(
           'WARNING: This will permanently delete ALL your data',
           style: TextStyle(
@@ -29,12 +29,12 @@ class DatabaseResetBottomSheet extends StatelessWidget {
             color: theme.colorScheme.error,
           ),
         ),
-        const SizedBox(height: ConfigService.defaultPadding),
+        SizedBox(height: ConfigService.defaultPadding),
         const Text(
           'This includes all items, shipments, inventory, and settings. '
           'This action cannot be undone.',
         ),
-        const SizedBox(height: ConfigService.mediumPadding),
+        SizedBox(height: ConfigService.mediumPadding),
         Text(
           'The app will restart after resetting.',
           style: TextStyle(
@@ -43,7 +43,7 @@ class DatabaseResetBottomSheet extends StatelessWidget {
           ),
         ),
         
-        const SizedBox(height: ConfigService.largePadding),
+        SizedBox(height: ConfigService.largePadding),
         ModalBottomSheet.buildActions(
           context: context,
           onCancel: () => Navigator.of(context).pop(false),

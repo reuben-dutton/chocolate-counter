@@ -94,7 +94,7 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
             children: [
               // Search bar at the top
               Padding(
-                padding: const EdgeInsets.all(ConfigService.smallPadding),
+                padding: EdgeInsets.all(ConfigService.smallPadding),
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
@@ -107,7 +107,7 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
                           )
                         : null,
                     isDense: true,
-                    contentPadding: const EdgeInsets.all(ConfigService.smallPadding),
+                    contentPadding: EdgeInsets.all(ConfigService.smallPadding),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
                       borderSide: BorderSide.none,
@@ -150,7 +150,7 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
               size: ConfigService.xLargeIconSize,
               color: Theme.of(context).colorScheme.onSurface.withAlpha(ConfigService.alphaModerate),
             ),
-            const SizedBox(height: ConfigService.defaultPadding),
+            SizedBox(height: ConfigService.defaultPadding),
             const Text('No matching items found'),
           ],
         ),
@@ -158,7 +158,7 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(ConfigService.smallPadding),
+      padding: EdgeInsets.all(ConfigService.smallPadding),
       itemCount: filteredItems.length,
       itemBuilder: (context, index) {
         final item = filteredItems[index];
@@ -171,7 +171,7 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
     final imageService = Provider.of<ImageService>(context, listen: false);
     
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: ConfigService.tinyPadding, horizontal: 0),
+      margin: EdgeInsets.symmetric(vertical: ConfigService.tinyPadding, horizontal: 0),
       child: ListTile(
         leading: ItemImageWidget(
           imagePath: item.imageUrl,

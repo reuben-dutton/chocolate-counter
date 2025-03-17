@@ -41,7 +41,7 @@ class _ItemEditDialogState extends State<ItemEditDialog> {
       title: Row(
         children: [
           const Icon(Icons.edit, size: ConfigService.defaultIconSize),
-          const SizedBox(width: ConfigService.smallPadding),
+          SizedBox(width: ConfigService.smallPadding),
           const Text('Edit Item')
         ],
       ),

@@ -111,7 +111,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
               ],
             ),
             body: Padding(
-              padding: const EdgeInsets.all(ConfigService.smallPadding),
+              padding: EdgeInsets.all(ConfigService.smallPadding),
               child: Form(
                 key: _formKey,
                 child: SingleChildScrollView(
@@ -133,7 +133,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: ConfigService.mediumPadding),
+                      SizedBox(height: ConfigService.mediumPadding),
                       TextFormField(
                         controller: _barcodeController,
                         decoration: const InputDecoration(
@@ -143,7 +143,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
                           prefixIcon: Icon(Icons.qr_code, size: ConfigService.mediumIconSize),
                         ),
                       ),
-                      const SizedBox(height: ConfigService.defaultPadding),
+                      SizedBox(height: ConfigService.defaultPadding),
                       
                       // Image picker
                       Center(
@@ -153,7 +153,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
                               'Item Image (Optional)',
                               style: TextStyle(fontSize: 14),
                             ),
-                            const SizedBox(height: ConfigService.smallPadding),
+                            SizedBox(height: ConfigService.smallPadding),
                             Container(
                               width: 180,
                               height: 180,
@@ -175,7 +175,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
                                       color: Colors.grey,
                                     ),
                             ),
-                            const SizedBox(height: ConfigService.defaultPadding),
+                            SizedBox(height: ConfigService.defaultPadding),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -184,7 +184,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
                                   label: const Text('Camera'),
                                   onPressed: () => _takePhoto(imageService),
                                 ),
-                                const SizedBox(width: ConfigService.defaultPadding),
+                                SizedBox(width: ConfigService.defaultPadding),
                                 OutlinedButton.icon(
                                   icon: const Icon(Icons.photo_library, size: ConfigService.mediumIconSize),
                                   label: const Text('Gallery'),
@@ -195,7 +195,7 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: ConfigService.largePadding),
+                      SizedBox(height: ConfigService.largePadding),
                       if (_isCreating)
                         const Center(child: CircularProgressIndicator()),
                     ],

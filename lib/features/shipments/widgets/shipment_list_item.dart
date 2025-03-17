@@ -32,7 +32,7 @@ class ShipmentListItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(ConfigService.smallPadding),
+          padding: EdgeInsets.all(ConfigService.smallPadding),
           child: Row(
             children: [
               Container(
@@ -50,7 +50,7 @@ class ShipmentListItem extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: ConfigService.mediumPadding),
+              SizedBox(width: ConfigService.mediumPadding),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,7 +63,7 @@ class ShipmentListItem extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: ConfigService.tinyPadding),
+                    SizedBox(height: ConfigService.tinyPadding),
                     Row(
                       children: [
                         CountChipWidget(
@@ -74,7 +74,7 @@ class ShipmentListItem extends StatelessWidget {
                           fontSize: 12,
                           text: formattedDate,
                         ),
-                        const SizedBox(width: ConfigService.smallPadding),
+                        SizedBox(width: ConfigService.smallPadding),
                         CountChipWidget(
                           icon: Icons.inventory_2,
                           count: shipment.items.length,

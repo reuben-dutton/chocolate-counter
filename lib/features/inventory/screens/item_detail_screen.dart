@@ -119,13 +119,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             ),
             
             Padding(
-              padding: const EdgeInsets.all(ConfigService.defaultPadding),
+              padding: EdgeInsets.all(ConfigService.defaultPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Item name 
                   Padding(
-                    padding: const EdgeInsets.only(bottom: ConfigService.smallPadding),
+                    padding: EdgeInsets.only(bottom: ConfigService.smallPadding),
                     child: Text(
                       _currentItemDefinition.name,
                       style: theme.textTheme.titleLarge?.copyWith(
@@ -137,7 +137,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   // Barcode (if available)
                   if (_currentItemDefinition.barcode != null)
                     Padding(
-                      padding: const EdgeInsets.all(ConfigService.defaultPadding),
+                      padding: EdgeInsets.all(ConfigService.defaultPadding),
                       child: Row(
                         children: [
                           Icon(Icons.qr_code, size: ConfigService.mediumIconSize, color: theme.colorScheme.primary),
@@ -155,7 +155,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   // Item counts
                   _buildCounts(theme, itemData.counts),
                   
-                  const SizedBox(height: ConfigService.defaultPadding),
+                  SizedBox(height: ConfigService.defaultPadding),
 
                   // Actions
                   _ItemActions(
@@ -233,7 +233,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           icon: Icons.event_available,
           iconColor: theme.colorScheme.secondary,
         ),
-        const SizedBox(height: ConfigService.mediumPadding),
+        SizedBox(height: ConfigService.mediumPadding),
         ItemExpirationList(instances: typedInstances),
       ],
     );
@@ -249,7 +249,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             icon: Icons.history,
             iconColor: theme.colorScheme.primary,
           ),
-          const SizedBox(height: ConfigService.defaultPadding),
+          SizedBox(height: ConfigService.defaultPadding),
           Center(
             child: Column(
               children: [
@@ -283,7 +283,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           icon: Icons.history,
           iconColor: theme.colorScheme.secondary,
         ),
-        const SizedBox(height: ConfigService.mediumPadding),
+        SizedBox(height: ConfigService.mediumPadding),
         InventoryMovementList(movements: typedMovements),
       ],
     );
@@ -362,12 +362,12 @@ class _ItemActions extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.secondary,
                   foregroundColor: theme.colorScheme.onSecondary,
-                  padding: const EdgeInsets.symmetric(vertical: ConfigService.mediumPadding),
+                  padding: EdgeInsets.symmetric(vertical: ConfigService.mediumPadding),
                 ),
                 onPressed: stockCount > 0 ? () => _updateStock(context, stockCount, dialogService) : null,
               ),
             ),
-            const SizedBox(width: ConfigService.mediumPadding),
+            SizedBox(width: ConfigService.mediumPadding),
             Expanded(
               child: ElevatedButton.icon(
                 icon: Icon(Icons.move_up, size: ConfigService.mediumIconSize, color: theme.colorScheme.onTertiary),
@@ -375,7 +375,7 @@ class _ItemActions extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.tertiary,
                   foregroundColor: theme.colorScheme.onTertiary,
-                  padding: const EdgeInsets.symmetric(vertical: ConfigService.mediumPadding),
+                  padding: EdgeInsets.symmetric(vertical: ConfigService.mediumPadding),
                 ),
                 onPressed: inventoryCount > 0 ? () => _moveToStock(context, inventoryCount) : null,
               ),

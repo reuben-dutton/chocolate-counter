@@ -58,11 +58,11 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
         
         // Main content
         // Quantity selector
-        const SizedBox(height: ConfigService.defaultPadding),
+        SizedBox(height: ConfigService.defaultPadding),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('Quantity: '),
+            Text('Quantity: '),
             IconButton(
               icon: const Icon(Icons.remove_circle_outline, size: ConfigService.defaultIconSize),
               padding: EdgeInsets.zero,
@@ -71,12 +71,12 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                   ? () => setState(() => quantity--)
                   : null,
             ),
-            const SizedBox(width: ConfigService.smallPadding),
+            SizedBox(width: ConfigService.smallPadding),
             Text(
               '$quantity',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(width: ConfigService.smallPadding),
+            SizedBox(width: ConfigService.smallPadding),
             IconButton(
               icon: const Icon(Icons.add_circle_outline, size: ConfigService.defaultIconSize),
               padding: EdgeInsets.zero,
@@ -87,7 +87,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
         ),
         
         // Expiration date selector
-        const SizedBox(height: ConfigService.defaultPadding),
+        SizedBox(height: ConfigService.defaultPadding),
         ListTile(
           dense: true,
           contentPadding: EdgeInsets.zero,
@@ -116,7 +116,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
         ),
         
         // Price input
-        const SizedBox(height: ConfigService.defaultPadding),
+        SizedBox(height: ConfigService.defaultPadding),
         Row(
           children: [
             const Expanded(
@@ -138,7 +138,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
             ),
             Container(
               width: 70,
-              padding: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding),
+              padding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding),
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
@@ -168,7 +168,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
         ),
         
         // Actions
-        const SizedBox(height: ConfigService.largePadding),
+        SizedBox(height: ConfigService.largePadding),
         ModalBottomSheet.buildActions(
           context: context,
           onCancel: () => Navigator.of(context).pop(),

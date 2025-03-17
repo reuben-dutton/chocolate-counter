@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/features/analytics/bloc/analytics_bloc.dart';
-import 'package:food_inventory/features/analytics/models/time_period.dart';
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
 import 'package:food_inventory/features/analytics/widgets/analytics_card.dart';
 import 'package:food_inventory/features/analytics/widgets/time_period_selectors.dart';
@@ -70,7 +69,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         slivers: [
                           SliverToBoxAdapter(
                             child: Padding(
-                              padding: const EdgeInsets.all(ConfigService.tinyPadding),
+                              padding: EdgeInsets.all(ConfigService.tinyPadding),
                               child: BlocBuilder<AnalyticsBloc, AnalyticsState>(
                                 builder: (context, state) {
                                   switch (state.selectedType) {
@@ -103,7 +102,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           )
                         ],
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: ConfigService.smallPadding, horizontal: ConfigService.smallPadding),
+                      padding: EdgeInsets.symmetric(vertical: ConfigService.smallPadding, horizontal: ConfigService.smallPadding),
                       child: _buildAnalyticsTypeSelector(context, theme),
                     ),
                   ],
@@ -133,7 +132,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   onTap: () => context.read<AnalyticsBloc>().add(ChangeAnalyticsType(type)),
                   child: AnimatedContainer(
                     duration: ConfigService.animationDurationFast,
-                    padding: const EdgeInsets.symmetric(vertical: ConfigService.mediumPadding, horizontal: ConfigService.smallPadding),
+                    padding: EdgeInsets.symmetric(vertical: ConfigService.mediumPadding, horizontal: ConfigService.smallPadding),
                     decoration: BoxDecoration(
                       color: isSelected 
                           ? theme.colorScheme.primary 

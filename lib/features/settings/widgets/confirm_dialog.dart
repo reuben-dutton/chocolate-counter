@@ -28,7 +28,7 @@ class ConfirmDialog extends StatelessWidget {
               ? theme.colorScheme.error
               : theme.colorScheme.secondary,
           ),
-          const SizedBox(width: ConfigService.mediumPadding),
+          SizedBox(width: ConfigService.mediumPadding),
           Expanded(
             child: Text(
               title,
@@ -43,12 +43,12 @@ class ConfirmDialog extends StatelessWidget {
         content,
         style: theme.textTheme.bodyMedium,
       ),
-      contentPadding: const EdgeInsets.all(ConfigService.largePadding),
+      contentPadding: EdgeInsets.all(ConfigService.largePadding),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
           style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.mediumPadding),
+            padding: EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.mediumPadding),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
             ),
@@ -64,7 +64,7 @@ class ConfirmDialog extends StatelessWidget {
             foregroundColor: icon == Icons.delete_forever || icon == Icons.delete_sweep
                 ? theme.colorScheme.onError
                 : theme.colorScheme.onPrimary,
-            padding: const EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.mediumPadding),
+            padding: EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.mediumPadding),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
             ),
@@ -76,8 +76,8 @@ class ConfirmDialog extends StatelessWidget {
           ),
         ),
       ],
-      actionsPadding: const EdgeInsets.fromLTRB(ConfigService.defaultPadding, 0, ConfigService.defaultPadding, ConfigService.defaultPadding),
-      buttonPadding: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding),
+      actionsPadding: EdgeInsets.fromLTRB(ConfigService.defaultPadding, 0, ConfigService.defaultPadding, ConfigService.defaultPadding),
+      buttonPadding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding),
     );
   }
 }

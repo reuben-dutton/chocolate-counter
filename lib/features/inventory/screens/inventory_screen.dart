@@ -69,7 +69,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               
               // Search bar at the bottom
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
+                padding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   boxShadow: [
@@ -95,7 +95,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                               )
                             : null,
                           isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
+                          contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
                             borderSide: BorderSide.none,
@@ -105,7 +105,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: ConfigService.smallPadding),
+                    SizedBox(width: ConfigService.smallPadding),
                     IconButton(
                       icon: const Icon(Icons.add_box),
                       tooltip: 'Add Item',
@@ -153,7 +153,7 @@ class _InventoryListView extends StatelessWidget {
           final allItems = state.items;
           
           if (allItems.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -179,7 +179,7 @@ class _InventoryListView extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.search_off, size: ConfigService.largeIconSize, color: Colors.grey),
-                  const SizedBox(height: ConfigService.defaultPadding),
+                  SizedBox(height: ConfigService.defaultPadding),
                   Text('No results found for "$searchQuery"'),
                 ],
               ),
@@ -192,7 +192,7 @@ class _InventoryListView extends StatelessWidget {
             },
             child: ListView.builder(
               // needs to be 0 padding at the top as we have padding from the menu indicator
-              padding: const EdgeInsets.only(top: 0, bottom: ConfigService.smallPadding, left: ConfigService.tinyPadding, right: ConfigService.tinyPadding),
+              padding: EdgeInsets.only(top: 0, bottom: ConfigService.smallPadding, left: ConfigService.tinyPadding, right: ConfigService.tinyPadding),
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];

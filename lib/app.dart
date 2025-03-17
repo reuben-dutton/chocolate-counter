@@ -58,7 +58,7 @@ class FoodInventoryApp extends StatelessWidget {
 
         // Only keep the PreferencesBloc at app-level since it affects the entire app theme
         BlocProvider<PreferencesBloc>(
-          create: (context) => PreferencesBloc(preferencesService),
+          create: (context) => PreferencesBloc(preferencesService, configService),
         ),
       ],
       child: BlocBuilder<PreferencesBloc, PreferencesState>(

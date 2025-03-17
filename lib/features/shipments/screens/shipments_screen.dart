@@ -104,9 +104,9 @@ class _ShipmentsList extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.local_shipping_outlined, size: ConfigService.xLargeIconSize, color: Colors.grey),
-                  const SizedBox(height: ConfigService.defaultPadding),
+                  SizedBox(height: ConfigService.defaultPadding),
                   const Text('No shipments found'),
-                  const SizedBox(height: ConfigService.defaultPadding),
+                  SizedBox(height: ConfigService.defaultPadding),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add),
                     label: const Text('Add Shipment'),
@@ -131,7 +131,7 @@ class _ShipmentsList extends StatelessWidget {
             },
             child: ListView.builder(
               // top padding set to 0 as we have padding in the menu indicators
-              padding: const EdgeInsets.only(top: 0, bottom: ConfigService.smallPadding, left: ConfigService.tinyPadding, right: ConfigService.tinyPadding),
+              padding: EdgeInsets.only(top: 0, bottom: ConfigService.smallPadding, left: ConfigService.tinyPadding, right: ConfigService.tinyPadding),
               itemCount: shipments.length,
               itemBuilder: (context, index) {
                 final shipment = shipments[index];

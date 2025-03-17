@@ -24,7 +24,7 @@ class AnalyticsCard extends StatelessWidget {
     final theme = Theme.of(context);
     
     return Card(
-      margin: const EdgeInsets.symmetric(
+      margin: EdgeInsets.symmetric(
         horizontal: ConfigService.smallPadding, 
         vertical: ConfigService.smallPadding
       ),
@@ -36,7 +36,7 @@ class AnalyticsCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(ConfigService.defaultBorderRadius),
         child: Padding(
-          padding: const EdgeInsets.all(ConfigService.defaultPadding),
+          padding: EdgeInsets.all(ConfigService.defaultPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -53,7 +53,7 @@ class AnalyticsCard extends StatelessWidget {
                         size: ConfigService.mediumIconSize,
                         color: theme.colorScheme.primary,
                       ),
-                      const SizedBox(width: ConfigService.smallPadding),
+                      SizedBox(width: ConfigService.smallPadding),
                       Text(
                         title,
                         style: theme.textTheme.titleMedium?.copyWith(
@@ -67,7 +67,7 @@ class AnalyticsCard extends StatelessWidget {
                 ],
               ),
               
-              const SizedBox(height: ConfigService.defaultPadding),
+              SizedBox(height: ConfigService.defaultPadding),
               
               // Loading indicator or content
               if (isLoading)

@@ -31,7 +31,7 @@ class CountChipWidget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: iconSize, color: color),
-          const SizedBox(width: ConfigService.tinyPadding),
+          SizedBox(width: ConfigService.tinyPadding),
           Text(
             text ?? '$count',
             style: TextStyle(

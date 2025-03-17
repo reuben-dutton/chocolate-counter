@@ -44,7 +44,7 @@ class _ExpirationEditBottomSheetState extends State<ExpirationEditBottomSheet> {
         
         // Item info
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: ConfigService.defaultPadding),
+          padding: EdgeInsets.symmetric(vertical: ConfigService.defaultPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -55,13 +55,13 @@ class _ExpirationEditBottomSheetState extends State<ExpirationEditBottomSheet> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: ConfigService.smallPadding),
+              SizedBox(height: ConfigService.smallPadding),
               
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.shopping_bag, size: ConfigService.smallIconSize),
-                  const SizedBox(width: ConfigService.tinyPadding),
+                  SizedBox(width: ConfigService.tinyPadding),
                   Text('Quantity: ${widget.item.quantity}', 
                     style: theme.textTheme.bodyMedium,
                   ),
@@ -76,10 +76,10 @@ class _ExpirationEditBottomSheetState extends State<ExpirationEditBottomSheet> {
           'Current expiration:',
           style: theme.textTheme.bodyMedium,
         ),
-        const SizedBox(height: ConfigService.smallPadding),
+        SizedBox(height: ConfigService.smallPadding),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(ConfigService.mediumPadding),
+          padding: EdgeInsets.all(ConfigService.mediumPadding),
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
@@ -94,7 +94,7 @@ class _ExpirationEditBottomSheetState extends State<ExpirationEditBottomSheet> {
             textAlign: TextAlign.center,
           ),
         ),
-        const SizedBox(height: ConfigService.largePadding),
+        SizedBox(height: ConfigService.largePadding),
         
         // Date selection buttons
         Column(
@@ -107,11 +107,11 @@ class _ExpirationEditBottomSheetState extends State<ExpirationEditBottomSheet> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: ConfigService.largePadding, vertical: ConfigService.mediumPadding),
+                padding: EdgeInsets.symmetric(horizontal: ConfigService.largePadding, vertical: ConfigService.mediumPadding),
               ),
             ),
             if (_expirationDate != null) ...[
-              const SizedBox(height: ConfigService.mediumPadding),
+              SizedBox(height: ConfigService.mediumPadding),
               OutlinedButton.icon(
                 icon: Icon(Icons.remove_circle_outline, size: ConfigService.smallIconSize, color: theme.colorScheme.error),
                 label: Text('Remove Date', style: TextStyle(color: theme.colorScheme.error)),
@@ -122,7 +122,7 @@ class _ExpirationEditBottomSheetState extends State<ExpirationEditBottomSheet> {
                 },
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: theme.colorScheme.error),
-                  padding: const EdgeInsets.symmetric(horizontal: ConfigService.largePadding, vertical: ConfigService.mediumPadding),
+                  padding: EdgeInsets.symmetric(horizontal: ConfigService.largePadding, vertical: ConfigService.mediumPadding),
                 ),
               ),
             ],
@@ -130,7 +130,7 @@ class _ExpirationEditBottomSheetState extends State<ExpirationEditBottomSheet> {
         ),
         
         // Action buttons
-        const SizedBox(height: ConfigService.largePadding),
+        SizedBox(height: ConfigService.largePadding),
         ModalBottomSheet.buildActions(
           context: context,
           onCancel: () => Navigator.of(context).pop(),

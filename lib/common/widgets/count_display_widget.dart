@@ -22,21 +22,21 @@ class CountDisplayWidget extends StatelessWidget {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(ConfigService.mediumPadding),
+          padding: EdgeInsets.all(ConfigService.mediumPadding),
           decoration: BoxDecoration(
             color: color.withAlpha(ConfigService.alphaLight),
             borderRadius: BorderRadius.circular(ConfigService.defaultBorderRadius),
           ),
           child: Icon(icon, size: ConfigService.mediumIconSize, color: color),
         ),
-        const SizedBox(height: ConfigService.smallPadding),
+        SizedBox(height: ConfigService.smallPadding),
         Text(
           label,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaHigh),
           ),
         ),
-        const SizedBox(height: ConfigService.tinyPadding),
+        SizedBox(height: ConfigService.tinyPadding),
         Text(
           '$count',
           style: theme.textTheme.headlineSmall?.copyWith(

@@ -17,7 +17,7 @@ class MinimalistTimePeriodSelector extends StatelessWidget {
     final theme = Theme.of(context);
     
     return Padding(
-      padding: const EdgeInsets.only(top: ConfigService.smallPadding),
+      padding: EdgeInsets.only(top: ConfigService.smallPadding),
       child: SizedBox(
         height: 28,
         child: DropdownButtonHideUnderline(
@@ -73,7 +73,7 @@ class PopupTimePeriodSelector extends StatelessWidget {
       borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
       onTap: () => _showOptionsMenu(context),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: ConfigService.tinyPadding),
+        padding: EdgeInsets.symmetric(vertical: ConfigService.tinyPadding),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -122,7 +122,7 @@ class PopupTimePeriodSelector extends StatelessWidget {
               if (period == selectedPeriod)
                 Icon(Icons.check, size: ConfigService.smallIconSize, color: theme.colorScheme.primary),
               if (period == selectedPeriod)
-                const SizedBox(width: ConfigService.smallPadding),
+                SizedBox(width: ConfigService.smallPadding),
               Text(getTimePeriodLabel(period)),
             ],
           ),

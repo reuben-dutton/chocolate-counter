@@ -75,7 +75,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
           child: Card(
             color: theme.colorScheme.surface,
             child: Padding(
-              padding: const EdgeInsets.all(ConfigService.tinyPadding),
+              padding: EdgeInsets.all(ConfigService.tinyPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -84,7 +84,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                     icon: Icons.list,
                     iconColor: theme.colorScheme.secondary,
                   ),
-                  const SizedBox(height: ConfigService.tinyPadding),
+                  SizedBox(height: ConfigService.tinyPadding),
                   Expanded(
                     child: filteredItems.isEmpty
                         ? const Center(child: Text('No matching items found'))
@@ -106,11 +106,11 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
         
         // Selected items
         if (_selectedItems.isNotEmpty) ...[
-          const SizedBox(height: ConfigService.mediumPadding),
+          SizedBox(height: ConfigService.mediumPadding),
           Card(
             color: theme.colorScheme.surface,
             child: Padding(
-              padding: const EdgeInsets.all(ConfigService.smallPadding),
+              padding: EdgeInsets.all(ConfigService.smallPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -119,7 +119,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                     icon: Icons.check_circle,
                     iconColor: theme.colorScheme.primary,
                   ),
-                  const SizedBox(height: ConfigService.tinyPadding),
+                  SizedBox(height: ConfigService.tinyPadding),
                   Container(
                     constraints: BoxConstraints(
                       maxHeight: _selectedItems.length > 2 ? 150 : 100,
@@ -142,12 +142,12 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
               ),
             ),
           ),
-          const SizedBox(height: ConfigService.mediumPadding),
+          SizedBox(height: ConfigService.mediumPadding),
         ],
         
         // Search and Add Item section
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
+          padding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
             boxShadow: [
@@ -173,7 +173,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                         )
                       : null,
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
+                    contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
                       borderSide: BorderSide.none,
@@ -183,7 +183,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
                   ),
                 ),
               ),
-              const SizedBox(width: ConfigService.smallPadding),
+              SizedBox(width: ConfigService.smallPadding),
               IconButton(
                 icon: const Icon(Icons.add_box),
                 tooltip: 'Add New Item',

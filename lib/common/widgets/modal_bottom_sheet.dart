@@ -64,7 +64,7 @@ class ModalBottomSheet {
                 children: [
                   if (icon != null) ...[
                     Icon(icon, size: ConfigService.defaultIconSize, color: effectiveIconColor),
-                    const SizedBox(width: ConfigService.mediumPadding),
+                    SizedBox(width: ConfigService.mediumPadding),
                   ],
                   Flexible(
                     child: Text(
@@ -108,7 +108,7 @@ class ModalBottomSheet {
             onPressed: loading ? null : onCancel,
             child: Text(cancelText),
           ),
-        const SizedBox(width: ConfigService.defaultPadding),
+        SizedBox(width: ConfigService.defaultPadding),
         if (onConfirm != null)
           loading
           ? const CircularProgressIndicator()

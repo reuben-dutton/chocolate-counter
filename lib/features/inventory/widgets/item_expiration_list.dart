@@ -39,7 +39,7 @@ class ItemExpirationList extends StatelessWidget {
         
         return ListTile(
           dense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: 0),
+          contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: 0),
           leading: const Icon(Icons.calendar_today, size: ConfigService.mediumIconSize),
           title: ExpirationDateWidget(
             expirationDate: expDate,

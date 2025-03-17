@@ -90,11 +90,11 @@ class _InventoryToStockBottomSheetState extends State<InventoryToStockBottomShee
         ),
         
         // Timestamp selector
-        const SizedBox(height: ConfigService.defaultPadding),
+        SizedBox(height: ConfigService.defaultPadding),
         InkWell(
           onTap: () => _selectDateTime(context),
           child: InputDecorator(
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Timestamp',
               isDense: true,
               contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.smallPadding),
@@ -102,7 +102,7 @@ class _InventoryToStockBottomSheetState extends State<InventoryToStockBottomShee
             child: Row(
               children: [
                 const Icon(Icons.calendar_today, size: ConfigService.smallIconSize),
-                const SizedBox(width: ConfigService.tinyPadding),
+                SizedBox(width: ConfigService.tinyPadding),
                 Text(
                   dateFormat.format(_timestamp),
                   style: const TextStyle(fontSize: 14),
@@ -113,7 +113,7 @@ class _InventoryToStockBottomSheetState extends State<InventoryToStockBottomShee
         ),
         
         // Actions
-        const SizedBox(height: ConfigService.largePadding),
+        SizedBox(height: ConfigService.largePadding),
         ModalBottomSheet.buildActions(
           context: context,
           onCancel: () => Navigator.of(context).pop(),

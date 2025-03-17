@@ -29,6 +29,9 @@ class ServiceLocator {
     
     final configService = ConfigService();
     
+    // Initialize configService with the saved UI density from preferences
+    configService.setCompactUiDensity(preferencesService.compactUiDensity);
+    
     // Register base services
     instance.registerSingleton<DatabaseService>(databaseService);
     instance.registerSingleton<PreferencesService>(preferencesService);

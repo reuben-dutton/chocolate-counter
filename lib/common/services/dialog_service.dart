@@ -51,7 +51,7 @@ class DialogService {
             
             // Content
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: ConfigService.defaultPadding),
+              padding: EdgeInsets.symmetric(vertical: ConfigService.defaultPadding),
               child: Text(
                 content,
                 style: theme.textTheme.bodyMedium,
@@ -59,7 +59,7 @@ class DialogService {
             ),
             
             // Actions
-            const SizedBox(height: ConfigService.largePadding),
+            SizedBox(height: ConfigService.largePadding),
             ModalBottomSheet.buildActions(
               context: context,
               onCancel: () => Navigator.of(context).pop(false),
@@ -144,7 +144,7 @@ class DialogService {
             title: Row(
               children: [
                 Icon(icon ?? Icons.inventory_2, size: ConfigService.defaultIconSize),
-                const SizedBox(width: ConfigService.smallPadding),
+                SizedBox(width: ConfigService.smallPadding),
                 Text(title),
               ],
             ),
@@ -152,7 +152,7 @@ class DialogService {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('Maximum: $maxQuantity'),
-                const SizedBox(height: ConfigService.smallPadding),
+                SizedBox(height: ConfigService.smallPadding),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -241,7 +241,7 @@ class DialogService {
                 
                 // Content
                 Text('Maximum: $maxQuantity'),
-                const SizedBox(height: ConfigService.defaultPadding),
+                SizedBox(height: ConfigService.defaultPadding),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -283,7 +283,7 @@ class DialogService {
                 ),
                 
                 // Actions
-                const SizedBox(height: ConfigService.largePadding),
+                SizedBox(height: ConfigService.largePadding),
                 ModalBottomSheet.buildActions(
                   context: context,
                   onCancel: () => Navigator.of(context).pop(),
@@ -341,11 +341,11 @@ class DialogService {
             ),
             
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: ConfigService.defaultPadding),
+              padding: EdgeInsets.symmetric(vertical: ConfigService.defaultPadding),
               child: Text(message),
             ),
             
-            const SizedBox(height: ConfigService.largePadding),
+            SizedBox(height: ConfigService.largePadding),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -374,7 +374,7 @@ class DialogService {
           mainAxisSize: MainAxisSize.min,
           children: [
             const CircularProgressIndicator(),
-            const SizedBox(height: ConfigService.defaultPadding),
+            SizedBox(height: ConfigService.defaultPadding),
             Text(message),
           ],
         ),
@@ -396,9 +396,9 @@ class DialogService {
           mainAxisSize: MainAxisSize.min,
           children: [
             const CircularProgressIndicator(),
-            const SizedBox(height: ConfigService.defaultPadding),
+            SizedBox(height: ConfigService.defaultPadding),
             Text(message),
-            const SizedBox(height: ConfigService.defaultPadding),
+            SizedBox(height: ConfigService.defaultPadding),
           ],
         );
       },

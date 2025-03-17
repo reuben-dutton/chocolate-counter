@@ -158,7 +158,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
                           _buildImagePreview(),
                           
                           Padding(
-                            padding: const EdgeInsets.all(ConfigService.defaultPadding),
+                            padding: EdgeInsets.all(ConfigService.defaultPadding),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -177,7 +177,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: ConfigService.mediumPadding),
+                                SizedBox(height: ConfigService.mediumPadding),
                                 TextFormField(
                                   controller: _barcodeController,
                                   decoration: const InputDecoration(
@@ -187,7 +187,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
                                     prefixIcon: Icon(Icons.qr_code, size: ConfigService.mediumIconSize),
                                   ),
                                 ),
-                                const SizedBox(height: ConfigService.defaultPadding),
+                                SizedBox(height: ConfigService.defaultPadding),
                                 
                                 // Image controls
                                 Row(
@@ -198,7 +198,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
                                       label: const Text('Camera'),
                                       onPressed: _takePhoto,
                                     ),
-                                    const SizedBox(width: ConfigService.defaultPadding),
+                                    SizedBox(width: ConfigService.defaultPadding),
                                     OutlinedButton.icon(
                                       icon: const Icon(Icons.photo_library, size: ConfigService.smallIconSize),
                                       label: const Text('Gallery'),
@@ -207,7 +207,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
                                   ],
                                 ),
                                 if (_imageFile != null || _existingImagePath != null) ...[
-                                  const SizedBox(height: ConfigService.smallPadding),
+                                  SizedBox(height: ConfigService.smallPadding),
                                   Center(
                                     child: TextButton.icon(
                                       icon: const Icon(Icons.delete, color: Colors.red, size: ConfigService.smallIconSize),

@@ -10,17 +10,29 @@ import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+  
+  // Define fixed padding values for the settings screen that won't change with density
+  static const double _fixedDefaultPadding = 16.0;
+  static const double _fixedSmallPadding = 8.0;
+  static const double _fixedTinyPadding = 4.0;
+  static const double _fixedMediumPadding = 12.0;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<PreferencesBloc, PreferencesState>(
       buildWhen: (previous, current) => 
         previous.themeMode != current.themeMode || 
-        previous.hardwareAcceleration != current.hardwareAcceleration,
+        previous.hardwareAcceleration != current.hardwareAcceleration ||
+        previous.compactUiDensity != current.compactUiDensity,
       builder: (context, state) {
         return Scaffold(
           body: ListView(
-            padding: const EdgeInsets.only(top: 0, bottom: ConfigService.smallPadding, left: ConfigService.tinyPadding, right: ConfigService.tinyPadding),
+            padding: const EdgeInsets.only(
+              top: 0, 
+              bottom: _fixedSmallPadding, 
+              left: _fixedTinyPadding, 
+              right: _fixedTinyPadding
+            ),
             children: [
               ListTile(
                 leading: const Icon(Icons.palette, size: ConfigService.defaultIconSize),
@@ -52,6 +64,26 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               const Divider(),
+
+              // UI Density Toggle
+              SwitchListTile(
+                title: const Text('Compact UI'),
+                subtitle: const Text('Use smaller padding values throughout the app'),
+                secondary: const Icon(Icons.density_medium, size: ConfigService.defaultIconSize),
+                value: state.compactUiDensity,
+                onChanged: (bool value) {
+                  context.read<PreferencesBloc>().add(SetCompactUiDensity(value));
+                  
+                  // Show a snackbar informing the user that changes are applied immediately
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('UI density has been updated'),
+                      duration: ConfigService.snackBarDuration,
+                    ),
+                  );
+                },
+              ),
+              const Divider(),
               
               // Hardware Acceleration Toggle
               SwitchListTile(
@@ -64,8 +96,8 @@ class SettingsScreen extends StatelessWidget {
                   
                   // Show a snackbar informing the user that restart is required
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Restart the app for this change to take effect'),
+                    SnackBar(
+                      content: const Text('Restart the app for this change to take effect'),
                       duration: ConfigService.snackBarDuration,
                     ),
                   );
@@ -74,9 +106,14 @@ class SettingsScreen extends StatelessWidget {
               const Divider(),
               
               // Debug section
-              const Padding(
-                padding: EdgeInsets.fromLTRB(ConfigService.defaultPadding, ConfigService.defaultPadding, ConfigService.defaultPadding, ConfigService.smallPadding),
-                child: Text(
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  _fixedDefaultPadding, 
+                  _fixedDefaultPadding, 
+                  _fixedDefaultPadding, 
+                  _fixedSmallPadding
+                ),
+                child: const Text(
                   'Debug Options',
                   style: TextStyle(
                     fontSize: 14,
@@ -102,7 +139,7 @@ class SettingsScreen extends StatelessWidget {
                 applicationVersion: '1.0.0',
                 applicationIcon: Icon(Icons.inventory),
                 aboutBoxChildren: [
-                  SizedBox(height: ConfigService.mediumPadding),
+                  SizedBox(height: _fixedMediumPadding),
                   Text('A comprehensive app for tracking food inventory and stock.'),
                 ],
               ),
@@ -153,7 +190,7 @@ class SettingsScreen extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Database has been reset'),
-            duration: Duration(seconds: 3),
+            duration: ConfigService.snackBarDuration,
           ),
         );
       }

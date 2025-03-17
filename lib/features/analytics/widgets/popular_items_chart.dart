@@ -55,7 +55,7 @@ class PopularItemsChart extends StatelessWidget {
         
         // Top Sellers Section
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.mediumPadding),
+          padding: EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.mediumPadding),
           child: Text(
             'Top Sellers',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -74,7 +74,7 @@ class PopularItemsChart extends StatelessWidget {
               final index = topItems.indexOf(item);
               
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.smallPadding),
+                padding: EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.smallPadding),
                 child: Row(
                   children: [
                     Container(
@@ -95,7 +95,7 @@ class PopularItemsChart extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: ConfigService.defaultPadding),
+                    SizedBox(width: ConfigService.defaultPadding),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,7 +108,7 @@ class PopularItemsChart extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: ConfigService.tinyPadding),
+                          SizedBox(height: ConfigService.tinyPadding),
                           LinearProgressIndicator(
                             value: item.salesCount / topItems.first.salesCount,
                             backgroundColor: theme.colorScheme.surface,
@@ -119,7 +119,7 @@ class PopularItemsChart extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: ConfigService.defaultPadding),
+                    SizedBox(width: ConfigService.defaultPadding),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -152,9 +152,9 @@ class PopularItemsChart extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.all(ConfigService.tinyPadding),
+      padding: EdgeInsets.all(ConfigService.tinyPadding),
       child: Container(
-        padding: const EdgeInsets.all(ConfigService.defaultPadding),
+        padding: EdgeInsets.all(ConfigService.defaultPadding),
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
@@ -197,7 +197,7 @@ class PopularItemsChart extends StatelessWidget {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(ConfigService.mediumPadding),
+          padding: EdgeInsets.all(ConfigService.mediumPadding),
           decoration: BoxDecoration(
             color: theme.colorScheme.primary.withAlpha(ConfigService.alphaLight),
             borderRadius: BorderRadius.circular(ConfigService.mediumPadding),
@@ -208,14 +208,14 @@ class PopularItemsChart extends StatelessWidget {
             size: 24,
           ),
         ),
-        const SizedBox(height: ConfigService.smallPadding),
+        SizedBox(height: ConfigService.smallPadding),
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaDefault),
           ),
         ),
-        const SizedBox(height: ConfigService.smallPadding),
+        SizedBox(height: ConfigService.smallPadding),
         Text(
           value,
           style: theme.textTheme.bodyMedium?.copyWith(

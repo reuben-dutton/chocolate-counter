@@ -9,18 +9,27 @@ class ConfigService extends ChangeNotifier {
   // Database constants
   static const int dbVersion = 3; // Updated version for unitPrice field
   
-  // UI constants
-  static const double defaultPadding = 16.0;
-  static const double smallPadding = 8.0;
-  static const double tinyPadding = 4.0;
-  static const double mediumPadding = 12.0;
-  static const double largePadding = 24.0;
+  // UI constants - Normal density (default)
+  static const double _defaultPaddingNormal = 16.0;
+  static const double _smallPaddingNormal = 8.0;
+  static const double _tinyPaddingNormal = 4.0;
+  static const double _mediumPaddingNormal = 12.0;
+  static const double _largePaddingNormal = 24.0;
 
-  // static const double defaultPadding = 8.0;
-  // static const double smallPadding = 4.0;
-  // static const double tinyPadding = 2.0;
-  // static const double mediumPadding = 6.0;
-  // static const double largePadding = 12.0;
+  // UI constants - Compact density
+  static const double _defaultPaddingCompact = 8.0;
+  static const double _smallPaddingCompact = 4.0;
+  static const double _tinyPaddingCompact = 2.0;
+  static const double _mediumPaddingCompact = 6.0;
+  static const double _largePaddingCompact = 12.0;
+  
+  // Runtime padding values - These can be modified
+  // We initialize them with normal density values
+  static double defaultPadding = _defaultPaddingNormal;
+  static double smallPadding = _smallPaddingNormal;
+  static double tinyPadding = _tinyPaddingNormal;
+  static double mediumPadding = _mediumPaddingNormal;
+  static double largePadding = _largePaddingNormal;
   
   // Border radius constants
   static const double defaultBorderRadius = 8.0;
@@ -61,9 +70,11 @@ class ConfigService extends ChangeNotifier {
   
   // Dynamic properties that can be changed at runtime
   double _uiScale = 1.0;
+  bool _compactUiDensity = false;
   
   // Getters for dynamic properties
   double get uiScale => _uiScale;
+  bool get compactUiDensity => _compactUiDensity;
   
   // Computed values based on scale
   double get scaledPadding => defaultPadding * _uiScale;
@@ -75,6 +86,30 @@ class ConfigService extends ChangeNotifier {
   void setUiScale(double scale) {
     if (_uiScale != scale) {
       _uiScale = scale;
+      notifyListeners();
+    }
+  }
+  
+  // Method to toggle between normal and compact UI density
+  void setCompactUiDensity(bool compact) {
+    if (_compactUiDensity != compact) {
+      _compactUiDensity = compact;
+      
+      // Update the static padding values
+      if (compact) {
+        defaultPadding = _defaultPaddingCompact;
+        smallPadding = _smallPaddingCompact;
+        tinyPadding = _tinyPaddingCompact;
+        mediumPadding = _mediumPaddingCompact;
+        largePadding = _largePaddingCompact;
+      } else {
+        defaultPadding = _defaultPaddingNormal;
+        smallPadding = _smallPaddingNormal;
+        tinyPadding = _tinyPaddingNormal;
+        mediumPadding = _mediumPaddingNormal;
+        largePadding = _largePaddingNormal;
+      }
+      
       notifyListeners();
     }
   }

@@ -30,7 +30,7 @@ class ShipmentItemList extends StatelessWidget {
         final item = items[index] as ShipmentItem;
         return ListTile(
           dense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: ConfigService.tinyPadding),
+          contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: ConfigService.tinyPadding),
           leading: ItemImageWidget(
             imagePath: item.itemDefinition?.imageUrl,
             itemName: item.itemDefinition?.name ?? 'Unknown Item',
@@ -55,12 +55,12 @@ class ShipmentItemList extends StatelessWidget {
                 Row(
                   children: [
                     Icon(Icons.attach_money, size: ConfigService.tinyIconSize, color: theme.colorScheme.secondary),
-                    const SizedBox(width: ConfigService.tinyPadding),
+                    SizedBox(width: ConfigService.tinyPadding),
                     Text(
                       ConfigService.formatCurrency(item.unitPrice!),
                       style: TextStyle(fontSize: 12),
                     ),
-                    const SizedBox(width: ConfigService.smallPadding),
+                    SizedBox(width: ConfigService.smallPadding),
                     Text(
                       'Total: ${ConfigService.formatCurrency(item.unitPrice! * item.quantity)}',
                       style: TextStyle(
@@ -85,7 +85,7 @@ class ShipmentItemList extends StatelessWidget {
                   tooltip: 'Edit expiration date',
                   onPressed: () => _showExpirationEditBottomSheet(context, item),
                 ),
-              const SizedBox(width: ConfigService.smallPadding),
+              SizedBox(width: ConfigService.smallPadding),
               Chip(
                 padding: const EdgeInsets.all(0),
                 visualDensity: VisualDensity.compact,

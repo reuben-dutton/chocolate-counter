@@ -47,7 +47,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
         ),
         
         // Quantity selector
-        const SizedBox(height: ConfigService.defaultPadding),
+        SizedBox(height: ConfigService.defaultPadding),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -60,12 +60,12 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                   ? () => setState(() => quantity--)
                   : null,
             ),
-            const SizedBox(width: ConfigService.smallPadding),
+            SizedBox(width: ConfigService.smallPadding),
             Text(
               '$quantity',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(width: ConfigService.smallPadding),
+            SizedBox(width: ConfigService.smallPadding),
             IconButton(
               icon: const Icon(Icons.add_circle_outline, size: ConfigService.defaultIconSize),
               padding: EdgeInsets.zero,
@@ -76,7 +76,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
         ),
         
         // Expiration date selector
-        const SizedBox(height: ConfigService.defaultPadding),
+        SizedBox(height: ConfigService.defaultPadding),
         ListTile(
           dense: true,
           contentPadding: EdgeInsets.zero,
@@ -105,7 +105,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
         ),
         
         // Add price input with increment/decrement
-        const SizedBox(height: ConfigService.defaultPadding),
+        SizedBox(height: ConfigService.defaultPadding),
         Row(
           children: [
             const Expanded(
@@ -157,7 +157,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
         ),
         
         // Action buttons
-        const SizedBox(height: ConfigService.largePadding),
+        SizedBox(height: ConfigService.largePadding),
         ModalBottomSheet.buildActions(
           context: context,
           onCancel: () => Navigator.of(context).pop(),

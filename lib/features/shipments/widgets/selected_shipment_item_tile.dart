@@ -31,7 +31,7 @@ class SelectedShipmentItemTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 1),
       child: ListTile(
         dense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: 1),
+        contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: 1),
         leading: ItemImageWidget(
           imagePath: item.itemDefinition?.imageUrl,
           itemName: item.itemDefinition?.name ?? 'Unknown Item',
@@ -57,7 +57,7 @@ class SelectedShipmentItemTile extends StatelessWidget {
               Row(
                 children: [
                   Icon(Icons.attach_money, size: ConfigService.tinyIconSize, color: theme.colorScheme.secondary),
-                  const SizedBox(width: ConfigService.tinyPadding),
+                  SizedBox(width: ConfigService.tinyPadding),
                   Text(
                     ConfigService.formatCurrency(item.unitPrice!),
                     style: TextStyle(fontSize: 12),
@@ -70,7 +70,7 @@ class SelectedShipmentItemTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.tinyPadding),
+              padding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.tinyPadding),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
               ),
@@ -82,14 +82,14 @@ class SelectedShipmentItemTile extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: ConfigService.tinyPadding),
+            SizedBox(width: ConfigService.tinyPadding),
             IconButton(
               icon: const Icon(Icons.edit, size: ConfigService.smallIconSize),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
               onPressed: () => _showEditBottomSheet(context),
             ),
-            const SizedBox(width: ConfigService.tinyPadding),
+            SizedBox(width: ConfigService.tinyPadding),
             IconButton(
               icon: const Icon(Icons.delete, size: ConfigService.smallIconSize),
               padding: EdgeInsets.zero,
