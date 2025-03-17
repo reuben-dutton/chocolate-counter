@@ -8,11 +8,11 @@ class AnalyticsRepository {
 
   AnalyticsRepository(this._databaseService);
 
-  /// Get most popular items based on sales history
-  Future<List<Map<String, dynamic>>> getPopularItems({Transaction? txn}) async {
+  /// Get most popular items based on sales history with optional date filtering
+  Future<List<Map<String, dynamic>>> getPopularItems({DateTime? startDate, Transaction? txn}) async {
     return _withTransactionIfNeeded(txn, (db) async {
-      // Query to get most sold items based on inventory movements
-      final results = await db.rawQuery('''
+      // Base query to get most sold items based on inventory movements
+      String query = '''
         SELECT 
           id.name as itemName, 
           SUM(im.quantity) as salesCount
@@ -24,13 +24,25 @@ class AnalyticsRepository {
           im.itemDefinitionId = id.id
         WHERE 
           im.type = ${MovementType.stockSale.index}
+      ''';
+      
+      // Add date filtering if needed
+      List<dynamic> args = [];
+      if (startDate != null) {
+        query += ' AND im.timestamp >= ?';
+        args.add(startDate.millisecondsSinceEpoch);
+      }
+      
+      // Complete the query
+      query += '''
         GROUP BY 
           im.itemDefinitionId
         ORDER BY 
           salesCount DESC
         LIMIT 10
-      ''');
+      ''';
       
+      final results = await db.rawQuery(query, args);
       return results;
     });
   }

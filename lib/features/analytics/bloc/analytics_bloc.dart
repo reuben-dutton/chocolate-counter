@@ -1,10 +1,126 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
-import 'package:food_inventory/features/analytics/bloc/analytics_event.dart';
-import 'package:food_inventory/features/analytics/bloc/analytics_state.dart';
 import 'package:food_inventory/features/analytics/models/analytics_data.dart';
+import 'package:food_inventory/features/analytics/models/time_period.dart';
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
+
+// Define events
+abstract class AnalyticsEvent extends Equatable {
+  const AnalyticsEvent();
+
+  @override
+  List<Object?> get props => [];
+}
+
+class InitializeAnalyticsScreen extends AnalyticsEvent {
+  const InitializeAnalyticsScreen();
+}
+
+class LoadPopularItemsData extends AnalyticsEvent {
+  final TimePeriod timePeriod;
+  
+  const LoadPopularItemsData({this.timePeriod = TimePeriod.allTime});
+  
+  @override
+  List<Object?> get props => [timePeriod];
+}
+
+class ChangeAnalyticsType extends AnalyticsEvent {
+  final AnalyticsType type;
+  
+  const ChangeAnalyticsType(this.type);
+  
+  @override
+  List<Object?> get props => [type];
+}
+
+class ChangeTimePeriod extends AnalyticsEvent {
+  final TimePeriod timePeriod;
+  
+  const ChangeTimePeriod(this.timePeriod);
+  
+  @override
+  List<Object?> get props => [timePeriod];
+}
+
+class ClearOperationState extends AnalyticsEvent {
+  const ClearOperationState();
+}
+
+// Define state
+enum AnalyticsType {
+  popularItems,
+  stockTrends,
+  expirationAnalytics,
+  salesHistory
+}
+
+class AnalyticsState extends Equatable {
+  final AppError? error;
+  final AnalyticsType selectedType;
+  final TimePeriod timePeriod;
+  
+  const AnalyticsState({
+    this.error, 
+    this.selectedType = AnalyticsType.popularItems,
+    this.timePeriod = TimePeriod.allTime,
+  });
+  
+  @override
+  List<Object?> get props => [error, selectedType, timePeriod];
+}
+
+/// Initial state
+class AnalyticsInitial extends AnalyticsState {
+  const AnalyticsInitial();
+}
+
+/// Loading state
+class AnalyticsLoading extends AnalyticsState {
+  const AnalyticsLoading({TimePeriod timePeriod = TimePeriod.allTime}) 
+      : super(timePeriod: timePeriod);
+}
+
+/// State when data is loaded
+class AnalyticsLoaded extends AnalyticsState {
+  final AnalyticsData data;
+  
+  const AnalyticsLoaded(
+    this.data, {
+    super.error,
+    super.timePeriod = TimePeriod.allTime
+  });
+  
+  @override
+  List<Object?> get props => [data, error, timePeriod];
+  
+  AnalyticsLoaded copyWith({
+    AnalyticsData? data,
+    AppError? error,
+    TimePeriod? timePeriod,
+  }) {
+    return AnalyticsLoaded(
+      data ?? this.data,
+      error: error ?? this.error,
+      timePeriod: timePeriod ?? this.timePeriod,
+    );
+  }
+}
+
+/// State for operation results
+class OperationResult extends AnalyticsState {
+  final bool success;
+  
+  const OperationResult({
+    required this.success,
+    super.error,
+  });
+  
+  @override
+  List<Object?> get props => [success, error];
+}
 
 class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
   final AnalyticsService _analyticsService;
@@ -13,6 +129,7 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
     on<InitializeAnalyticsScreen>(_onInitializeAnalyticsScreen);
     on<LoadPopularItemsData>(_onLoadPopularItemsData);
     on<ChangeAnalyticsType>(_onChangeAnalyticsType);
+    on<ChangeTimePeriod>(_onChangeTimePeriod);
     on<ClearOperationState>(_onClearOperationState);
   }
 
@@ -31,11 +148,11 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
     Emitter<AnalyticsState> emit,
   ) async {
     try {
-      emit(const AnalyticsLoading());
+      emit(AnalyticsLoading(timePeriod: event.timePeriod));
       
-      final data = await _analyticsService.getPopularItemsData();
+      final data = await _getDataForTimePeriod(event.timePeriod);
       
-      emit(AnalyticsLoaded(data));
+      emit(AnalyticsLoaded(data, timePeriod: event.timePeriod));
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error loading analytics data', e, stackTrace, 'AnalyticsBloc');
       
@@ -58,6 +175,7 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
             stackTrace: stackTrace,
             source: 'AnalyticsBloc'
           ),
+          timePeriod: event.timePeriod,
         ));
       }
     }
@@ -67,15 +185,27 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
     ChangeAnalyticsType event,
     Emitter<AnalyticsState> emit,
   ) async {
-    emit(AnalyticsState(selectedType: event.type));
+    // Preserve the current time period when changing analytics type
+    final currentTimePeriod = state.timePeriod;
+    emit(AnalyticsState(selectedType: event.type, timePeriod: currentTimePeriod));
     
     // Load data for the specific analytics type
     switch (event.type) {
       case AnalyticsType.popularItems:
-        add(const LoadPopularItemsData());
+        add(LoadPopularItemsData(timePeriod: currentTimePeriod));
       default:
         // Add placeholder loading methods for other types later
         break;
+    }
+  }
+
+  Future<void> _onChangeTimePeriod(
+    ChangeTimePeriod event,
+    Emitter<AnalyticsState> emit,
+  ) async {
+    if (state.timePeriod != event.timePeriod) {
+      // Update state and reload data with new time period
+      add(LoadPopularItemsData(timePeriod: event.timePeriod));
     }
   }
 
@@ -88,6 +218,26 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
     if (state is OperationResult) {
       emit(const AnalyticsInitial());
     }
+  }
+
+  /// Get data for the selected time period
+  Future<AnalyticsData> _getDataForTimePeriod(TimePeriod period) async {
+    DateTime? startDate;
+    
+    final now = DateTime.now();
+    
+    switch (period) {
+      case TimePeriod.lastWeek:
+        startDate = now.subtract(const Duration(days: 7));
+      case TimePeriod.lastMonth:
+        startDate = DateTime(now.year, now.month - 1, now.day);
+      case TimePeriod.lastSixMonths:
+        startDate = DateTime(now.year, now.month - 6, now.day);
+      case TimePeriod.allTime:
+        startDate = null; // No filter
+    }
+    
+    return _analyticsService.getPopularItemsData(startDate: startDate);
   }
 
   /// Handle an error with a BuildContext for UI feedback

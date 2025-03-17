@@ -3,10 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/features/analytics/bloc/analytics_bloc.dart';
-import 'package:food_inventory/features/analytics/bloc/analytics_event.dart';
-import 'package:food_inventory/features/analytics/bloc/analytics_state.dart';
+import 'package:food_inventory/features/analytics/models/time_period.dart';
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
 import 'package:food_inventory/features/analytics/widgets/analytics_card.dart';
+import 'package:food_inventory/features/analytics/widgets/time_period_selectors.dart';
 import 'package:food_inventory/features/analytics/widgets/popular_items_chart.dart';
 import 'package:provider/provider.dart';
 
@@ -56,7 +56,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             builder: (context) {
               return RefreshIndicator(
                 onRefresh: () async {
-                  BlocProvider.of<AnalyticsBloc>(context).add(const LoadPopularItemsData());
+                  // Preserve the current time period when refreshing
+                  final currentState = context.read<AnalyticsBloc>().state;
+                  context.read<AnalyticsBloc>().add(
+                    LoadPopularItemsData(timePeriod: currentState.timePeriod)
+                  );
                 },
                 child: Column(
                   children: [
@@ -157,14 +161,26 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Widget _buildPopularItemsContent(BuildContext context, AnalyticsState state) {
+    // Create time period selector
+    final periodSelector = BlocBuilder<AnalyticsBloc, AnalyticsState>(
+      buildWhen: (previous, current) => previous.timePeriod != current.timePeriod,
+      builder: (context, state) {
+        return CompactTimePeriodSelector(
+          selectedPeriod: state.timePeriod,
+          onPeriodChanged: (period) {
+            context.read<AnalyticsBloc>().add(ChangeTimePeriod(period));
+          },
+        );
+      },
+    );
+
     if (state is AnalyticsLoading) {
-      return const AnalyticsCard(
+      return AnalyticsCard(
         title: 'At A Glance',
         icon: Icons.bar_chart,
-        child: Center(
-          heightFactor: 2,
-          child: CircularProgressIndicator(),
-        ),
+        titleChild: periodSelector,
+        isLoading: true,
+        child: const SizedBox.shrink(),
       );
     }
     
@@ -172,6 +188,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       return AnalyticsCard(
         title: 'At A Glance',
         icon: Icons.bar_chart,
+        titleChild: periodSelector,
         child: PopularItemsChart(
           popularItems: state.data.popularItems,
           totalStockCount: state.data.totalStockCount,
@@ -179,10 +196,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       );
     }
     
-    return const AnalyticsCard(
+    return AnalyticsCard(
       title: 'At A Glance',
       icon: Icons.bar_chart,
-      child: Center(
+      titleChild: periodSelector,
+      child: const Center(
         heightFactor: 2,
         child: Text('No data available'),
       ),

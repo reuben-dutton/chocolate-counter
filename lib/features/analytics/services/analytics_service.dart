@@ -8,10 +8,13 @@ class AnalyticsService {
 
   AnalyticsService(this._analyticsRepository);
 
-  /// Get data for most popular (most sold) items
-  Future<AnalyticsData> getPopularItemsData({Transaction? txn}) async {
+  /// Get data for most popular (most sold) items with optional time period filter
+  Future<AnalyticsData> getPopularItemsData({DateTime? startDate, Transaction? txn}) async {
     return _withTransactionIfNeeded(txn, (transaction) async {
-      final rawData = await _analyticsRepository.getPopularItems(txn: transaction);
+      final rawData = await _analyticsRepository.getPopularItems(
+        startDate: startDate,
+        txn: transaction
+      );
       final totalStockCount = await _analyticsRepository.getTotalStockCount(txn: transaction);
       
       final List<PopularItemData> popularItems = [];
