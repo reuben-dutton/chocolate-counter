@@ -7,6 +7,7 @@ import 'package:food_inventory/features/analytics/services/analytics_service.dar
 import 'package:food_inventory/features/analytics/widgets/analytics_card.dart';
 import 'package:food_inventory/features/analytics/widgets/time_period_selectors.dart';
 import 'package:food_inventory/features/analytics/widgets/popular_items_chart.dart';
+import 'package:food_inventory/features/analytics/widgets/popular_items_skeleton.dart';
 import 'package:provider/provider.dart';
 
 class AnalyticsScreen extends StatefulWidget {
@@ -178,8 +179,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         title: 'At A Glance',
         icon: Icons.bar_chart,
         titleChild: periodSelector,
-        isLoading: true,
-        child: const SizedBox.shrink(),
+        child: const PopularItemsSkeleton(),
       );
     }
     

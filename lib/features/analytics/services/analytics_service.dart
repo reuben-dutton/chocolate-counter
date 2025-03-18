@@ -5,11 +5,20 @@ import 'package:sqflite/sqflite.dart';
 /// Service for analytics-related operations
 class AnalyticsService {
   final AnalyticsRepository _analyticsRepository;
+  // Set this to true to simulate loading delay
+  final bool _simulateDelay = true;
+  // Adjust this duration as needed for testing
+  final Duration _delayDuration = const Duration(seconds: 3);
 
   AnalyticsService(this._analyticsRepository);
 
   /// Get data for most popular (most sold) items with optional time period filter
   Future<AnalyticsData> getPopularItemsData({DateTime? startDate, Transaction? txn}) async {
+    // Add artificial delay for testing the skeleton loader
+    if (_simulateDelay) {
+      await Future.delayed(_delayDuration);
+    }
+    
     return _withTransactionIfNeeded(txn, (transaction) async {
       final rawData = await _analyticsRepository.getPopularItems(
         startDate: startDate,
