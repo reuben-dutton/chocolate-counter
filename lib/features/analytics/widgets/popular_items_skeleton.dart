@@ -48,11 +48,11 @@ class _PopularItemsSkeletonState extends State<PopularItemsSkeleton> with Single
     final theme = Theme.of(context);
     
     return SizedBox(
-      height: 550, // Approximate height to match the actual content
+      // height: 550, // Approximate height to match the actual content
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Summary card skeleton
+          // Summary card skeleton that better matches the actual layout
           _buildSummaryCardSkeleton(theme),
           
           // Top Sellers title skeleton
@@ -63,7 +63,7 @@ class _PopularItemsSkeletonState extends State<PopularItemsSkeleton> with Single
             ),
             child: Row(
               children: [
-                _buildShimmerContainer(width: 120, height: 24),
+                _buildShimmerContainer(width: 120, height: 28),
               ],
             ),
           ),
@@ -86,10 +86,10 @@ class _PopularItemsSkeletonState extends State<PopularItemsSkeleton> with Single
     return Padding(
       padding: EdgeInsets.all(ConfigService.tinyPadding),
       child: Container(
-        width: double.infinity,
+        // width: double.infinity,
         padding: EdgeInsets.all(ConfigService.defaultPadding),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerLow,
+          color: theme.colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
         ),
         child: Column(
@@ -113,17 +113,17 @@ class _PopularItemsSkeletonState extends State<PopularItemsSkeleton> with Single
     return Column(
       children: [
         Container(
-          width: 60, // Match the size of the actual icon container
-          height: 60,
+          width: 24 + ConfigService.mediumPadding * 2, 
+          height: 24 + ConfigService.mediumPadding * 2,
           decoration: BoxDecoration(
             color: _colorAnimation.value,
             borderRadius: BorderRadius.circular(ConfigService.mediumPadding),
           ),
         ),
         SizedBox(height: ConfigService.smallPadding),
-        _buildShimmerContainer(width: 70, height: 14),
+        _buildShimmerContainer(width: 70, height: 18),
         SizedBox(height: ConfigService.smallPadding),
-        _buildShimmerContainer(width: 30, height: 20),
+        _buildShimmerContainer(width: 30, height: 18),
       ],
     );
   }
@@ -138,33 +138,18 @@ class _PopularItemsSkeletonState extends State<PopularItemsSkeleton> with Single
             color: _colorAnimation.value,
             borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
           ),
-          child: Center(
-            child: Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                color: _colorAnimation.value?.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
-              ),
-            ),
-          ),
         ),
         SizedBox(width: ConfigService.defaultPadding),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildShimmerContainer(width: 150, height: 20),
+              _buildShimmerContainer(width: 150, height: 24),
               SizedBox(height: ConfigService.tinyPadding),
               Container(
                 height: 6,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      _colorAnimation.value!,
-                      _colorAnimation.value!.withOpacity(0.3),
-                    ],
-                  ),
+                  color: _colorAnimation.value,
                   borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
                 ),
               ),

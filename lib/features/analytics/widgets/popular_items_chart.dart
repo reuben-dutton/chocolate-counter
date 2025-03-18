@@ -160,7 +160,7 @@ class PopularItemsChart extends StatelessWidget {
           borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,

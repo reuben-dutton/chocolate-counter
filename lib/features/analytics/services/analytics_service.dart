@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 class AnalyticsService {
   final AnalyticsRepository _analyticsRepository;
   // Set this to true to simulate loading delay
-  final bool _simulateDelay = true;
+  final bool _simulateDelay = false;
   // Adjust this duration as needed for testing
   final Duration _delayDuration = const Duration(seconds: 3);
 
