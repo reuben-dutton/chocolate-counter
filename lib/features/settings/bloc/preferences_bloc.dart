@@ -21,6 +21,15 @@ class SetThemeMode extends PreferencesEvent {
   List<Object?> get props => [themeMode];
 }
 
+class SetThemeType extends PreferencesEvent {
+  final String themeType;
+
+  const SetThemeType(this.themeType);
+
+  @override
+  List<Object?> get props => [themeType];
+}
+
 class SetHardwareAcceleration extends PreferencesEvent {
   final bool enabled;
 
@@ -42,29 +51,33 @@ class SetCompactUiDensity extends PreferencesEvent {
 // Define state
 class PreferencesState extends Equatable {
   final ThemeMode themeMode;
+  final String themeType;
   final bool hardwareAcceleration;
   final bool compactUiDensity;
 
   const PreferencesState({
     this.themeMode = ThemeMode.system,
+    this.themeType = 'standard',
     this.hardwareAcceleration = true,
     this.compactUiDensity = false,
   });
 
   PreferencesState copyWith({
     ThemeMode? themeMode,
+    String? themeType,
     bool? hardwareAcceleration,
     bool? compactUiDensity,
   }) {
     return PreferencesState(
       themeMode: themeMode ?? this.themeMode,
+      themeType: themeType ?? this.themeType,
       hardwareAcceleration: hardwareAcceleration ?? this.hardwareAcceleration,
       compactUiDensity: compactUiDensity ?? this.compactUiDensity,
     );
   }
 
   @override
-  List<Object?> get props => [themeMode, hardwareAcceleration, compactUiDensity];
+  List<Object?> get props => [themeMode, themeType, hardwareAcceleration, compactUiDensity];
 }
 
 /// BLoC for application preferences
@@ -75,6 +88,7 @@ class PreferencesBloc extends Bloc<PreferencesEvent, PreferencesState> {
   PreferencesBloc(this._preferencesService, this._configService) 
       : super(PreferencesState(
           themeMode: _preferencesService.themeMode,
+          themeType: _preferencesService.themeType,
           hardwareAcceleration: _preferencesService.hardwareAcceleration,
           compactUiDensity: _preferencesService.compactUiDensity,
         )) {
@@ -86,6 +100,7 @@ class PreferencesBloc extends Bloc<PreferencesEvent, PreferencesState> {
     
     // Event handlers
     on<SetThemeMode>(_onSetThemeMode);
+    on<SetThemeType>(_onSetThemeType);
     on<SetHardwareAcceleration>(_onSetHardwareAcceleration);
     on<SetCompactUiDensity>(_onSetCompactUiDensity);
   }
@@ -94,6 +109,7 @@ class PreferencesBloc extends Bloc<PreferencesEvent, PreferencesState> {
     // Update the state when preferences change externally
     emit(state.copyWith(
       themeMode: _preferencesService.themeMode,
+      themeType: _preferencesService.themeType,
       hardwareAcceleration: _preferencesService.hardwareAcceleration,
       compactUiDensity: _preferencesService.compactUiDensity,
     ));
@@ -105,6 +121,16 @@ class PreferencesBloc extends Bloc<PreferencesEvent, PreferencesState> {
   ) async {
     // Update the service
     await _preferencesService.setThemeMode(event.themeMode);
+    
+    // Note: We don't need to emit here as the service listener will handle it
+  }
+
+  Future<void> _onSetThemeType(
+    SetThemeType event, 
+    Emitter<PreferencesState> emit,
+  ) async {
+    // Update the service
+    await _preferencesService.setThemeType(event.themeType);
     
     // Note: We don't need to emit here as the service listener will handle it
   }

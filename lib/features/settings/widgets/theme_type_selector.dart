@@ -2,56 +2,50 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/settings/bloc/preferences_bloc.dart';
+import 'package:food_inventory/theme/theme_loader.dart';
 
-class ThemeModeSelector extends StatelessWidget {
-  const ThemeModeSelector({super.key});
+class ThemeTypeSelector extends StatelessWidget {
+  const ThemeTypeSelector({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<PreferencesBloc, PreferencesState>(
-      buildWhen: (previous, current) => previous.themeMode != current.themeMode,
+      buildWhen: (previous, current) => previous.themeType != current.themeType,
       builder: (context, state) {
         final theme = Theme.of(context);
+        final availableThemes = ThemeLoader.themes;
         
         return Padding(
           padding: EdgeInsets.symmetric(
-            vertical: ConfigService.defaultPadding,
-            horizontal: ConfigService.smallPadding
+            vertical: 16,
+            horizontal: 8
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.palette, size: ConfigService.defaultIconSize),
-                title: const Text('Theme'),
-                subtitle: _getThemeSubtitle(state.themeMode),
+                leading: const Icon(Icons.color_lens, size: ConfigService.defaultIconSize),
+                title: const Text('Theme Style'),
+                subtitle: Text(
+                  availableThemes[state.themeType]?.description ?? 'Custom theme',
+                  style: const TextStyle(fontSize: 12)
+                ),
               ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildThemeOption(
-                    context: context,
-                    icon: Icons.brightness_auto,
-                    label: 'System',
-                    selected: state.themeMode == ThemeMode.system,
-                    mode: ThemeMode.system,
-                  ),
-                  _buildThemeOption(
-                    context: context,
-                    icon: Icons.light_mode,
-                    label: 'Light',
-                    selected: state.themeMode == ThemeMode.light,
-                    mode: ThemeMode.light,
-                  ),
-                  _buildThemeOption(
-                    context: context,
-                    icon: Icons.dark_mode,
-                    label: 'Dark',
-                    selected: state.themeMode == ThemeMode.dark,
-                    mode: ThemeMode.dark,
-                  ),
+                  for (final entry in availableThemes.entries)
+                    _buildThemeOption(
+                      context: context,
+                      icon: entry.value.icon,
+                      label: entry.value.name,
+                      selected: state.themeType == entry.key,
+                      themeKey: entry.key,
+                      // Use the primary color from light scheme for theme option
+                      color: entry.value.lightScheme.primary,
+                    ),
                 ],
               ),
             ],
@@ -66,30 +60,31 @@ class ThemeModeSelector extends StatelessWidget {
     required IconData icon,
     required String label,
     required bool selected,
-    required ThemeMode mode,
+    required String themeKey,
+    required Color color,
   }) {
     final theme = Theme.of(context);
     
     return InkWell(
       borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
-      onTap: () => context.read<PreferencesBloc>().add(SetThemeMode(mode)),
-              child: Container(
-        width: 90,
-        padding: EdgeInsets.all(ConfigService.smallPadding),
+      onTap: () => context.read<PreferencesBloc>().add(SetThemeType(themeKey)),
+      child: Container(
+        // width: 70,
+        padding: EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: selected 
-              ? theme.colorScheme.primaryContainer
+              ? color.withAlpha(ConfigService.alphaLight)
               : theme.colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
           border: Border.all(
             color: selected 
-                ? theme.colorScheme.primary
+                ? color
                 : theme.colorScheme.outlineVariant,
             width: selected ? 2 : 1,
           ),
           boxShadow: selected ? [
             BoxShadow(
-              color: theme.colorScheme.primary.withAlpha(ConfigService.alphaLight),
+              color: color.withAlpha(ConfigService.alphaLight),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -102,15 +97,15 @@ class ThemeModeSelector extends StatelessWidget {
               icon,
               size: ConfigService.configIconSize,
               color: selected
-                  ? theme.colorScheme.primary
+                  ? color
                   : theme.colorScheme.onSurfaceVariant,
             ),
-            SizedBox(height: ConfigService.tinyPadding),
+            SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 color: selected
-                    ? theme.colorScheme.primary
+                    ? color
                     : theme.colorScheme.onSurfaceVariant,
                 fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 13,
@@ -120,18 +115,5 @@ class ThemeModeSelector extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Widget _getThemeSubtitle(ThemeMode mode) {
-    String text;
-    switch (mode) {
-      case ThemeMode.system:
-        text = 'Use system settings';
-      case ThemeMode.light:
-        text = 'Light mode';
-      case ThemeMode.dark:
-        text = 'Dark mode';
-    }
-    return Text(text, style: const TextStyle(fontSize: 12));
   }
 }

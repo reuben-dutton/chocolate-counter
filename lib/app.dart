@@ -12,7 +12,7 @@ import 'package:food_inventory/features/analytics/repositories/analytics_reposit
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
 import 'package:food_inventory/features/settings/bloc/preferences_bloc.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
-import 'package:food_inventory/theme.dart';
+import 'package:food_inventory/theme/material_theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class FoodInventoryApp extends StatelessWidget {
@@ -64,14 +64,16 @@ class FoodInventoryApp extends StatelessWidget {
       child: BlocBuilder<PreferencesBloc, PreferencesState>(
         buildWhen: (previous, current) => 
           previous.themeMode != current.themeMode || 
+          previous.themeType != current.themeType ||
           previous.hardwareAcceleration != current.hardwareAcceleration,
         builder: (context, state) {
           final themeMode = state.themeMode;
+          final themeType = state.themeType;
           
           return MaterialApp(
             title: ConfigService.appName,
-            theme: theme.light(),
-            darkTheme: theme.dark(),
+            theme: theme.light(themeType),
+            darkTheme: theme.dark(themeType),
             themeMode: themeMode,
             home: const HomeScreen(),
             // Set the disableHardwareAcceleration flag based on preferences

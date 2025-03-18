@@ -42,6 +42,7 @@ class ConfigService extends ChangeNotifier {
   static const double smallIconSize = 16.0;
   static const double mediumIconSize = 18.0;
   static const double defaultIconSize = 20.0;
+  static const double configIconSize = 28.0;
   static const double largeIconSize = 48.0;
   static const double xLargeIconSize = 64.0;
   static const double xxLargeIconSize = 80.0;

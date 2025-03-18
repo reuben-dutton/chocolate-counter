@@ -5,6 +5,7 @@ import 'package:food_inventory/app.dart';
 import 'package:food_inventory/common/services/preferences_service.dart';
 import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/utils/bloc_observer.dart';
+import 'package:food_inventory/theme/theme_loader.dart'; // Import theme loader
 
 // Global navigator key for context access
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -12,6 +13,9 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Preload themes
+  await ThemeLoader.preloadThemes();
   
   // Initialize services and repositories
   await ServiceLocator.init();

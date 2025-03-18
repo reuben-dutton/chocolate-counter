@@ -7,6 +7,7 @@ import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/features/settings/bloc/preferences_bloc.dart';
 import 'package:food_inventory/features/settings/widgets/database_reset_bottom_sheet.dart';
 import 'package:food_inventory/features/settings/widgets/theme_mode_selector.dart';
+import 'package:food_inventory/features/settings/widgets/theme_type_selector.dart'; // Import our new widget
 import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -23,6 +24,7 @@ class SettingsScreen extends StatelessWidget {
     return BlocBuilder<PreferencesBloc, PreferencesState>(
       buildWhen: (previous, current) => 
         previous.themeMode != current.themeMode || 
+        previous.themeType != current.themeType ||
         previous.hardwareAcceleration != current.hardwareAcceleration ||
         previous.compactUiDensity != current.compactUiDensity,
       builder: (context, state) {
@@ -35,8 +37,13 @@ class SettingsScreen extends StatelessWidget {
               right: _fixedTinyPadding
             ),
             children: [
-              // Theme mode selector (new widget)
+              // Theme mode selector (light/dark/system)
               const ThemeModeSelector(),
+              
+              const Divider(),
+              
+              // Theme type selector (new widget)
+              const ThemeTypeSelector(),
               
               const Divider(),
 

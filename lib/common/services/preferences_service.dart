@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PreferencesService extends ChangeNotifier {
   // Keys for preferences
   static const String _themeKey = 'app_theme_mode';
+  static const String _themeTypeKey = 'app_theme_type';
   static const String _hardwareAccelerationKey = 'hardware_acceleration';
   static const String _compactUiDensityKey = 'compact_ui_density';
   
@@ -13,6 +14,9 @@ class PreferencesService extends ChangeNotifier {
   // Store the current theme mode
   ThemeMode _themeMode = ThemeMode.system;
   
+  // Store the current theme type
+  String _themeType = 'standard';
+  
   // Store hardware acceleration preference
   bool _hardwareAcceleration = true;
   
@@ -21,6 +25,7 @@ class PreferencesService extends ChangeNotifier {
   
   // Getters
   ThemeMode get themeMode => _themeMode;
+  String get themeType => _themeType;
   bool get hardwareAcceleration => _hardwareAcceleration;
   bool get compactUiDensity => _compactUiDensity;
   
@@ -40,6 +45,16 @@ class PreferencesService extends ChangeNotifier {
         _themeMode = ThemeMode.system;
       }
 
+      // Retrieve the saved theme type
+      final savedThemeType = _prefs.getString(_themeTypeKey);
+      
+      // Set theme type, defaulting to standard if not previously set
+      if (savedThemeType != null) {
+        _themeType = savedThemeType;
+      } else {
+        _themeType = 'standard';
+      }
+
       // Retrieve hardware acceleration setting, default to true if not set
       _hardwareAcceleration = _prefs.getBool(_hardwareAccelerationKey) ?? true;
       
@@ -49,6 +64,7 @@ class PreferencesService extends ChangeNotifier {
       // Log error and fall back to default values
       print('Error initializing preferences: $e');
       _themeMode = ThemeMode.system;
+      _themeType = 'standard';
       _hardwareAcceleration = true;
       _compactUiDensity = false;
     }
@@ -67,6 +83,22 @@ class PreferencesService extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('Error saving theme mode: $e');
+    }
+  }
+
+  // Method to change and persist theme type
+  Future<void> setThemeType(String type) async {
+    try {
+      // Update the current theme type
+      _themeType = type;
+      
+      // Persist the theme type
+      await _prefs.setString(_themeTypeKey, type);
+      
+      // Notify listeners of the change
+      notifyListeners();
+    } catch (e) {
+      print('Error saving theme type: $e');
     }
   }
 
