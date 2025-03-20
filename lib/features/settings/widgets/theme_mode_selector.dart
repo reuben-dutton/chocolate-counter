@@ -28,31 +28,19 @@ class ThemeModeSelector extends StatelessWidget {
                 subtitle: _getThemeSubtitle(state.themeMode),
               ),
               const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildThemeOption(
-                    context: context,
-                    icon: Icons.brightness_auto,
-                    label: 'System',
-                    selected: state.themeMode == ThemeMode.system,
-                    mode: ThemeMode.system,
-                  ),
-                  _buildThemeOption(
-                    context: context,
-                    icon: Icons.light_mode,
-                    label: 'Light',
-                    selected: state.themeMode == ThemeMode.light,
-                    mode: ThemeMode.light,
-                  ),
-                  _buildThemeOption(
-                    context: context,
-                    icon: Icons.dark_mode,
-                    label: 'Dark',
-                    selected: state.themeMode == ThemeMode.dark,
-                    mode: ThemeMode.dark,
-                  ),
-                ],
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: ThemeMode.values.map((mode) {
+                    return _buildThemeOption(
+                      context: context,
+                      mode: mode,
+                      selected: state.themeMode == mode,
+                    );
+                  }).toList(),
+                ),
               ),
             ],
           ),
@@ -63,18 +51,34 @@ class ThemeModeSelector extends StatelessWidget {
 
   Widget _buildThemeOption({
     required BuildContext context,
-    required IconData icon,
-    required String label,
-    required bool selected,
     required ThemeMode mode,
+    required bool selected,
   }) {
     final theme = Theme.of(context);
     
-    return InkWell(
-      borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
+    IconData icon;
+    String label;
+    
+    switch (mode) {
+      case ThemeMode.system:
+        icon = Icons.brightness_auto;
+        label = 'System';
+        break;
+      case ThemeMode.light:
+        icon = Icons.light_mode;
+        label = 'Light';
+        break;
+      case ThemeMode.dark:
+        icon = Icons.dark_mode;
+        label = 'Dark';
+        break;
+    }
+    
+    return GestureDetector(
       onTap: () => context.read<PreferencesBloc>().add(SetThemeMode(mode)),
-              child: Container(
-        width: 90,
+      child: Container(
+        width: 110,
+        margin: const EdgeInsets.symmetric(horizontal: 8),
         padding: EdgeInsets.all(ConfigService.smallPadding),
         decoration: BoxDecoration(
           color: selected 
@@ -89,7 +93,7 @@ class ThemeModeSelector extends StatelessWidget {
           ),
           boxShadow: selected ? [
             BoxShadow(
-              color: theme.colorScheme.primary.withAlpha(ConfigService.alphaLight),
+              color: theme.colorScheme.primary.withOpacity(0.3),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -100,7 +104,7 @@ class ThemeModeSelector extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: ConfigService.configIconSize,
+              size: 28,
               color: selected
                   ? theme.colorScheme.primary
                   : theme.colorScheme.onSurfaceVariant,
