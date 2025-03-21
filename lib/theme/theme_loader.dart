@@ -28,9 +28,9 @@ class ThemeLoader {
     'standard-theme.json',
     'evening-theme.json',
     'desert-theme.json',
-    'iceberg-theme.json',
+    // 'iceberg-theme.json',
     'petrichor-theme.json',
-    'cacao-theme.json'
+    // 'cacao-theme.json',
   ];
   
   // Get list of available themes

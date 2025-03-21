@@ -33,20 +33,26 @@ class ThemeTypeSelector extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  for (final entry in availableThemes.entries)
-                    _buildThemeOption(
-                      context: context,
-                      icon: entry.value.icon,
-                      label: entry.value.name,
-                      selected: state.themeType == entry.key,
-                      themeKey: entry.key,
-                      // Use the primary color from light scheme for theme option
-                      color: entry.value.lightScheme.primary,
-                    ),
-                ],
+              // Wrap the Row with a SingleChildScrollView to prevent overflow
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (final entry in availableThemes.entries)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: _buildThemeOption(
+                          context: context,
+                          icon: entry.value.icon,
+                          label: entry.value.name,
+                          selected: state.themeType == entry.key,
+                          themeKey: entry.key,
+                          // Use the primary color from light scheme for theme option
+                          color: entry.value.lightScheme.primary,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -69,7 +75,7 @@ class ThemeTypeSelector extends StatelessWidget {
       borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
       onTap: () => context.read<PreferencesBloc>().add(SetThemeType(themeKey)),
       child: Container(
-        // width: 70,
+        width: 70, // Give a fixed width to ensure consistency
         padding: EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: selected 
@@ -110,6 +116,8 @@ class ThemeTypeSelector extends StatelessWidget {
                 fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 13,
               ),
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
           ],
         ),
