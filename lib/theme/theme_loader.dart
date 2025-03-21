@@ -31,6 +31,7 @@ class ThemeLoader {
     // 'iceberg-theme.json',
     'petrichor-theme.json',
     // 'cacao-theme.json',
+    'monochrome-theme.json',
   ];
   
   // Get list of available themes

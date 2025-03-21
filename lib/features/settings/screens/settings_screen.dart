@@ -25,172 +25,207 @@ class SettingsScreen extends StatelessWidget {
         final availableThemes = ThemeLoader.themes;
         
         return Scaffold(
-          body: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+          body: Column(
             children: [
-              // Appearance Section
-              _buildSectionHeader(context, 'Appearance'),
+              // // Title section with minimal padding
+              // Padding(
+              //   padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              //   child: Row(
+              //     children: [
+              //       Icon(Icons.settings, 
+              //         size: ConfigService.defaultIconSize,
+              //         color: theme.colorScheme.primary),
+              //       const SizedBox(width: 8),
+              //       Text('Settings',
+              //         style: theme.textTheme.titleLarge?.copyWith(
+              //           fontWeight: FontWeight.bold
+              //         )),
+              //     ],
+              //   ),
+              // ),
               
-              // Theme Mode
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // Main content in an Expanded ListView
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.only(top: 0, bottom: 16),
                   children: [
-                    const Text('Theme Mode', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        for (final mode in ThemeMode.values)
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
-                              child: _buildFixedSizeButton(
-                                context,
-                                label: _getThemeModeLabel(mode),
-                                selected: state.themeMode == mode,
-                                onTap: () => context.read<PreferencesBloc>().add(SetThemeMode(mode)),
+                    // Theme Mode Section
+                    Card(
+                      margin: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.wb_sunny_outlined, 
+                                  color: theme.colorScheme.primary),
+                                const SizedBox(width: 8),
+                                Text('Theme Mode', 
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold
+                                  )),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final mode in ThemeMode.values)
+                                  _buildThemeButton(
+                                    context: context,
+                                    label: _getThemeModeLabel(mode),
+                                    selected: state.themeMode == mode,
+                                    onTap: () => context.read<PreferencesBloc>().add(SetThemeMode(mode)),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    
+                    // Theme Type Section
+                    Card(
+                      margin: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.color_lens_outlined, 
+                                  color: theme.colorScheme.primary),
+                                const SizedBox(width: 8),
+                                Text('Theme Style', 
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold
+                                  )),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final entry in availableThemes.entries)
+                                  _buildThemeButton(
+                                    context: context,
+                                    label: entry.value.name,
+                                    selected: state.themeType == entry.key,
+                                    onTap: () => context.read<PreferencesBloc>().add(SetThemeType(entry.key)),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    
+                    // UI Options Section
+                    Card(
+                      margin: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.tune, 
+                                  color: theme.colorScheme.primary),
+                                const SizedBox(width: 8),
+                                Text('UI Options', 
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold
+                                  )),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            SwitchListTile(
+                              title: const Text('Compact UI'),
+                              subtitle: const Text('Use smaller padding throughout the app'),
+                              value: state.compactUiDensity,
+                              onChanged: (bool value) {
+                                context.read<PreferencesBloc>().add(SetCompactUiDensity(value));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('UI density has been updated'),
+                                    duration: ConfigService.snackBarDuration,
+                                  ),
+                                );
+                              },
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            const Divider(),
+                            SwitchListTile(
+                              title: const Text('Hardware Acceleration'),
+                              subtitle: const Text('Disable for certain devices with graphics issues'),
+                              value: state.hardwareAcceleration,
+                              onChanged: (bool value) {
+                                context.read<PreferencesBloc>().add(SetHardwareAcceleration(value));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Restart the app for this change to take effect'),
+                                    duration: ConfigService.snackBarDuration,
+                                  ),
+                                );
+                              },
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    
+                    // Debug & About Section
+                    Card(
+                      margin: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.bug_report_outlined, 
+                                  color: theme.colorScheme.primary),
+                                const SizedBox(width: 8),
+                                Text('Debug & About', 
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold
+                                  )),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ListTile(
+                              title: const Text('Reset Database'),
+                              subtitle: const Text('Delete all data and restart app'),
+                              trailing: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: theme.colorScheme.error,
+                                  foregroundColor: theme.colorScheme.onError,
+                                ),
+                                onPressed: () => _confirmDatabaseReset(context),
+                                child: const Text('Reset'),
                               ),
+                              contentPadding: EdgeInsets.zero,
                             ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Theme Type
-              // Theme Type section for settings screen
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Theme Style', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final entry in availableThemes.entries)
-                          Container(
-                            constraints: const BoxConstraints(minWidth: 100),
-                            child: _buildFixedSizeButton(
-                              context,
-                              label: entry.value.name,
-                              selected: state.themeType == entry.key,
-                              onTap: () => context.read<PreferencesBloc>().add(SetThemeType(entry.key)),
+                            const Divider(),
+                            ListTile(
+                              title: const Text('About'),
+                              subtitle: Text('Version ${ConfigService.appVersion}'),
+                              trailing: OutlinedButton(
+                                onPressed: () => _showAboutDialog(context),
+                                child: const Text('Details'),
+                              ),
+                              contentPadding: EdgeInsets.zero,
                             ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-              const Divider(),
-              
-              // UI Settings
-              _buildSectionHeader(context, 'UI Settings'),
-              
-              // UI Density
-              SwitchListTile(
-                title: const Text('Compact UI'),
-                subtitle: const Text('Use smaller padding throughout the app'),
-                value: state.compactUiDensity,
-                onChanged: (bool value) {
-                  context.read<PreferencesBloc>().add(SetCompactUiDensity(value));
-                  
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('UI density has been updated'),
-                      duration: ConfigService.snackBarDuration,
-                    ),
-                  );
-                },
-              ),
-              
-              // Hardware Acceleration
-              SwitchListTile(
-                title: const Text('Hardware Acceleration'),
-                subtitle: const Text('Disable for certain devices with graphics issues'),
-                value: state.hardwareAcceleration,
-                onChanged: (bool value) {
-                  context.read<PreferencesBloc>().add(SetHardwareAcceleration(value));
-                  
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Restart the app for this change to take effect'),
-                      duration: ConfigService.snackBarDuration,
-                    ),
-                  );
-                },
-              ),
-              
-              const Divider(),
-              
-              // Debug & About Section
-              _buildSectionHeader(context, 'Debug & About'),
-              
-              // Reset Database
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Reset Database', style: TextStyle(fontSize: 16)),
-                          SizedBox(height: 4),
-                          Text('Delete all data and restart app', 
-                            style: TextStyle(fontSize: 14, color: Colors.grey)),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      width: 100,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size.fromHeight(36),
+                          ],
                         ),
-                        onPressed: () => _confirmDatabaseReset(context),
-                        child: const Text('Reset'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // About
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('About', style: TextStyle(fontSize: 16)),
-                          const SizedBox(height: 4),
-                          Text('Version ${ConfigService.appVersion}', 
-                            style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      width: 100,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(36),
-                        ),
-                        onPressed: () => _showAboutDialog(context),
-                        child: const Text('Details'),
                       ),
                     ),
                   ],
@@ -203,8 +238,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
   
-  Widget _buildFixedSizeButton(
-    BuildContext context, {
+  Widget _buildThemeButton({
+    required BuildContext context,
     required String label,
     required bool selected,
     required VoidCallback onTap,
@@ -212,37 +247,31 @@ class SettingsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     
     return Material(
-      color: selected ? theme.colorScheme.primary : theme.colorScheme.surface,
       borderRadius: BorderRadius.circular(8),
-      elevation: selected ? 1 : 0,
+      color: selected 
+          ? theme.colorScheme.primary
+          : theme.colorScheme.surfaceVariant,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: selected ? theme.colorScheme.primary : theme.colorScheme.outline,
-              width: selected ? 2 : 1,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          constraints: const BoxConstraints(minWidth: 90),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Text(
             label,
             style: TextStyle(
-              color: selected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
-              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 14,
+              color: selected 
+                  ? theme.colorScheme.onPrimary
+                  : theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
             ),
-            overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
           ),
         ),
       ),
     );
   }
-
+  
   String _getThemeModeLabel(ThemeMode mode) {
     switch (mode) {
       case ThemeMode.system:
@@ -252,19 +281,6 @@ class SettingsScreen extends StatelessWidget {
       case ThemeMode.dark:
         return 'Dark';
     }
-  }
-
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
   }
   
   Future<void> _confirmDatabaseReset(BuildContext context) async {
