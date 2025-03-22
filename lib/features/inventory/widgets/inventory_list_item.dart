@@ -3,6 +3,7 @@ import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
+import 'package:food_inventory/common/widgets/expiration_indicator.dart';
 import 'package:provider/provider.dart';
 
 class InventoryListItem extends StatelessWidget {
@@ -11,6 +12,7 @@ class InventoryListItem extends StatelessWidget {
   final int inventoryCount;
   final bool isEmptyItem;
   final VoidCallback onTap;
+  final DateTime? earliestExpirationDate;
 
   const InventoryListItem({
     super.key,
@@ -19,6 +21,7 @@ class InventoryListItem extends StatelessWidget {
     required this.inventoryCount,
     required this.isEmptyItem,
     required this.onTap,
+    this.earliestExpirationDate,
   });
 
   @override
@@ -37,13 +40,7 @@ class InventoryListItem extends StatelessWidget {
             padding: EdgeInsets.all(ConfigService.smallPadding),
             child: Row(
               children: [
-                ItemImageWidget(
-                  imagePath: itemDefinition.imageUrl,
-                  itemName: itemDefinition.name,
-                  radius: ConfigService.avatarRadiusMedium,
-                  imageService: imageService,
-                  memoryEfficient: true,
-                ),
+                _buildImageWithExpirationIndicator(context, imageService),
                 SizedBox(width: ConfigService.mediumPadding),
                 Expanded(
                   child: Column(
@@ -70,6 +67,40 @@ class InventoryListItem extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+  
+  Widget _buildImageWithExpirationIndicator(BuildContext context, ImageService imageService) {
+    // Determine if we should show expiration indicator
+    Color? indicatorColor;
+    if (earliestExpirationDate != null) {
+      final daysUntil = earliestExpirationDate!.difference(DateTime.now()).inDays;
+      
+      if (daysUntil < ConfigService.expirationWarningDays) {
+        // Use the config service to get the appropriate color
+        indicatorColor = ConfigService.getExpirationColor(context, earliestExpirationDate);
+      }
+    }
+    
+    return Stack(
+      children: [
+        ItemImageWidget(
+          imagePath: itemDefinition.imageUrl,
+          itemName: itemDefinition.name,
+          radius: ConfigService.avatarRadiusMedium,
+          imageService: imageService,
+          memoryEfficient: true,
+        ),
+        if (indicatorColor != null)
+          Positioned(
+            top: 0,
+            left: 0,
+            child: ExpirationIndicator(
+              color: indicatorColor,
+              size: 14.0,
+            ),
+          ),
+      ],
     );
   }
   

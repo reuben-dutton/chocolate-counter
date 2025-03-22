@@ -13,11 +13,13 @@ class InventoryItemWithCounts {
   final int stockCount;
   final int inventoryCount;
   final bool isEmptyItem;
+  final DateTime? earliestExpirationDate; // Added field for earliest expiration date
 
   InventoryItemWithCounts({
     required this.itemDefinition,
     required this.stockCount,
     required this.inventoryCount,
+    this.earliestExpirationDate, // Add parameter
   }) : isEmptyItem = stockCount == 0 && inventoryCount == 0;
 }
 
@@ -218,10 +220,23 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
         final List<InventoryItemWithCounts> itemsWithCounts = [];
         for (final item in items) {
           final counts = await _inventoryService.getItemCounts(item.id!, txn: txn);
+          final instances = await _inventoryService.getItemInstances(item.id!, txn: txn);
+          
+          // Find earliest expiration date
+          DateTime? earliestDate;
+          for (final instance in instances) {
+            if (instance.expirationDate != null) {
+              if (earliestDate == null || instance.expirationDate!.isBefore(earliestDate)) {
+                earliestDate = instance.expirationDate;
+              }
+            }
+          }
+          
           itemsWithCounts.add(InventoryItemWithCounts(
             itemDefinition: item,
             stockCount: counts['stock'] ?? 0,
             inventoryCount: counts['inventory'] ?? 0,
+            earliestExpirationDate: earliestDate,
           ));
         }
         

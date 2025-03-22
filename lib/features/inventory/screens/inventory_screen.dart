@@ -202,6 +202,7 @@ class _InventoryListView extends StatelessWidget {
                   stockCount: item.stockCount,
                   inventoryCount: item.inventoryCount,
                   isEmptyItem: item.isEmptyItem,
+                  earliestExpirationDate: item.earliestExpirationDate, // Pass expiration date
                   onTap: () {
                     NavigationUtils.navigateWithSlide(
                       context,
