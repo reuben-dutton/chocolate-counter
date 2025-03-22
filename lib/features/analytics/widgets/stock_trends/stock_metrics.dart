@@ -22,34 +22,34 @@ class StockMetrics extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(
         vertical: ConfigService.largePadding,
-        horizontal: ConfigService.defaultPadding
+        horizontal: ConfigService.smallPadding
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildMetricColumn(
-            context,
-            Icons.shopping_cart,
-            'Current Stock',
-            currentStock.toString(),
-            stockGrowth,
-            '$firstMonthLabel to now',
+          Expanded(
+            child: _buildMetricColumn(
+              context,
+              Icons.shopping_cart,
+              'Current Stock',
+              currentStock.toString(),
+            ),
           ),
-          _buildMetricColumn(
-            context,
-            Icons.inventory_2,
-            'Current Inventory',
-            currentInventory.toString(),
-            inventoryGrowth,
-            '$firstMonthLabel to now',
+          Expanded(
+            child: _buildMetricColumn(
+              context,
+              Icons.inventory_2,
+              'Current Inventory',
+              currentInventory.toString(),
+            ),
           ),
-          _buildMetricColumn(
-            context,
-            Icons.donut_large,
-            'Total Items',
-            (currentStock + currentInventory).toString(),
-            null,
-            'Combined total',
+          Expanded(
+            child: _buildMetricColumn(
+              context,
+              Icons.donut_large,
+              'Total Items',
+              (currentStock + currentInventory).toString(),
+            ),
           ),
         ],
       ),
@@ -61,11 +61,8 @@ class StockMetrics extends StatelessWidget {
     IconData icon,
     String label,
     String value,
-    double? percentChange,
-    String subLabel,
   ) {
     final theme = Theme.of(context);
-    final isGrowthPositive = percentChange != null && percentChange >= 0;
     
     return Column(
       children: [
@@ -80,6 +77,7 @@ class StockMetrics extends StatelessWidget {
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaHigh),
           ),
+          textAlign: TextAlign.center,
         ),
         SizedBox(height: ConfigService.tinyPadding),
         Text(
@@ -88,36 +86,7 @@ class StockMetrics extends StatelessWidget {
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.primary,
           ),
-        ),
-        if (percentChange != null) ...[
-          SizedBox(height: ConfigService.tinyPadding),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isGrowthPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                size: 14,
-                color: isGrowthPositive ? Colors.green : Colors.red,
-              ),
-              SizedBox(width: 2),
-              Text(
-                '${percentChange.abs().toStringAsFixed(1)}%',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isGrowthPositive ? Colors.green : Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ],
-        SizedBox(height: ConfigService.tinyPadding),
-        Text(
-          subLabel,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaModerate),
-            fontSize: 10,
-          ),
+          textAlign: TextAlign.center,
         ),
       ],
     );

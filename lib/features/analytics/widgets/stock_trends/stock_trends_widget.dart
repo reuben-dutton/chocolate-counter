@@ -54,7 +54,7 @@ class _StockTrendsWidgetState extends State<StockTrendsWidget> {
           return AnalyticsCard(
             title: 'Stock Trends',
             icon: Icons.trending_up,
-            titleChild: _buildTimePeriodSelector(context, state),
+            // titleChild: _buildTimePeriodSelector(context, state),
             isLoading: state is StockTrendsLoading,
             child: state is StockTrendsLoaded
                 ? StockTrendsChart(trendsData: state.data.trendData)

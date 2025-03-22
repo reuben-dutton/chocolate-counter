@@ -14,6 +14,14 @@ class ExpirationSummaryMetrics extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
+    // Calculate expired items (total items with negative days until expiration)
+    final criticalItems = data.thisWeekItems.length;
+    final criticalAndWarningItems = data.thisWeekItems.length + data.nextWeekItems.length;
+    final expiredItems = data.thisWeekItems.where((item) {
+      final expirationDate = DateTime.fromMillisecondsSinceEpoch(item['expirationDate'] as int);
+      return expirationDate.isBefore(DateTime.now());
+    }).length;
+    
     return Padding(
       padding: EdgeInsets.all(ConfigService.defaultPadding),
       child: Row(
@@ -21,25 +29,21 @@ class ExpirationSummaryMetrics extends StatelessWidget {
         children: [
           _buildMetricBox(
             context,
-            data.criticalCount,
-            'Critical Items',
-            'Expiring within 7 days',
-            Colors.red,
+            criticalItems,
+            'Critical',
+            theme.colorScheme.error,
           ),
           _buildMetricBox(
             context,
-            data.totalItemsCount,
-            'Expiring Items',
-            'Across all timeframes',
-            theme.colorScheme.primary,
-          ),
-          _buildMetricBox(
-            context,
-            _calculatePercentageCritical(data),
-            'Critical %',
-            'Of total inventory',
+            criticalAndWarningItems,
+            'Critical + Warning',
             Colors.orange,
-            isPercentage: true,
+          ),
+          _buildMetricBox(
+            context,
+            expiredItems,
+            'Expired',
+            Colors.red.shade900,
           ),
         ],
       ),
@@ -50,10 +54,8 @@ class ExpirationSummaryMetrics extends StatelessWidget {
     BuildContext context,
     int value,
     String label,
-    String sublabel,
-    Color color, {
-    bool isPercentage = false,
-  }) {
+    Color color,
+  ) {
     final theme = Theme.of(context);
     
     return Container(
@@ -71,9 +73,10 @@ class ExpirationSummaryMetrics extends StatelessWidget {
         ],
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            isPercentage ? '$value%' : value.toString(),
+            value.toString(),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: color,
@@ -85,23 +88,8 @@ class ExpirationSummaryMetrics extends StatelessWidget {
             style: theme.textTheme.bodyMedium,
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: ConfigService.tinyPadding),
-          Text(
-            sublabel,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaDefault),
-            ),
-            textAlign: TextAlign.center,
-          ),
         ],
       ),
     );
-  }
-  
-  int _calculatePercentageCritical(ExpirationAnalyticsData data) {
-    if (data.totalItemsCount == 0) {
-      return 0;
-    }
-    return (data.criticalCount / data.totalItemsCount * 100).round();
   }
 }

@@ -53,6 +53,12 @@ class StockTrendsChart extends StatelessWidget {
           firstMonthLabel: trendsData.first.month,
         ),
         
+        // Stock/Inventory Ratio section
+        StockRatioDisplay(
+          currentStock: currentStock,
+          currentInventory: currentInventory,
+        ),
+        
         // Main chart
         Padding(
           padding: EdgeInsets.all(ConfigService.defaultPadding),
@@ -60,12 +66,6 @@ class StockTrendsChart extends StatelessWidget {
             height: 240,
             child: StockLineChart(trendsData: trendsData),
           ),
-        ),
-        
-        // Stock/Inventory Ratio section
-        StockRatioDisplay(
-          currentStock: currentStock,
-          currentInventory: currentInventory,
         ),
         
         // Insights section
@@ -113,18 +113,6 @@ class StockTrendsChart extends StatelessWidget {
           ),
         ),
         
-        // Placeholder for chart
-        Padding(
-          padding: EdgeInsets.all(ConfigService.defaultPadding),
-          child: Container(
-            height: 240,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
-            ),
-          ),
-        ),
-        
         // Placeholder for ratio
         Padding(
           padding: EdgeInsets.all(ConfigService.defaultPadding),
@@ -148,6 +136,18 @@ class StockTrendsChart extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+        
+        // Placeholder for chart
+        Padding(
+          padding: EdgeInsets.all(ConfigService.defaultPadding),
+          child: Container(
+            height: 240,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
+            ),
           ),
         ),
       ],

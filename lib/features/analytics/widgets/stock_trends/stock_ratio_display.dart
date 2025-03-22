@@ -20,15 +20,6 @@ class StockRatioDisplay extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Stock-to-Inventory Ratio',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          SizedBox(height: ConfigService.smallPadding),
-          
           // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
