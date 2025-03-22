@@ -83,7 +83,7 @@ class PopularItemsChart extends StatelessWidget {
         
         // Top Sellers Section
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.mediumPadding),
+          padding: EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: ConfigService.mediumPadding),
           child: Text(
             'Top Sellers',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -102,7 +102,7 @@ class PopularItemsChart extends StatelessWidget {
               final index = topItems.indexOf(item);
               
               return Padding(
-                padding: EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding, vertical: ConfigService.smallPadding),
+                padding: EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: ConfigService.smallPadding),
                 child: Row(
                   children: [
                     Container(

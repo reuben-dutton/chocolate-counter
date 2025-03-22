@@ -69,7 +69,7 @@ class _PopularItemsSkeletonState extends State<PopularItemsSkeleton> with Single
         // Top Sellers title skeleton
         Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: ConfigService.defaultPadding, 
+            horizontal: ConfigService.tinyPadding, 
             vertical: ConfigService.mediumPadding
           ),
           child: _buildShimmerContainer(width: 120, height: 28),
@@ -79,7 +79,7 @@ class _PopularItemsSkeletonState extends State<PopularItemsSkeleton> with Single
         for (int i = 0; i < 5; i++)
           Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: ConfigService.defaultPadding, 
+              horizontal: ConfigService.tinyPadding, 
               vertical: ConfigService.smallPadding
             ),
             child: _buildTopSellerItemSkeleton(),
