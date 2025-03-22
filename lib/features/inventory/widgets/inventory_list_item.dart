@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/common/widgets/count_chip_widget.dart';
 import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:provider/provider.dart';
 
@@ -57,21 +56,7 @@ class InventoryListItem extends StatelessWidget {
                         style: theme.textTheme.titleMedium,
                       ),
                       SizedBox(height: ConfigService.tinyPadding),
-                      Row(
-                        children: [
-                          CountChipWidget(
-                            icon: Icons.shopping_cart,
-                            count: stockCount,
-                            color: theme.colorScheme.secondary,
-                          ),
-                          SizedBox(width: ConfigService.smallPadding),
-                          CountChipWidget(
-                            icon: Icons.inventory_2,
-                            count: inventoryCount,
-                            color: theme.colorScheme.secondary,
-                          ),
-                        ],
-                      ),
+                      _buildStatusText(context, stockCount, inventoryCount, theme),
                     ],
                   ),
                 ),
@@ -86,5 +71,36 @@ class InventoryListItem extends StatelessWidget {
         ),
       ),
     );
+  }
+  
+  Widget _buildStatusText(BuildContext context, int stockCount, int inventoryCount, ThemeData theme) {
+    if (stockCount > 0) {
+      return Text(
+        'In Stock',
+        style: TextStyle(
+          color: theme.colorScheme.secondary,
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+        ),
+      );
+    } else if (inventoryCount > 0) {
+      return Text(
+        'In Inventory',
+        style: TextStyle(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+        ),
+      );
+    } else {
+      return Text(
+        'Out of Stock',
+        style: TextStyle(
+          color: theme.colorScheme.error,
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+        ),
+      );
+    }
   }
 }
