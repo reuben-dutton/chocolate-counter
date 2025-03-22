@@ -5,7 +5,7 @@ import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/features/analytics/bloc/expiration_analytics_bloc.dart';
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
 import 'package:food_inventory/features/analytics/widgets/analytics_card.dart';
-import 'package:food_inventory/features/analytics/widgets/expiration_analytics_chart.dart';
+import 'package:food_inventory/features/analytics/widgets/expiration/expiration_analytics_chart.dart';
 import 'package:provider/provider.dart';
 
 class ExpirationAnalyticsWidget extends StatefulWidget {
