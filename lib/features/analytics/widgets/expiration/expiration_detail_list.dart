@@ -36,28 +36,27 @@ class ExpirationDetailList extends StatelessWidget {
       );
     }
     
-    // Sort items by expiration date
-    final sortedItems = List<Map<String, dynamic>>.from(items)
-      ..sort((a, b) {
-        final aDate = DateTime.fromMillisecondsSinceEpoch(a['expirationDate'] as int);
-        final bDate = DateTime.fromMillisecondsSinceEpoch(b['expirationDate'] as int);
-        return aDate.compareTo(bDate);
-      });
-    
     // Group items by status for showing headers
     final Map<String, List<Map<String, dynamic>>> groupedItems = {
+      'expired': [],
       'critical': [],
       'warning': [],
       'normal': [],
       'safe': [],
     };
     
-    for (final item in sortedItems) {
+    for (final item in items) {
       final status = item['status'] as String;
       groupedItems[status]?.add(item);
     }
     
     final List<Widget> sections = [];
+    
+    // Expired items
+    if (groupedItems['expired']!.isNotEmpty) {
+      sections.add(_buildSectionHeader('Expired', groupedItems['expired']!.length, Colors.red.shade900));
+      sections.addAll(groupedItems['expired']!.map((item) => _buildItemTile(context, item, Colors.red.shade900)));
+    }
     
     // Critical items
     if (groupedItems['critical']!.isNotEmpty) {

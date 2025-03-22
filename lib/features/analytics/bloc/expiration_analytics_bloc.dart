@@ -120,11 +120,13 @@ class ExpirationAnalyticsBloc extends Bloc<ExpirationAnalyticsEvent, ExpirationA
           thisMonthCount: 0,
           nextMonthCount: 0,
           beyondCount: 0,
+          expiredCount: 0,
           thisWeekItems: const [],
           nextWeekItems: const [],
           thisMonthItems: const [],
           nextMonthItems: const [],
           beyondItems: const [],
+          expiredItems: const [],
         );
         
         emit(ExpirationAnalyticsLoaded(

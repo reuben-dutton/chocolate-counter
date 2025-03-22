@@ -5,12 +5,14 @@ class ExpirationAnalyticsData {
   final int thisMonthCount;
   final int nextMonthCount;
   final int beyondCount;
+  final int expiredCount;
   
   final List<Map<String, dynamic>> thisWeekItems;
   final List<Map<String, dynamic>> nextWeekItems;
   final List<Map<String, dynamic>> thisMonthItems;
   final List<Map<String, dynamic>> nextMonthItems;
   final List<Map<String, dynamic>> beyondItems;
+  final List<Map<String, dynamic>> expiredItems;
 
   ExpirationAnalyticsData({
     required this.thisWeekCount,
@@ -18,20 +20,23 @@ class ExpirationAnalyticsData {
     required this.thisMonthCount,
     required this.nextMonthCount,
     required this.beyondCount,
+    required this.expiredCount,
     required this.thisWeekItems,
     required this.nextWeekItems,
     required this.thisMonthItems,
     required this.nextMonthItems,
     required this.beyondItems,
+    required this.expiredItems,
   });
   
-  int get totalItemsCount => thisWeekCount + nextWeekCount + thisMonthCount + nextMonthCount + beyondCount;
+  int get totalItemsCount => expiredCount + thisWeekCount + nextWeekCount + thisMonthCount + nextMonthCount + beyondCount;
   
   int get criticalCount => thisWeekCount;
   int get warningCount => nextWeekCount;
   
   List<Map<String, dynamic>> get allItems {
     return [
+      ...expiredItems,
       ...thisWeekItems,
       ...nextWeekItems,
       ...thisMonthItems,
@@ -43,6 +48,13 @@ class ExpirationAnalyticsData {
   /// Get items with status tag for display purposes
   List<Map<String, dynamic>> getItemsWithStatus() {
     final result = <Map<String, dynamic>>[];
+    
+    // Process expired items
+    for (final item in expiredItems) {
+      final newItem = Map<String, dynamic>.from(item);
+      newItem['status'] = 'expired';
+      result.add(newItem);
+    }
     
     // Process this week's items as critical
     for (final item in thisWeekItems) {
@@ -92,6 +104,11 @@ class ExpirationAnalyticsData {
   /// Get expiration timeline data for charts
   List<Map<String, dynamic>> getTimelineData() {
     return [
+      {
+        'category': 'Expired',
+        'count': expiredCount,
+        'color': '#9f1239',  // deep red
+      },
       {
         'category': 'This Week',
         'count': thisWeekCount,

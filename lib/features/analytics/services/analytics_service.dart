@@ -92,46 +92,84 @@ class AnalyticsService {
     }
     
     return _withTransactionIfNeeded(txn, (transaction) async {
+      final now = DateTime.now();
+      
+      // Get expired items (past)
+      final expiredItems = await _analyticsRepository.getExpiringItems(
+        now.subtract(const Duration(days: 365 * 5)), // 5 years ago as a reasonable limit
+        now,
+        txn: transaction
+      );
+      
       final itemsExpiringThisWeek = await _analyticsRepository.getExpiringItems(
-        DateTime.now(),
-        DateTime.now().add(const Duration(days: 7)),
+        now,
+        now.add(const Duration(days: 7)),
         txn: transaction
       );
       
       final itemsExpiringNextWeek = await _analyticsRepository.getExpiringItems(
-        DateTime.now().add(const Duration(days: 7)),
-        DateTime.now().add(const Duration(days: 14)),
+        now.add(const Duration(days: 7)),
+        now.add(const Duration(days: 14)),
         txn: transaction
       );
       
       final itemsExpiringThisMonth = await _analyticsRepository.getExpiringItems(
-        DateTime.now().add(const Duration(days: 14)),
-        DateTime.now().add(const Duration(days: 30)),
+        now.add(const Duration(days: 14)),
+        now.add(const Duration(days: 30)),
         txn: transaction
       );
       
       final itemsExpiringNextMonth = await _analyticsRepository.getExpiringItems(
-        DateTime.now().add(const Duration(days: 30)),
-        DateTime.now().add(const Duration(days: 60)),
+        now.add(const Duration(days: 30)),
+        now.add(const Duration(days: 60)),
         txn: transaction
       );
       
       final itemsExpiringBeyond = await _analyticsRepository.getExpiringItems(
-        DateTime.now().add(const Duration(days: 60)),
+        now.add(const Duration(days: 60)),
         null, // No end date
         txn: transaction
       );
       
-      // Here we'd process the raw data into the appropriate structures for the ExpirationAnalyticsData
-      // This would involve transforming the database rows into the proper models
+      // Calculate total quantities for each category
+      int expiredCount = 0;
+      for (final item in expiredItems) {
+        expiredCount += item['quantity'] as int;
+      }
+      
+      int thisWeekCount = 0;
+      for (final item in itemsExpiringThisWeek) {
+        thisWeekCount += item['quantity'] as int;
+      }
+      
+      int nextWeekCount = 0;
+      for (final item in itemsExpiringNextWeek) {
+        nextWeekCount += item['quantity'] as int;
+      }
+      
+      int thisMonthCount = 0;
+      for (final item in itemsExpiringThisMonth) {
+        thisMonthCount += item['quantity'] as int;
+      }
+      
+      int nextMonthCount = 0;
+      for (final item in itemsExpiringNextMonth) {
+        nextMonthCount += item['quantity'] as int;
+      }
+      
+      int beyondCount = 0;
+      for (final item in itemsExpiringBeyond) {
+        beyondCount += item['quantity'] as int;
+      }
       
       return ExpirationAnalyticsData(
-        // Populate with the processed data
-        thisWeekCount: itemsExpiringThisWeek.length,
-        nextWeekCount: itemsExpiringNextWeek.length,
-        thisMonthCount: itemsExpiringThisMonth.length,
-        nextMonthCount: itemsExpiringNextMonth.length,
-        beyondCount: itemsExpiringBeyond.length,
+        expiredCount: expiredCount,
+        thisWeekCount: thisWeekCount,
+        nextWeekCount: nextWeekCount,
+        thisMonthCount: thisMonthCount,
+        nextMonthCount: nextMonthCount,
+        beyondCount: beyondCount,
+        expiredItems: expiredItems,
         thisWeekItems: itemsExpiringThisWeek,
         nextWeekItems: itemsExpiringNextWeek,
         thisMonthItems: itemsExpiringThisMonth,
