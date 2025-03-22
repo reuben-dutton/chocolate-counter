@@ -57,87 +57,60 @@ class ExpirationDetailList extends StatelessWidget {
       groupedItems[status]?.add(item);
     }
     
+    final List<Widget> sections = [];
+    
+    // Critical items
+    if (groupedItems['critical']!.isNotEmpty) {
+      sections.add(_buildSectionHeader('Expiring This Week', groupedItems['critical']!.length, Colors.red));
+      sections.addAll(groupedItems['critical']!.map((item) => _buildItemTile(context, item, Colors.red)));
+    }
+    
+    // Warning items
+    if (groupedItems['warning']!.isNotEmpty) {
+      sections.add(_buildSectionHeader('Expiring Next Week', groupedItems['warning']!.length, Colors.orange));
+      sections.addAll(groupedItems['warning']!.map((item) => _buildItemTile(context, item, Colors.orange)));
+    }
+    
+    // Normal items
+    if (groupedItems['normal']!.isNotEmpty) {
+      sections.add(_buildSectionHeader('Expiring This Month', groupedItems['normal']!.length, theme.colorScheme.primary));
+      sections.addAll(groupedItems['normal']!.map((item) => _buildItemTile(context, item, theme.colorScheme.primary)));
+    }
+    
+    // Safe items
+    if (groupedItems['safe']!.isNotEmpty) {
+      sections.add(_buildSectionHeader('Expiring Later', groupedItems['safe']!.length, Colors.green));
+      sections.addAll(groupedItems['safe']!.map((item) => _buildItemTile(context, item, Colors.green)));
+    }
+    
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Critical items
-          if (groupedItems['critical']!.isNotEmpty)
-            _buildStatusSection(context, 'Expiring This Week', groupedItems['critical']!, Colors.red),
-            
-          // Warning items
-          if (groupedItems['warning']!.isNotEmpty)
-            _buildStatusSection(context, 'Expiring Next Week', groupedItems['warning']!, Colors.orange),
-            
-          // Normal items
-          if (groupedItems['normal']!.isNotEmpty)
-            _buildStatusSection(context, 'Expiring This Month', groupedItems['normal']!, theme.colorScheme.primary),
-            
-          // Safe items
-          if (groupedItems['safe']!.isNotEmpty)
-            _buildStatusSection(context, 'Expiring Later', groupedItems['safe']!, Colors.green),
-        ],
+        children: sections,
       ),
     );
   }
   
-  Widget _buildStatusSection(
-    BuildContext context,
-    String title,
-    List<Map<String, dynamic>> sectionItems,
-    Color color
-  ) {
-    final theme = Theme.of(context);
-    
+  Widget _buildSectionHeader(String title, int count, Color color) {
     return Padding(
-      padding: EdgeInsets.only(bottom: ConfigService.defaultPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(left: 12, top: 12, bottom: 4),
+      child: Row(
         children: [
-          Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: ConfigService.smallPadding,
-              horizontal: ConfigService.smallPadding,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                SizedBox(width: ConfigService.smallPadding),
-                Text(
-                  '$title (${sectionItems.length})',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: sectionItems.length,
-              separatorBuilder: (_, __) => Divider(height: 1, thickness: 1, indent: 70),
-              itemBuilder: (context, index) => _buildItemTile(context, sectionItems[index], color),
+          SizedBox(width: 8),
+          Text(
+            '$title ($count)',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
             ),
           ),
         ],
@@ -165,19 +138,28 @@ class ExpirationDetailList extends StatelessWidget {
     }
     
     return Container(
+      margin: const EdgeInsets.only(bottom: 1),
       decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
         border: Border(
           left: BorderSide(
             color: statusColor,
             width: 4,
           ),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ListTile(
         dense: true,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: ConfigService.defaultPadding,
-          vertical: ConfigService.smallPadding,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 8,
         ),
         title: Text(
           itemName,
@@ -188,20 +170,20 @@ class ExpirationDetailList extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: ConfigService.tinyPadding),
+            const SizedBox(height: 4),
             Row(
               children: [
                 Icon(
                   Icons.calendar_today,
-                  size: ConfigService.tinyIconSize,
+                  size: 12,
                   color: theme.colorScheme.secondary,
                 ),
-                SizedBox(width: ConfigService.tinyPadding),
+                const SizedBox(width: 4),
                 Text(
                   formattedDate,
                   style: theme.textTheme.bodySmall,
                 ),
-                SizedBox(width: ConfigService.smallPadding),
+                const SizedBox(width: 8),
                 Text(
                   daysText,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -214,9 +196,9 @@ class ExpirationDetailList extends StatelessWidget {
           ],
         ),
         trailing: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: ConfigService.smallPadding,
-            vertical: ConfigService.tinyPadding,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 4,
           ),
           decoration: BoxDecoration(
             color: statusColor.withOpacity(0.1),

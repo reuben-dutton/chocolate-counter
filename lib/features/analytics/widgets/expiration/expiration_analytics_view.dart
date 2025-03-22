@@ -4,7 +4,6 @@ import 'package:food_inventory/features/analytics/models/expiration_analytics_da
 import 'package:food_inventory/features/analytics/widgets/expiration/expiration_pie_chart.dart';
 import 'package:food_inventory/features/analytics/widgets/expiration/expiration_detail_list.dart';
 import 'package:food_inventory/features/analytics/widgets/expiration/expiration_insights.dart';
-import 'package:food_inventory/features/analytics/widgets/expiration/expiration_summary_metrics.dart';
 
 /// Main view widget that combines all expiration analytics components
 class ExpirationAnalyticsView extends StatelessWidget {
@@ -60,63 +59,132 @@ class ExpirationAnalyticsView extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Column(
-                  children: [
-                    ExpirationPieChart(timelineData: timelineData),
-                    // Legend for pie chart
-                    Padding(
-                      padding: EdgeInsets.only(top: ConfigService.largePadding), // Increased padding
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          vertical: ConfigService.mediumPadding,
-                          horizontal: ConfigService.smallPadding
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
-                        ),
-                        child: Wrap(
-                          spacing: 16, // Increased spacing
-                          runSpacing: 12, // Increased spacing
-                          alignment: WrapAlignment.center,
-                          children: timelineData.map((item) {
-                            return Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: _hexToColor(item['color'] as String),
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
-                                const SizedBox(width: 6), // Increased spacing
-                                Text(
-                                  item['category'] as String,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                child: ExpirationPieChart(timelineData: timelineData),
               ),
             ],
           ),
         ),
         
-        // Summary metrics
-        ExpirationSummaryMetrics(data: data!),
+        // Summary metrics with horizontal alignment
+        _buildAlignedSummaryMetrics(context),
         
         // Insights section
         ExpirationInsights(data: data!),
       ],
+    );
+  }
+
+  Widget _buildAlignedSummaryMetrics(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    // Calculate items for each category
+    final criticalItems = data!.thisWeekItems.length;
+    final warningItems = data!.nextWeekItems.length;
+    final expiredItems = data!.thisWeekItems.where((item) {
+      final expirationDate = DateTime.fromMillisecondsSinceEpoch(item['expirationDate'] as int);
+      return expirationDate.isBefore(DateTime.now());
+    }).length;
+    final okayItems = data!.thisMonthItems.length + data!.nextMonthItems.length + data!.beyondItems.length;
+    
+    return Padding(
+      padding: EdgeInsets.all(ConfigService.defaultPadding),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildMetricBox(
+            context,
+            okayItems,
+            'Okay',
+            Colors.green,
+            Icons.check_circle,
+          ),
+          SizedBox(width: ConfigService.smallPadding),
+          _buildMetricBox(
+            context,
+            warningItems,
+            'Warning',
+            Colors.orange,
+            Icons.timelapse,
+          ),
+          SizedBox(width: ConfigService.mediumPadding),
+          _buildMetricBox(
+            context,
+            criticalItems,
+            'Critical',
+            Colors.red,
+            Icons.warning_amber,
+          ),
+          SizedBox(width: ConfigService.mediumPadding),
+          _buildMetricBox(
+            context,
+            expiredItems,
+            'Expired',
+            Colors.red.shade900,
+            Icons.event_busy,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricBox(
+    BuildContext context,
+    int value,
+    String label,
+    Color color,
+    IconData icon,
+  ) {
+    final theme = Theme.of(context);
+    
+    return Container(
+      width: 65,
+      padding: EdgeInsets.all(ConfigService.tinyPadding),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: ConfigService.defaultIconSize,
+            color: color,
+          ),
+          const SizedBox(height: 6),
+          Container(
+            alignment: Alignment.center,
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value.toString(),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
   
@@ -194,14 +262,5 @@ class ExpirationAnalyticsView extends StatelessWidget {
         ],
       ),
     );
-  }
-  
-  // Helper method to convert hex color
-  Color _hexToColor(String hexColor) {
-    hexColor = hexColor.replaceAll('#', '');
-    if (hexColor.length == 6) {
-      hexColor = 'FF$hexColor';
-    }
-    return Color(int.parse(hexColor, radix: 16));
   }
 }
