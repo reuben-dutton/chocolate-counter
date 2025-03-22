@@ -7,138 +7,54 @@ import 'package:food_inventory/features/analytics/widgets/expiration/expiration_
 import 'package:food_inventory/features/analytics/widgets/expiration/expiration_summary_metrics.dart';
 
 /// Main view widget that combines all expiration analytics components
-class ExpirationAnalyticsView extends StatefulWidget {
+class ExpirationAnalyticsView extends StatelessWidget {
   final ExpirationAnalyticsData? data;
   final bool isLoading;
+  final bool showDetailView;
 
   const ExpirationAnalyticsView({
     super.key,
     this.data,
     this.isLoading = false,
+    this.showDetailView = false,
   });
-
-  @override
-  State<ExpirationAnalyticsView> createState() => _ExpirationAnalyticsViewState();
-}
-
-class _ExpirationAnalyticsViewState extends State<ExpirationAnalyticsView> {
-  bool _showDetailView = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    if (widget.isLoading) {
+    if (isLoading) {
       return _buildLoadingSkeleton(theme);
     }
     
-    if (widget.data == null) {
+    if (data == null) {
       return _buildEmptyState(theme);
     }
     
-    // Get items with status for display, filtering only critical and warning
-    final items = widget.data!.getItemsWithStatus()
-        .where((item) => ['critical', 'warning'].contains(item['status']))
+    // Get items with status for display
+    final items = data!.getItemsWithStatus()
+        .where((item) => showDetailView ? true : ['critical', 'warning'].contains(item['status']))
         .toList();
     
-    if (items.isEmpty) {
+    if (items.isEmpty && showDetailView) {
+      // If detail view has no items to show
       return _buildEmptyState(theme);
     }
     
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // View toggle buttons - next to title
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.event_busy, size: ConfigService.defaultIconSize, color: theme.colorScheme.primary),
-                SizedBox(width: ConfigService.smallPadding),
-                Text(
-                  'Expiration Analytics', 
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold
-                  )
-                ),
-              ],
-            ),
-            Expanded(
-              flex: 1,
-              child: SegmentedButton<bool>(
-                showSelectedIcon: false,
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                    (Set<MaterialState> states) {
-                      if (states.contains(MaterialState.selected)) {
-                        return theme.colorScheme.primary.withOpacity(0.1);
-                      }
-                      return Colors.transparent;
-                    },
-                  ),
-                  foregroundColor: MaterialStateProperty.resolveWith<Color>(
-                    (Set<MaterialState> states) {
-                      if (states.contains(MaterialState.selected)) {
-                        return theme.colorScheme.primary;
-                      }
-                      return theme.colorScheme.onSurface.withOpacity(0.6);
-                    },
-                  ),
-                  padding: MaterialStateProperty.all(
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 0)
-                  ),
-                  visualDensity: VisualDensity.compact,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  minimumSize: MaterialStateProperty.all(const Size(0, 28)),
-                  side: MaterialStateProperty.all(
-                    BorderSide.none
-                  ),
-                ),
-                segments: const [
-                  ButtonSegment<bool>(
-                    value: false,
-                    label: Text('Summary', style: TextStyle(fontSize: 11)),
-                  ),
-                  ButtonSegment<bool>(
-                    value: true,
-                    label: Text('Expiring', style: TextStyle(fontSize: 11)),
-                  ),
-                ],
-                selected: {_showDetailView},
-                onSelectionChanged: (Set<bool> selection) {
-                  if (selection.isNotEmpty) {
-                    setState(() {
-                      _showDetailView = selection.first;
-                    });
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-        
-        SizedBox(height: ConfigService.mediumPadding),
-        
-        // Summary metrics if in summary view
-        if (!_showDetailView) ...[
-          _buildSummaryView(context),
-        ] else ...[
-          _buildDetailView(context, items),
-        ],
-      ],
-    );
+    // Summary or Detail view based on selection
+    if (!showDetailView) {
+      return _buildSummaryView(context);
+    } else {
+      return _buildDetailView(context, items);
+    }
   }
   
   Widget _buildSummaryView(BuildContext context) {
-    final data = widget.data!;
-    
-    // Get timeline data for charts
-    final timelineData = data.getTimelineData();
+    final timelineData = data!.getTimelineData();
     
     return Column(
       children: [
-        // Pie Chart without title
+        // Pie Chart
         Padding(
           padding: EdgeInsets.all(ConfigService.defaultPadding),
           child: Row(
@@ -149,26 +65,43 @@ class _ExpirationAnalyticsViewState extends State<ExpirationAnalyticsView> {
                     ExpirationPieChart(timelineData: timelineData),
                     // Legend for pie chart
                     Padding(
-                      padding: EdgeInsets.only(top: ConfigService.mediumPadding),
-                      child: Wrap(
-                        spacing: 10,
-                        children: timelineData.map((item) {
-                          return Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 12,
-                                height: 12,
-                                color: _hexToColor(item['color'] as String),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                item['category'] as String,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          );
-                        }).toList(),
+                      padding: EdgeInsets.only(top: ConfigService.largePadding), // Increased padding
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          vertical: ConfigService.mediumPadding,
+                          horizontal: ConfigService.smallPadding
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
+                        ),
+                        child: Wrap(
+                          spacing: 16, // Increased spacing
+                          runSpacing: 12, // Increased spacing
+                          alignment: WrapAlignment.center,
+                          children: timelineData.map((item) {
+                            return Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: _hexToColor(item['color'] as String),
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                const SizedBox(width: 6), // Increased spacing
+                                Text(
+                                  item['category'] as String,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                        ),
                       ),
                     ),
                   ],
@@ -179,10 +112,10 @@ class _ExpirationAnalyticsViewState extends State<ExpirationAnalyticsView> {
         ),
         
         // Summary metrics
-        ExpirationSummaryMetrics(data: data),
+        ExpirationSummaryMetrics(data: data!),
         
         // Insights section
-        ExpirationInsights(data: data),
+        ExpirationInsights(data: data!),
       ],
     );
   }
@@ -194,36 +127,6 @@ class _ExpirationAnalyticsViewState extends State<ExpirationAnalyticsView> {
   Widget _buildLoadingSkeleton(ThemeData theme) {
     return Column(
       children: [
-        // Toggle buttons skeleton
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 100,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                SizedBox(width: ConfigService.smallPadding),
-                Container(
-                  width: 100,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        
-        SizedBox(height: ConfigService.defaultPadding),
-        
         // Metrics skeleton
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -232,7 +135,7 @@ class _ExpirationAnalyticsViewState extends State<ExpirationAnalyticsView> {
               width: 90,
               height: 90,
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
+                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -242,18 +145,23 @@ class _ExpirationAnalyticsViewState extends State<ExpirationAnalyticsView> {
         SizedBox(height: ConfigService.defaultPadding),
         
         // Chart skeleton
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
+        Container(
+          height: 220,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        
+        SizedBox(height: ConfigService.defaultPadding),
+        
+        // Insights skeleton
+        Container(
+          height: 120,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
       ],
     );

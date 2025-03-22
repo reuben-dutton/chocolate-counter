@@ -14,7 +14,7 @@ class ExpirationSummaryMetrics extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    // Calculate expired items (total items with negative days until expiration)
+    // Calculate expired items (items with negative days until expiration)
     final criticalItems = data.thisWeekItems.length;
     final criticalAndWarningItems = data.thisWeekItems.length + data.nextWeekItems.length;
     final expiredItems = data.thisWeekItems.where((item) {
@@ -31,19 +31,22 @@ class ExpirationSummaryMetrics extends StatelessWidget {
             context,
             criticalItems,
             'Critical',
-            theme.colorScheme.error,
+            Colors.red,
+            Icons.warning_amber,
           ),
           _buildMetricBox(
             context,
             criticalAndWarningItems,
             'Critical + Warning',
             Colors.orange,
+            Icons.timelapse,
           ),
           _buildMetricBox(
             context,
             expiredItems,
             'Expired',
             Colors.red.shade900,
+            Icons.event_busy,
           ),
         ],
       ),
@@ -55,26 +58,33 @@ class ExpirationSummaryMetrics extends StatelessWidget {
     int value,
     String label,
     Color color,
+    IconData icon,
   ) {
     final theme = Theme.of(context);
     
     return Container(
       width: 100,
-      padding: EdgeInsets.all(ConfigService.defaultPadding),
+      padding: EdgeInsets.all(ConfigService.mediumPadding),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Icon(
+            icon,
+            size: ConfigService.defaultIconSize,
+            color: color,
+          ),
+          SizedBox(height: ConfigService.smallPadding),
           Text(
             value.toString(),
             style: theme.textTheme.headlineSmall?.copyWith(
@@ -85,7 +95,7 @@ class ExpirationSummaryMetrics extends StatelessWidget {
           SizedBox(height: ConfigService.tinyPadding),
           Text(
             label,
-            style: theme.textTheme.bodyMedium,
+            style: theme.textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),
         ],

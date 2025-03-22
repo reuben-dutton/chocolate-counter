@@ -49,37 +49,59 @@ class ExpirationInsights extends StatelessWidget {
             SizedBox(height: ConfigService.mediumPadding),
             
             // Generate insights based on the data
-            _buildInsightRow(
-              context,
-              data.criticalCount > 0 
-                  ? 'Consider prioritizing ${data.criticalCount} items expiring this week'
-                  : 'No items expiring this week, great job!',
-            ),
-            SizedBox(height: ConfigService.smallPadding),
-            _buildInsightRow(
-              context,
-              data.warningCount > 0 
-                  ? 'Move ${data.warningCount} items expiring next week from inventory to stock'
-                  : 'No items expiring next week',
-            ),
-            SizedBox(height: ConfigService.smallPadding),
-            _buildInsightRow(
-              context,
-              percentageCritical > 15
-                  ? 'High proportion of critical items ($percentageCritical%), review purchasing patterns'
-                  : 'Healthy balance of expiration timeframes',
-            ),
+            data.totalItemsCount == 0
+                ? _buildNoDataInsight(context)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildInsightRow(
+                        context,
+                        data.criticalCount > 0 
+                            ? 'Prioritize ${data.criticalCount} items expiring this week'
+                            : 'No items expiring this week, great job!',
+                        Icons.priority_high,
+                        data.criticalCount > 0 ? Colors.red : Colors.green,
+                      ),
+                      SizedBox(height: ConfigService.smallPadding),
+                      _buildInsightRow(
+                        context,
+                        data.warningCount > 0 
+                            ? 'Move ${data.warningCount} items expiring next week from inventory to stock'
+                            : 'No items expiring next week',
+                        Icons.move_up,
+                        data.warningCount > 0 ? Colors.orange : theme.colorScheme.onSurface.withAlpha(ConfigService.alphaHigh),
+                      ),
+                      SizedBox(height: ConfigService.smallPadding),
+                      _buildInsightRow(
+                        context,
+                        percentageCritical > 15
+                            ? 'High proportion of critical items ($percentageCritical%), review purchasing patterns'
+                            : 'Healthy balance of expiration timeframes',
+                        Icons.balance,
+                        percentageCritical > 15 ? Colors.amber : Colors.green,
+                      ),
+                    ],
+                  ),
           ],
         ),
       ),
     );
   }
   
-  Widget _buildInsightRow(BuildContext context, String insight) {
+  Widget _buildNoDataInsight(BuildContext context) {
+    return _buildInsightRow(
+      context,
+      'No expiration data available. Add items with expiration dates to see insights.',
+      Icons.info_outline,
+      Theme.of(context).colorScheme.onSurface.withAlpha(ConfigService.alphaHigh),
+    );
+  }
+  
+  Widget _buildInsightRow(BuildContext context, String insight, IconData insightIcon, Color iconColor) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('•', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Icon(insightIcon, size: ConfigService.smallIconSize, color: iconColor),
         SizedBox(width: ConfigService.smallPadding),
         Expanded(
           child: Text(

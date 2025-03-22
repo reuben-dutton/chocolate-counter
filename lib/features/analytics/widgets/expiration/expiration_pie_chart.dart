@@ -13,10 +13,14 @@ class ExpirationPieChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bool hasData = timelineData.any((item) => (item['count'] as int) > 0);
+    
+    if (!hasData) {
+      return _buildEmptyChart(theme);
+    }
     
     return Container(
-      height: 220,
-      padding: EdgeInsets.all(ConfigService.defaultPadding),
+      height: 230,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
@@ -31,16 +35,27 @@ class ExpirationPieChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Timeline Distribution',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+          Padding(
+            padding: EdgeInsets.all(ConfigService.mediumPadding),
+            child: Text(
+              'Expiration Timeline',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          SizedBox(height: ConfigService.smallPadding),
           Expanded(
             child: PieChart(
-              _createPieChartData(timelineData, theme),
+              PieChartData(
+                sectionsSpace: 2,
+                centerSpaceRadius: 40,
+                sections: _createSections(timelineData, theme),
+                pieTouchData: PieTouchData(
+                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                    // Handle touch events if needed
+                  },
+                ),
+              ),
             ),
           ),
         ],
@@ -48,43 +63,92 @@ class ExpirationPieChart extends StatelessWidget {
     );
   }
   
-  PieChartData _createPieChartData(List<Map<String, dynamic>> timelineData, ThemeData theme) {
-    return PieChartData(
-      sectionsSpace: 0,
-      centerSpaceRadius: 40,
-      sections: List.generate(
-        timelineData.length,
-        (index) {
-          final item = timelineData[index];
-          final count = item['count'] as int;
-          final category = item['category'] as String;
-          final color = _hexToColor(item['color'] as String);
-          
-          // Calculate percentage
-          final total = timelineData.fold<int>(
-            0, (sum, item) => sum + (item['count'] as int)
-          );
-          final percentage = total > 0 ? (count / total * 100) : 0.0;
-          
-          return PieChartSectionData(
-            color: color,
-            value: count.toDouble(),
-            title: '${percentage.toStringAsFixed(0)}%',
-            radius: 60,
-            titleStyle: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+  Widget _buildEmptyChart(ThemeData theme) {
+    return Container(
+      height: 230,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.pie_chart_outline,
+              size: ConfigService.largeIconSize,
+              color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaModerate),
             ),
-            badgeWidget: _LegendBadge(
-              color: color,
-              text: category,
+            SizedBox(height: ConfigService.smallPadding),
+            Text(
+              'No expiration data',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaDefault),
+              ),
             ),
-            badgePositionPercentageOffset: 1.5,
-          );
-        },
+          ],
+        ),
       ),
     );
+  }
+  
+  List<PieChartSectionData> _createSections(List<Map<String, dynamic>> data, ThemeData theme) {
+    final totalCount = data.fold<int>(0, (sum, item) => sum + (item['count'] as int));
+    
+    // If there's no data, return an empty section
+    if (totalCount == 0) {
+      return [
+        PieChartSectionData(
+          color: theme.colorScheme.surfaceContainerHighest,
+          value: 100,
+          title: '0%',
+          radius: 60,
+          titleStyle: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+      ];
+    }
+    
+    return data.map((item) {
+      final count = item['count'] as int;
+      final category = item['category'] as String;
+      final color = _hexToColor(item['color'] as String);
+      
+      // Calculate percentage
+      final percentage = totalCount > 0 ? (count / totalCount * 100) : 0.0;
+      
+      // Skip sections with 0 count
+      if (count == 0) {
+        return PieChartSectionData(
+          color: Colors.transparent,
+          value: 0,
+          title: '',
+          radius: 0,
+        );
+      }
+      
+      return PieChartSectionData(
+        color: color,
+        value: count.toDouble(),
+        title: percentage >= 5 ? '${percentage.toStringAsFixed(0)}%' : '',
+        radius: 60,
+        titleStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      );
+    }).where((section) => section.value > 0).toList();
   }
   
   // Helper method to convert hex color string to Color
@@ -94,41 +158,5 @@ class ExpirationPieChart extends StatelessWidget {
       hexColor = 'FF$hexColor';
     }
     return Color(int.parse(hexColor, radix: 16));
-  }
-}
-
-class _LegendBadge extends StatelessWidget {
-  final Color color;
-  final String text;
-  
-  const _LegendBadge({
-    required this.color,
-    required this.text,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(
-            color: color,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
   }
 }
