@@ -44,6 +44,7 @@ class ItemExpirationList extends StatelessWidget {
           title: ExpirationDateWidget(
             expirationDate: expDate,
             showIcon: false,
+            fontSize: 13, // Larger font size for the detail screen
           ),
           trailing: Chip(
             padding: const EdgeInsets.all(0),
