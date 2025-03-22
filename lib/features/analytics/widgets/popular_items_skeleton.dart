@@ -47,83 +47,55 @@ class _PopularItemsSkeletonState extends State<PopularItemsSkeleton> with Single
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return SizedBox(
-      // height: 550, // Approximate height to match the actual content
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Summary card skeleton that better matches the actual layout
-          _buildSummaryCardSkeleton(theme),
-          
-          // Top Sellers title skeleton
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Summary stats skeleton that matches the new layout
+        Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: ConfigService.largePadding,
+            horizontal: ConfigService.defaultPadding
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildSimpleStatColumnSkeleton(theme),
+              _buildSimpleStatColumnSkeleton(theme),
+              _buildSimpleStatColumnSkeleton(theme),
+            ],
+          ),
+        ),
+        
+        // Top Sellers title skeleton
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: ConfigService.defaultPadding, 
+            vertical: ConfigService.mediumPadding
+          ),
+          child: _buildShimmerContainer(width: 120, height: 28),
+        ),
+        
+        // Top Sellers list skeleton - match the actual number and spacing
+        for (int i = 0; i < 5; i++)
           Padding(
             padding: EdgeInsets.symmetric(
               horizontal: ConfigService.defaultPadding, 
-              vertical: ConfigService.mediumPadding
+              vertical: ConfigService.smallPadding
             ),
-            child: Row(
-              children: [
-                _buildShimmerContainer(width: 120, height: 28),
-              ],
-            ),
+            child: _buildTopSellerItemSkeleton(),
           ),
-          
-          // Top Sellers list skeleton - match the actual number and spacing
-          for (int i = 0; i < 5; i++)
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: ConfigService.defaultPadding, 
-                vertical: ConfigService.smallPadding
-              ),
-              child: _buildTopSellerItemSkeleton(),
-            ),
-        ],
-      ),
+      ],
     );
   }
 
-  Widget _buildSummaryCardSkeleton(ThemeData theme) {
-    return Padding(
-      padding: EdgeInsets.all(ConfigService.tinyPadding),
-      child: Container(
-        // width: double.infinity,
-        padding: EdgeInsets.all(ConfigService.defaultPadding),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatColumnSkeleton(theme),
-                _buildStatColumnSkeleton(theme),
-                _buildStatColumnSkeleton(theme),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatColumnSkeleton(ThemeData theme) {
+  Widget _buildSimpleStatColumnSkeleton(ThemeData theme) {
     return Column(
       children: [
-        Container(
-          width: 24 + ConfigService.mediumPadding * 2, 
-          height: 24 + ConfigService.mediumPadding * 2,
-          decoration: BoxDecoration(
-            color: _colorAnimation.value,
-            borderRadius: BorderRadius.circular(ConfigService.mediumPadding),
-          ),
-        ),
+        _buildShimmerContainer(width: 24, height: 24, isCircular: true),
         SizedBox(height: ConfigService.smallPadding),
-        _buildShimmerContainer(width: 70, height: 18),
+        _buildShimmerContainer(width: 70, height: 16),
         SizedBox(height: ConfigService.smallPadding),
-        _buildShimmerContainer(width: 30, height: 18),
+        _buildShimmerContainer(width: 30, height: 20),
       ],
     );
   }
@@ -134,17 +106,15 @@ class _PopularItemsSkeletonState extends State<PopularItemsSkeleton> with Single
         Container(
           width: 40,
           height: 40,
-          decoration: BoxDecoration(
-            color: _colorAnimation.value,
-            borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
-          ),
+          alignment: Alignment.center,
+          child: _buildShimmerContainer(width: 20, height: 20, isCircular: true),
         ),
         SizedBox(width: ConfigService.defaultPadding),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildShimmerContainer(width: 150, height: 24),
+              _buildShimmerContainer(width: 150, height: 20),
               SizedBox(height: ConfigService.tinyPadding),
               Container(
                 height: 6,
@@ -173,13 +143,16 @@ class _PopularItemsSkeletonState extends State<PopularItemsSkeleton> with Single
     required double width, 
     required double height,
     double? borderRadius,
+    bool isCircular = false,
   }) {
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
         color: _colorAnimation.value,
-        borderRadius: BorderRadius.circular(borderRadius ?? ConfigService.borderRadiusSmall),
+        borderRadius: isCircular 
+            ? BorderRadius.circular(height / 2) 
+            : BorderRadius.circular(borderRadius ?? ConfigService.borderRadiusSmall),
       ),
     );
   }

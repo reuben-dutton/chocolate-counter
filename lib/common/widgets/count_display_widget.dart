@@ -21,13 +21,10 @@ class CountDisplayWidget extends StatelessWidget {
     
     return Column(
       children: [
-        Container(
-          padding: EdgeInsets.all(ConfigService.mediumPadding),
-          decoration: BoxDecoration(
-            color: color.withAlpha(ConfigService.alphaLight),
-            borderRadius: BorderRadius.circular(ConfigService.defaultBorderRadius),
-          ),
-          child: Icon(icon, size: ConfigService.mediumIconSize, color: color),
+        Icon(
+          icon, 
+          size: ConfigService.largeIconSize, 
+          color: color
         ),
         SizedBox(height: ConfigService.smallPadding),
         Text(

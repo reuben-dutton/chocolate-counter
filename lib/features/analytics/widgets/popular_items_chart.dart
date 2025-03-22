@@ -50,8 +50,36 @@ class PopularItemsChart extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Overall Summary
-        _buildSummaryCard(context, totalSales, sortedItems, totalStockCount),
+        // Overall Summary - Summary stats now displayed directly without card
+        Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: ConfigService.largePadding,
+            horizontal: ConfigService.defaultPadding
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildSimpleStatColumn(
+                context,
+                Icons.shopping_cart,
+                'Total Sales',
+                totalSales.toString(),
+              ),
+              _buildSimpleStatColumn(
+                context,
+                Icons.inventory_2,
+                'Total Stock',
+                totalStockCount.toString(),
+              ),
+              _buildSimpleStatColumn(
+                context,
+                Icons.add_chart,
+                'Unique Items',
+                sortedItems.length.toString(),
+              ),
+            ],
+          ),
+        ),
         
         // Top Sellers Section
         Padding(
@@ -80,18 +108,13 @@ class PopularItemsChart extends StatelessWidget {
                     Container(
                       width: 40,
                       height: 40,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withAlpha(ConfigService.alphaLight),
-                        borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${index + 1}',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
                         ),
                       ),
                     ),
@@ -148,65 +171,15 @@ class PopularItemsChart extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(BuildContext context, int totalSales, List<PopularItemData> sortedItems, int totalStockCount) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: EdgeInsets.all(ConfigService.tinyPadding),
-      child: Container(
-        padding: EdgeInsets.all(ConfigService.defaultPadding),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatColumn(
-                  context,
-                  Icons.shopping_cart,
-                  'Total Sales',
-                  totalSales.toString(),
-                ),
-                _buildStatColumn(
-                  context,
-                  Icons.inventory_2,
-                  'Total Stock',
-                  totalStockCount.toString(),
-                ),
-                _buildStatColumn(
-                  context,
-                  Icons.add_chart,
-                  'Unique Items',
-                  sortedItems.length.toString(),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatColumn(BuildContext context, IconData icon, String label, String value) {
+  Widget _buildSimpleStatColumn(BuildContext context, IconData icon, String label, String value) {
     final theme = Theme.of(context);
 
     return Column(
       children: [
-        Container(
-          padding: EdgeInsets.all(ConfigService.mediumPadding),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withAlpha(ConfigService.alphaLight),
-            borderRadius: BorderRadius.circular(ConfigService.mediumPadding),
-          ),
-          child: Icon(
-            icon,
-            color: theme.colorScheme.primary,
-            size: 24,
-          ),
+        Icon(
+          icon,
+          color: theme.colorScheme.primary,
+          size: 24,
         ),
         SizedBox(height: ConfigService.smallPadding),
         Text(

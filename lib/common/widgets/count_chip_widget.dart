@@ -21,27 +21,20 @@ class CountChipWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.tinyPadding),
-      decoration: BoxDecoration(
-        color: color.withAlpha(ConfigService.alphaLight),
-        borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge), // previously -4
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: iconSize, color: color),
-          SizedBox(width: ConfigService.tinyPadding),
-          Text(
-            text ?? '$count',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: fontSize,
-            ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: iconSize, color: color),
+        SizedBox(width: ConfigService.tinyPadding),
+        Text(
+          text ?? '$count',
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.bold,
+            fontSize: fontSize,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
