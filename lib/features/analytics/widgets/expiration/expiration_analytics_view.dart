@@ -80,10 +80,7 @@ class ExpirationAnalyticsView extends StatelessWidget {
     // Calculate items for each category
     final criticalItems = data!.thisWeekItems.length;
     final warningItems = data!.nextWeekItems.length;
-    final expiredItems = data!.thisWeekItems.where((item) {
-      final expirationDate = DateTime.fromMillisecondsSinceEpoch(item['expirationDate'] as int);
-      return expirationDate.isBefore(DateTime.now());
-    }).length;
+    final expiredItems = data!.expiredItems.length;
     final okayItems = data!.thisMonthItems.length + data!.nextMonthItems.length + data!.beyondItems.length;
     
     return Padding(
