@@ -51,25 +51,6 @@ class ShipmentItemList extends StatelessWidget {
                 iconSize: ConfigService.tinyIconSize,
                 fontSize: 12,
               ),
-              if (item.unitPrice != null) 
-                Row(
-                  children: [
-                    Icon(Icons.attach_money, size: ConfigService.tinyIconSize, color: theme.colorScheme.secondary),
-                    SizedBox(width: ConfigService.tinyPadding),
-                    Text(
-                      ConfigService.formatCurrency(item.unitPrice!),
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    SizedBox(width: ConfigService.smallPadding),
-                    Text(
-                      'Total: ${ConfigService.formatCurrency(item.unitPrice! * item.quantity)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
             ],
           ),
           trailing: Row(

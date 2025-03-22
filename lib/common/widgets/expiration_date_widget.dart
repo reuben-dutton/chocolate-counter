@@ -28,7 +28,7 @@ class ExpirationDateWidget extends StatelessWidget {
         style: TextStyle(
           fontSize: fontSize,
           fontStyle: FontStyle.italic,
-          color: theme.colorScheme.onSurface.withOpacity(0.7),
+          color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaModerate),
         ),
       );
     }
