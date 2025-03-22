@@ -1,6 +1,10 @@
 import 'package:food_inventory/features/analytics/models/analytics_data.dart';
+import 'package:food_inventory/features/analytics/models/stock_trend_data.dart';
+import 'package:food_inventory/features/analytics/models/stock_trends_data.dart';
+import 'package:food_inventory/features/analytics/models/expiration_analytics_data.dart';
 import 'package:food_inventory/features/analytics/repositories/analytics_repository.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:intl/intl.dart';
 
 /// Service for analytics-related operations
 class AnalyticsService {
@@ -41,6 +45,98 @@ class AnalyticsService {
       return AnalyticsData(
         popularItems: popularItems,
         totalStockCount: totalStockCount,
+      );
+    });
+  }
+  
+  /// Get stock trends data with optional time period filter
+  Future<StockTrendsData> getStockTrendsData({DateTime? startDate, Transaction? txn}) async {
+    // Add artificial delay for testing the skeleton loader
+    if (_simulateDelay) {
+      await Future.delayed(_delayDuration);
+    }
+    
+    return _withTransactionIfNeeded(txn, (transaction) async {
+      final rawData = await _analyticsRepository.getStockTrends(
+        startDate: startDate,
+        txn: transaction
+      );
+      
+      // Format a date formatter for month names
+      final dateFormat = DateFormat('MMM');
+      
+      final List<StockTrendData> trendData = [];
+      
+      for (final row in rawData) {
+        final date = DateTime.fromMillisecondsSinceEpoch(row['month_start'] as int);
+        final stockCount = row['stock_count'] as int;
+        final inventoryCount = row['inventory_count'] as int;
+        
+        trendData.add(StockTrendData(
+          month: dateFormat.format(date),
+          stockCount: stockCount,
+          inventoryCount: inventoryCount,
+          date: date,
+        ));
+      }
+      
+      return StockTrendsData(trendData: trendData);
+    });
+  }
+  
+  /// Get expiration analytics data with optional time period filter
+  Future<ExpirationAnalyticsData> getExpirationAnalyticsData({Transaction? txn}) async {
+    // Add artificial delay for testing the skeleton loader
+    if (_simulateDelay) {
+      await Future.delayed(_delayDuration);
+    }
+    
+    return _withTransactionIfNeeded(txn, (transaction) async {
+      final itemsExpiringThisWeek = await _analyticsRepository.getExpiringItems(
+        DateTime.now(),
+        DateTime.now().add(const Duration(days: 7)),
+        txn: transaction
+      );
+      
+      final itemsExpiringNextWeek = await _analyticsRepository.getExpiringItems(
+        DateTime.now().add(const Duration(days: 7)),
+        DateTime.now().add(const Duration(days: 14)),
+        txn: transaction
+      );
+      
+      final itemsExpiringThisMonth = await _analyticsRepository.getExpiringItems(
+        DateTime.now().add(const Duration(days: 14)),
+        DateTime.now().add(const Duration(days: 30)),
+        txn: transaction
+      );
+      
+      final itemsExpiringNextMonth = await _analyticsRepository.getExpiringItems(
+        DateTime.now().add(const Duration(days: 30)),
+        DateTime.now().add(const Duration(days: 60)),
+        txn: transaction
+      );
+      
+      final itemsExpiringBeyond = await _analyticsRepository.getExpiringItems(
+        DateTime.now().add(const Duration(days: 60)),
+        null, // No end date
+        txn: transaction
+      );
+      
+      // Here we'd process the raw data into the appropriate structures for the ExpirationAnalyticsData
+      // This would involve transforming the database rows into the proper models
+      
+      return ExpirationAnalyticsData(
+        // Populate with the processed data
+        thisWeekCount: itemsExpiringThisWeek.length,
+        nextWeekCount: itemsExpiringNextWeek.length,
+        thisMonthCount: itemsExpiringThisMonth.length,
+        nextMonthCount: itemsExpiringNextMonth.length,
+        beyondCount: itemsExpiringBeyond.length,
+        thisWeekItems: itemsExpiringThisWeek,
+        nextWeekItems: itemsExpiringNextWeek,
+        thisMonthItems: itemsExpiringThisMonth,
+        nextMonthItems: itemsExpiringNextMonth,
+        beyondItems: itemsExpiringBeyond,
       );
     });
   }

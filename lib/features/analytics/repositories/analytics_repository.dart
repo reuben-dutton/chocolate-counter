@@ -63,6 +63,89 @@ class AnalyticsRepository {
     });
   }
   
+  /// Get stock trend data by month for visualization
+  Future<List<Map<String, dynamic>>> getStockTrends({DateTime? startDate, Transaction? txn}) async {
+    return _withTransactionIfNeeded(txn, (db) async {
+      // Base query to get stock and inventory counts grouped by month
+      String query = '''
+        SELECT 
+          strftime('%Y-%m-01', datetime(timestamp / 1000, 'unixepoch')) as month_label,
+          strftime('%s', strftime('%Y-%m-01', datetime(timestamp / 1000, 'unixepoch'))) * 1000 as month_start,
+          SUM(CASE WHEN type = ${MovementType.stockSale.index} THEN quantity ELSE 0 END) as sales_count,
+          (SELECT COALESCE(SUM(quantity), 0) FROM ${DatabaseService.tableItemInstances} WHERE isInStock = 1) as stock_count,
+          (SELECT COALESCE(SUM(quantity), 0) FROM ${DatabaseService.tableItemInstances} WHERE isInStock = 0) as inventory_count
+        FROM 
+          ${DatabaseService.tableInventoryMovements}
+      ''';
+      
+      // Add date filtering if needed
+      List<dynamic> args = [];
+      if (startDate != null) {
+        query += ' WHERE timestamp >= ?';
+        args.add(startDate.millisecondsSinceEpoch);
+      }
+      
+      // Complete the query
+      query += '''
+        GROUP BY 
+          month_label
+        ORDER BY 
+          month_start ASC
+      ''';
+      
+      final results = await db.rawQuery(query, args);
+      return results;
+    });
+  }
+  
+  /// Get items expiring within a specified date range
+  Future<List<Map<String, dynamic>>> getExpiringItems(
+    DateTime startDate, 
+    DateTime? endDate, 
+    {Transaction? txn}
+  ) async {
+    return _withTransactionIfNeeded(txn, (db) async {
+      // Convert dates to milliseconds
+      final startMillis = startDate.millisecondsSinceEpoch;
+      final endMillis = endDate?.millisecondsSinceEpoch;
+      
+      // Base query to get items with expiration dates in the given range
+      String query = '''
+        SELECT 
+          ii.id,
+          ii.quantity,
+          ii.expirationDate,
+          ii.isInStock,
+          id.name as itemName,
+          id.imageUrl
+        FROM 
+          ${DatabaseService.tableItemInstances} ii
+        JOIN 
+          ${DatabaseService.tableItemDefinitions} id 
+        ON 
+          ii.itemDefinitionId = id.id
+        WHERE 
+          ii.expirationDate >= ?
+      ''';
+      
+      // Add end date filtering if needed
+      List<dynamic> args = [startMillis];
+      if (endMillis != null) {
+        query += ' AND ii.expirationDate <= ?';
+        args.add(endMillis);
+      }
+      
+      // Complete the query
+      query += '''
+        ORDER BY 
+          ii.expirationDate ASC
+      ''';
+      
+      final results = await db.rawQuery(query, args);
+      return results;
+    });
+  }
+  
   /// Run a function within a transaction
   Future<R> withTransaction<R>(Future<R> Function(Transaction txn) action) async {
     final db = _databaseService.database;
