@@ -464,10 +464,7 @@ class StockTrendsChart extends StatelessWidget {
       maxY: _getMaxY(),
       lineTouchData: LineTouchData(
         touchTooltipData: LineTouchTooltipData(
-          // Using the tooltip property instead of tooltipBgColor
-          tooltip: FlTooltip(
-            getTooltipColor: (_) => theme.colorScheme.surface,
-          ),
+          getTooltipColor: (touchedSpot) => theme.colorScheme.surface,
           getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
             return touchedBarSpots.map((barSpot) {
               final index = barSpot.x.toInt();
