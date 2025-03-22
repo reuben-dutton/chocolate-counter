@@ -51,20 +51,7 @@ class _PopularItemsSkeletonState extends State<PopularItemsSkeleton> with Single
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Summary stats skeleton that matches the new layout
-        Padding(
-          padding: EdgeInsets.symmetric(
-            vertical: ConfigService.largePadding,
-            horizontal: ConfigService.defaultPadding
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildSimpleStatColumnSkeleton(theme),
-              _buildSimpleStatColumnSkeleton(theme),
-              _buildSimpleStatColumnSkeleton(theme),
-            ],
-          ),
-        ),
+        _buildSummaryStatsSkeleton(),
         
         // Top Sellers title skeleton
         Padding(
@@ -75,7 +62,32 @@ class _PopularItemsSkeletonState extends State<PopularItemsSkeleton> with Single
           child: _buildShimmerContainer(width: 120, height: 28),
         ),
         
-        // Top Sellers list skeleton - match the actual number and spacing
+        // Top Sellers list skeleton
+        _buildTopSellersListSkeleton(),
+      ],
+    );
+  }
+
+  Widget _buildSummaryStatsSkeleton() {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: ConfigService.largePadding,
+        horizontal: ConfigService.defaultPadding
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildSimpleStatColumnSkeleton(),
+          _buildSimpleStatColumnSkeleton(),
+          _buildSimpleStatColumnSkeleton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopSellersListSkeleton() {
+    return Column(
+      children: [
         for (int i = 0; i < 5; i++)
           Padding(
             padding: EdgeInsets.symmetric(
@@ -88,7 +100,7 @@ class _PopularItemsSkeletonState extends State<PopularItemsSkeleton> with Single
     );
   }
 
-  Widget _buildSimpleStatColumnSkeleton(ThemeData theme) {
+  Widget _buildSimpleStatColumnSkeleton() {
     return Column(
       children: [
         _buildShimmerContainer(width: 24, height: 24, isCircular: true),

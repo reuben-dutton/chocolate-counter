@@ -6,11 +6,11 @@ import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/features/analytics/bloc/analytics_bloc.dart';
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
 import 'package:food_inventory/features/analytics/widgets/analytics_card.dart';
-import 'package:food_inventory/features/analytics/widgets/expiration_analytics_widget.dart';
-import 'package:food_inventory/features/analytics/widgets/popular_items_chart.dart';
-import 'package:food_inventory/features/analytics/widgets/popular_items_skeleton.dart';
+import 'package:food_inventory/features/analytics/widgets/expiration/expiration_analytics_widget.dart';
+import 'package:food_inventory/features/analytics/widgets/popular_items/popular_items_chart.dart';
+import 'package:food_inventory/features/analytics/widgets/popular_items/popular_items_skeleton.dart';
 import 'package:food_inventory/features/analytics/widgets/sales_history_widget.dart';
-import 'package:food_inventory/features/analytics/widgets/stock_trends_widget.dart';
+import 'package:food_inventory/features/analytics/widgets/stock_trends/stock_trends_widget.dart';
 import 'package:food_inventory/features/analytics/widgets/time_period_selectors.dart';
 import 'package:provider/provider.dart';
 

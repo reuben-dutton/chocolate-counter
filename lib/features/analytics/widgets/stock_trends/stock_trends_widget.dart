@@ -6,7 +6,7 @@ import 'package:food_inventory/features/analytics/bloc/stock_trends_bloc.dart';
 import 'package:food_inventory/features/analytics/models/time_period.dart';
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
 import 'package:food_inventory/features/analytics/widgets/analytics_card.dart';
-import 'package:food_inventory/features/analytics/widgets/stock_trends_chart.dart';
+import 'package:food_inventory/features/analytics/widgets/stock_trends/stock_trends_chart.dart';
 import 'package:food_inventory/features/analytics/widgets/time_period_selectors.dart';
 import 'package:provider/provider.dart';
 
