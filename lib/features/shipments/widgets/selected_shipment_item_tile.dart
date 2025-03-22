@@ -26,9 +26,8 @@ class SelectedShipmentItemTile extends StatelessWidget {
     final theme = Theme.of(context);
     final imageService = Provider.of<ImageService>(context, listen: false);
     
-    return Card(
-      color: theme.colorScheme.surface,
-      margin: const EdgeInsets.symmetric(vertical: 1),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
       child: ListTile(
         dense: true,
         contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: 1),

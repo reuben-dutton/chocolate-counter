@@ -21,13 +21,8 @@ class ShipmentListItem extends StatelessWidget {
     final theme = Theme.of(context);
     final formattedDate = DateFormat('yyyy-MM-dd').format(shipment.date);
     
-    return Card(
-      color: theme.colorScheme.surface,
-      margin: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.tinyPadding),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium)
-      ),
-      elevation: 1,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.tinyPadding),
       child: InkWell(
         borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
         onTap: onTap,

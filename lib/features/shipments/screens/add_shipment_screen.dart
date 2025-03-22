@@ -357,179 +357,171 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
               SizedBox(height: ConfigService.largePadding),
               
               // Summary
-              Card(
-                color: theme.colorScheme.surface,
-                elevation: 1,
-                child: Padding(
-                  padding: EdgeInsets.all(ConfigService.defaultPadding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.summarize, size: ConfigService.mediumIconSize, color: theme.colorScheme.primary),
-                          SizedBox(width: ConfigService.smallPadding),
-                          Text(
-                            'Shipment Summary',
-                            style: theme.textTheme.titleMedium,
+              Padding(
+                padding: EdgeInsets.all(ConfigService.defaultPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.summarize, size: ConfigService.mediumIconSize, color: theme.colorScheme.primary),
+                        SizedBox(width: ConfigService.smallPadding),
+                        Text(
+                          'Shipment Summary',
+                          style: theme.textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(Icons.inventory_2, size: ConfigService.smallIconSize),
+                              SizedBox(width: ConfigService.smallPadding),
+                              Text(
+                                'Items: ${_selectedItems.length}', 
+                                style: theme.textTheme.bodyMedium
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const Divider(),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                const Icon(Icons.inventory_2, size: ConfigService.smallIconSize),
-                                SizedBox(width: ConfigService.smallPadding),
-                                Text(
-                                  'Items: ${_selectedItems.length}', 
-                                  style: theme.textTheme.bodyMedium
-                                ),
-                              ],
-                            ),
+                        ),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(Icons.shopping_bag, size: ConfigService.smallIconSize),
+                              SizedBox(width: ConfigService.smallPadding),
+                              Text(
+                                'Total: ${_selectedItems.fold<int>(0, (sum, item) => sum + item.quantity)}',
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ],
                           ),
-                          Expanded(
-                            child: Row(
-                              children: [
-                                const Icon(Icons.shopping_bag, size: ConfigService.smallIconSize),
-                                SizedBox(width: ConfigService.smallPadding),
-                                Text(
-                                  'Total: ${_selectedItems.fold<int>(0, (sum, item) => sum + item.quantity)}',
-                                  style: theme.textTheme.bodyMedium,
-                                ),
-                              ],
-                            ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: ConfigService.smallPadding),
+                    Row(
+                      children: [
+                        const Icon(Icons.monetization_on, size: ConfigService.smallIconSize),
+                        SizedBox(width: ConfigService.smallPadding),
+                        Text(
+                          'Total Cost: ${ConfigService.formatCurrency(totalCost)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
                           ),
-                        ],
-                      ),
-                      SizedBox(height: ConfigService.smallPadding),
-                      Row(
-                        children: [
-                          const Icon(Icons.monetization_on, size: ConfigService.smallIconSize),
-                          SizedBox(width: ConfigService.smallPadding),
-                          Text(
-                            'Total Cost: ${ConfigService.formatCurrency(totalCost)}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
               
               SizedBox(height: ConfigService.largePadding),
               
               // Selected items list
-              Card(
-                color: theme.colorScheme.surface,
-                elevation: 1,
-                child: Padding(
-                  padding: EdgeInsets.all(ConfigService.defaultPadding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.list, size: ConfigService.mediumIconSize, color: theme.colorScheme.primary),
-                          SizedBox(width: ConfigService.smallPadding),
-                          Text(
-                            'Selected Items',
-                            style: theme.textTheme.titleMedium,
-                          ),
-                        ],
-                      ),
-                      const Divider(),
-                      
-                      Container(
-                        constraints: const BoxConstraints(maxHeight: 300),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: theme.colorScheme.outlineVariant),
-                          borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
+              Padding(
+                padding: EdgeInsets.all(ConfigService.defaultPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.list, size: ConfigService.mediumIconSize, color: theme.colorScheme.primary),
+                        SizedBox(width: ConfigService.smallPadding),
+                        Text(
+                          'Selected Items',
+                          style: theme.textTheme.titleMedium,
                         ),
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          itemCount: _selectedItems.length,
-                          separatorBuilder: (context, index) => Divider(
-                            height: 1,
-                            color: theme.colorScheme.outlineVariant,
-                          ),
-                          itemBuilder: (context, index) {
-                            final item = _selectedItems[index];
-                            return ListTile(
-                              dense: true,
-                              contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.mediumPadding, vertical: ConfigService.tinyPadding),
-                              leading: Icon(
-                                Icons.inventory_2,
-                                size: ConfigService.defaultIconSize,
-                                color: theme.colorScheme.primary,
-                              ),
-                              title: Text(
-                                item.itemDefinition?.name ?? 'Unknown Item',
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyMedium,
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (item.expirationDate != null)
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.event_available, 
-                                          size: ConfigService.tinyIconSize, 
-                                          color: theme.colorScheme.secondary
-                                        ),
-                                        SizedBox(width: ConfigService.tinyPadding),
-                                        Text(
-                                          dateFormat.format(item.expirationDate!),
-                                          style: theme.textTheme.bodySmall,
-                                        ),
-                                      ],
-                                    ),
-                                  if (item.unitPrice != null)
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.attach_money, 
-                                          size: ConfigService.tinyIconSize, 
-                                          color: theme.colorScheme.secondary
-                                        ),
-                                        SizedBox(width: ConfigService.tinyPadding),
-                                        Text(
-                                          '${ConfigService.formatCurrency(item.unitPrice!)} × ${item.quantity}',
-                                          style: theme.textTheme.bodySmall,
-                                        ),
-                                      ],
-                                    ),
-                                ],
-                              ),
-                              trailing: Container(
-                                padding: EdgeInsets.symmetric(horizontal: ConfigService.mediumPadding, vertical: ConfigService.tinyPadding),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
-                                ),
-                                child: Text(
-                                  '${item.quantity}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    color: theme.colorScheme.onPrimaryContainer,
+                      ],
+                    ),
+                    const Divider(),
+                    
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 300),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: theme.colorScheme.outlineVariant),
+                        borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: _selectedItems.length,
+                        separatorBuilder: (context, index) => Divider(
+                          height: 1,
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                        itemBuilder: (context, index) {
+                          final item = _selectedItems[index];
+                          return ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.mediumPadding, vertical: ConfigService.tinyPadding),
+                            leading: Icon(
+                              Icons.inventory_2,
+                              size: ConfigService.defaultIconSize,
+                              color: theme.colorScheme.primary,
+                            ),
+                            title: Text(
+                              item.itemDefinition?.name ?? 'Unknown Item',
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (item.expirationDate != null)
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.event_available, 
+                                        size: ConfigService.tinyIconSize, 
+                                        color: theme.colorScheme.secondary
+                                      ),
+                                      SizedBox(width: ConfigService.tinyPadding),
+                                      Text(
+                                        dateFormat.format(item.expirationDate!),
+                                        style: theme.textTheme.bodySmall,
+                                      ),
+                                    ],
                                   ),
+                                if (item.unitPrice != null)
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.attach_money, 
+                                        size: ConfigService.tinyIconSize, 
+                                        color: theme.colorScheme.secondary
+                                      ),
+                                      SizedBox(width: ConfigService.tinyPadding),
+                                      Text(
+                                        '${ConfigService.formatCurrency(item.unitPrice!)} × ${item.quantity}',
+                                        style: theme.textTheme.bodySmall,
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                            trailing: Container(
+                              padding: EdgeInsets.symmetric(horizontal: ConfigService.mediumPadding, vertical: ConfigService.tinyPadding),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
+                              ),
+                              child: Text(
+                                '${item.quantity}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: theme.colorScheme.onPrimaryContainer,
                                 ),
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],

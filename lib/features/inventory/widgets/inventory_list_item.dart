@@ -29,11 +29,8 @@ class InventoryListItem extends StatelessWidget {
     
     return Opacity(
       opacity: isEmptyItem ? 0.5 : 1.0,
-      child: Card(
-        color: theme.colorScheme.surface,
-        margin: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.tinyPadding),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ConfigService.mediumPadding)),
-        elevation: 1,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: ConfigService.tinyPadding),
         child: InkWell(
           borderRadius: BorderRadius.circular(ConfigService.borderRadiusMedium),
           onTap: onTap,

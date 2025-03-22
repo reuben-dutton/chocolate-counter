@@ -27,31 +27,14 @@ class SettingsScreen extends StatelessWidget {
         return Scaffold(
           body: Column(
             children: [
-              // // Title section with minimal padding
-              // Padding(
-              //   padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              //   child: Row(
-              //     children: [
-              //       Icon(Icons.settings, 
-              //         size: ConfigService.defaultIconSize,
-              //         color: theme.colorScheme.primary),
-              //       const SizedBox(width: 8),
-              //       Text('Settings',
-              //         style: theme.textTheme.titleLarge?.copyWith(
-              //           fontWeight: FontWeight.bold
-              //         )),
-              //     ],
-              //   ),
-              // ),
-              
               // Main content in an Expanded ListView
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.only(top: 0, bottom: 16),
                   children: [
                     // Theme Mode Section
-                    Card(
-                      margin: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -88,8 +71,8 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     
                     // Theme Type Section
-                    Card(
-                      margin: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -126,8 +109,8 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     
                     // UI Options Section
-                    Card(
-                      margin: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -182,8 +165,8 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     
                     // Debug & About Section
-                    Card(
-                      margin: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -250,7 +233,7 @@ class SettingsScreen extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       color: selected 
           ? theme.colorScheme.primary
-          : theme.colorScheme.surfaceVariant,
+          : theme.colorScheme.surfaceContainerHighest,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),

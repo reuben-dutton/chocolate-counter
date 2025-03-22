@@ -23,14 +23,10 @@ class AnalyticsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return Card(
-      margin: EdgeInsets.symmetric(
+    return Padding(
+      padding: EdgeInsets.symmetric(
         horizontal: ConfigService.smallPadding, 
         vertical: ConfigService.smallPadding
-      ),
-      color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ConfigService.defaultBorderRadius)
       ),
       child: InkWell(
         onTap: onTap,

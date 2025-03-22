@@ -95,64 +95,61 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Shipment info
-            Card(
-              color: theme.colorScheme.surface,
-              child: Padding(
-                padding: EdgeInsets.all(ConfigService.mediumPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+            Padding(
+              padding: EdgeInsets.all(ConfigService.mediumPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.info_outline, size: ConfigService.smallIconSize),
+                      SizedBox(width: ConfigService.smallPadding),
+                      Text(
+                        'Shipment Information',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: ConfigService.mediumPadding),
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: ConfigService.smallIconSize),
+                      SizedBox(width: ConfigService.smallPadding),
+                      Text(
+                        'Date: $formattedDate',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  if (widget.shipment.name != null) ...[
+                    SizedBox(height: ConfigService.tinyPadding),
                     Row(
                       children: [
-                        const Icon(Icons.info_outline, size: ConfigService.smallIconSize),
+                        const Icon(Icons.label, size: ConfigService.smallIconSize),
                         SizedBox(width: ConfigService.smallPadding),
                         Text(
-                          'Shipment Information',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: ConfigService.mediumPadding),
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today, size: ConfigService.smallIconSize),
-                        SizedBox(width: ConfigService.smallPadding),
-                        Text(
-                          'Date: $formattedDate',
+                          'Name: ${widget.shipment.name}',
                           style: const TextStyle(fontSize: 14),
                         ),
                       ],
                     ),
-                    if (widget.shipment.name != null) ...[
-                      SizedBox(height: ConfigService.tinyPadding),
-                      Row(
-                        children: [
-                          const Icon(Icons.label, size: ConfigService.smallIconSize),
-                          SizedBox(width: ConfigService.smallPadding),
-                          Text(
-                            'Name: ${widget.shipment.name}',
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        ],
+                  ],
+                  // Add total cost row
+                  SizedBox(height: ConfigService.tinyPadding),
+                  Row(
+                    children: [
+                      const Icon(Icons.monetization_on, size: ConfigService.smallIconSize),
+                      SizedBox(width: ConfigService.smallPadding),
+                      Text(
+                        'Total Cost: ${ConfigService.formatCurrency(totalCost)}',
+                        style: const TextStyle(
+                          fontSize: 14, 
+                          fontWeight: FontWeight.bold
+                        ),
                       ),
                     ],
-                    // Add total cost row
-                    SizedBox(height: ConfigService.tinyPadding),
-                    Row(
-                      children: [
-                        const Icon(Icons.monetization_on, size: ConfigService.smallIconSize),
-                        SizedBox(width: ConfigService.smallPadding),
-                        Text(
-                          'Total Cost: ${ConfigService.formatCurrency(totalCost)}',
-                          style: const TextStyle(
-                            fontSize: 14, 
-                            fontWeight: FontWeight.bold
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
             
@@ -218,57 +215,54 @@ class _ShipmentItemsList extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return Card(
-      color: theme.colorScheme.surface,
-      child: Padding(
-        padding: EdgeInsets.all(ConfigService.mediumPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+    return Padding(
+      padding: EdgeInsets.all(ConfigService.mediumPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.inventory_2, size: ConfigService.smallIconSize),
+                  SizedBox(width: ConfigService.smallPadding),
+                  Text(
+                    'Items (${items.length})',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14),
+                  ),
+                ],
+              ),
+              Tooltip(
+                message: 'Tap the calendar icon to edit expiration dates',
+                child: Row(
                   children: [
-                    const Icon(Icons.inventory_2, size: ConfigService.smallIconSize),
-                    SizedBox(width: ConfigService.smallPadding),
+                    const Icon(Icons.edit_calendar, size: ConfigService.smallIconSize),
+                    SizedBox(width: ConfigService.mediumPadding),
                     Text(
-                      'Items (${items.length})',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14),
+                      'Edit dates', 
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.primary
+                      ),
                     ),
                   ],
                 ),
-                Tooltip(
-                  message: 'Tap the calendar icon to edit expiration dates',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.edit_calendar, size: ConfigService.smallIconSize),
-                      SizedBox(width: ConfigService.mediumPadding),
-                      Text(
-                        'Edit dates', 
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.primary
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: ConfigService.smallPadding),
-            if (items.isEmpty)
-              Padding(
-                padding: EdgeInsets.all(ConfigService.smallPadding),
-                child: Text('No items in this shipment.'),
-              )
-            else
-              ShipmentItemList(
-                items: items,
-                onExpirationDateChanged: (shipmentItemId, newExpirationDate) => _updateItemExpirationDate(context, shipmentItemId, newExpirationDate),
               ),
-          ],
-        ),
+            ],
+          ),
+          SizedBox(height: ConfigService.smallPadding),
+          if (items.isEmpty)
+            Padding(
+              padding: EdgeInsets.all(ConfigService.smallPadding),
+              child: Text('No items in this shipment.'),
+            )
+          else
+            ShipmentItemList(
+              items: items,
+              onExpirationDateChanged: (shipmentItemId, newExpirationDate) => _updateItemExpirationDate(context, shipmentItemId, newExpirationDate),
+            ),
+        ],
       ),
     );
   }

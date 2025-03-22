@@ -72,34 +72,31 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
       children: [
         // Available items
         Expanded(
-          child: Card(
-            color: theme.colorScheme.surface,
-            child: Padding(
-              padding: EdgeInsets.all(ConfigService.tinyPadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SectionHeaderWidget(
-                    title: 'Available Items',
-                    icon: Icons.list,
-                    iconColor: theme.colorScheme.secondary,
-                  ),
-                  SizedBox(height: ConfigService.tinyPadding),
-                  Expanded(
-                    child: filteredItems.isEmpty
-                        ? const Center(child: Text('No matching items found'))
-                        : ListView.builder(
-                            itemCount: filteredItems.length,
-                            itemBuilder: (context, index) {
-                              return AvailableItemTile(
-                                item: filteredItems[index],
-                                onAdd: _showAddItemDialog,
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
+          child: Padding(
+            padding: EdgeInsets.all(ConfigService.tinyPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SectionHeaderWidget(
+                  title: 'Available Items',
+                  icon: Icons.list,
+                  iconColor: theme.colorScheme.secondary,
+                ),
+                SizedBox(height: ConfigService.tinyPadding),
+                Expanded(
+                  child: filteredItems.isEmpty
+                      ? const Center(child: Text('No matching items found'))
+                      : ListView.builder(
+                          itemCount: filteredItems.length,
+                          itemBuilder: (context, index) {
+                            return AvailableItemTile(
+                              item: filteredItems[index],
+                              onAdd: _showAddItemDialog,
+                            );
+                          },
+                        ),
+                ),
+              ],
             ),
           ),
         ),
@@ -107,39 +104,36 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
         // Selected items
         if (_selectedItems.isNotEmpty) ...[
           SizedBox(height: ConfigService.mediumPadding),
-          Card(
-            color: theme.colorScheme.surface,
-            child: Padding(
-              padding: EdgeInsets.all(ConfigService.smallPadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SectionHeaderWidget(
-                    title: 'Selected Items',
-                    icon: Icons.check_circle,
-                    iconColor: theme.colorScheme.primary,
+          Padding(
+            padding: EdgeInsets.all(ConfigService.smallPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SectionHeaderWidget(
+                  title: 'Selected Items',
+                  icon: Icons.check_circle,
+                  iconColor: theme.colorScheme.primary,
+                ),
+                SizedBox(height: ConfigService.tinyPadding),
+                Container(
+                  constraints: BoxConstraints(
+                    maxHeight: _selectedItems.length > 2 ? 150 : 100,
                   ),
-                  SizedBox(height: ConfigService.tinyPadding),
-                  Container(
-                    constraints: BoxConstraints(
-                      maxHeight: _selectedItems.length > 2 ? 150 : 100,
-                    ),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: _selectedItems.length,
-                      itemBuilder: (context, index) {
-                        return SelectedShipmentItemTile(
-                          key: ValueKey(_selectedItems[index].itemDefinitionId),
-                          item: _selectedItems[index],
-                          onEdit: (quantity, expirationDate, unitPrice) => 
-                              _updateItem(index, quantity, expirationDate, unitPrice),
-                          onRemove: () => _removeItem(index),
-                        );
-                      },
-                    ),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _selectedItems.length,
+                    itemBuilder: (context, index) {
+                      return SelectedShipmentItemTile(
+                        key: ValueKey(_selectedItems[index].itemDefinitionId),
+                        item: _selectedItems[index],
+                        onEdit: (quantity, expirationDate, unitPrice) => 
+                            _updateItem(index, quantity, expirationDate, unitPrice),
+                        onRemove: () => _removeItem(index),
+                      );
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           SizedBox(height: ConfigService.mediumPadding),
