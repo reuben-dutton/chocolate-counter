@@ -1,3 +1,4 @@
+// lib/features/analytics/screens/analytics_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/config_service.dart';
@@ -5,9 +6,12 @@ import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/features/analytics/bloc/analytics_bloc.dart';
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
 import 'package:food_inventory/features/analytics/widgets/analytics_card.dart';
-import 'package:food_inventory/features/analytics/widgets/time_period_selectors.dart';
+import 'package:food_inventory/features/analytics/widgets/expiration_analytics_widget.dart';
 import 'package:food_inventory/features/analytics/widgets/popular_items_chart.dart';
 import 'package:food_inventory/features/analytics/widgets/popular_items_skeleton.dart';
+import 'package:food_inventory/features/analytics/widgets/sales_history_widget.dart';
+import 'package:food_inventory/features/analytics/widgets/stock_trends_widget.dart';
+import 'package:food_inventory/features/analytics/widgets/time_period_selectors.dart';
 import 'package:provider/provider.dart';
 
 class AnalyticsScreen extends StatefulWidget {
@@ -73,16 +77,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               padding: EdgeInsets.all(ConfigService.tinyPadding),
                               child: BlocBuilder<AnalyticsBloc, AnalyticsState>(
                                 builder: (context, state) {
-                                  switch (state.selectedType) {
-                                    case AnalyticsType.popularItems:
-                                      return _buildPopularItemsContent(context, state);
-                                    case AnalyticsType.stockTrends:
-                                      return _buildStockTrendsContent();
-                                    case AnalyticsType.expirationAnalytics:
-                                      return _buildExpirationAnalyticsContent();
-                                    case AnalyticsType.salesHistory:
-                                      return _buildSalesHistoryContent();
-                                  }
+                                  return IndexedStack(
+                                    index: state.selectedType.index,
+                                    children: [
+                                      _buildPopularItemsContent(context, state), // Popular Items
+                                      StockTrendsWidget(),                      // Stock Trends
+                                      ExpirationAnalyticsWidget(),              // Expiration Analytics  
+                                      SalesHistoryWidget(),                     // Sales History
+                                    ],
+                                  );
                                 },
                               ),
                             ),
@@ -202,39 +205,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       child: const Center(
         heightFactor: 2,
         child: Text('No data available'),
-      ),
-    );
-  }
-
-  Widget _buildStockTrendsContent() {
-    return const AnalyticsCard(
-      title: 'Stock Trends',
-      icon: Icons.trending_up,
-      child: Center(
-        heightFactor: 2,
-        child: Text('Stock Trends Coming Soon'),
-      ),
-    );
-  }
-
-  Widget _buildExpirationAnalyticsContent() {
-    return const AnalyticsCard(
-      title: 'Expiration Analytics',
-      icon: Icons.event_busy,
-      child: Center(
-        heightFactor: 2,
-        child: Text('Expiration Analytics Coming Soon'),
-      ),
-    );
-  }
-
-  Widget _buildSalesHistoryContent() {
-    return const AnalyticsCard(
-      title: 'Sales History',
-      icon: Icons.attach_money,
-      child: Center(
-        heightFactor: 2,
-        child: Text('Sales History Coming Soon'),
       ),
     );
   }

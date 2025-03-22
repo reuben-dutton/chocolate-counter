@@ -10,14 +10,14 @@ import 'package:food_inventory/features/analytics/widgets/stock_trends_chart.dar
 import 'package:food_inventory/features/analytics/widgets/time_period_selectors.dart';
 import 'package:provider/provider.dart';
 
-class StockTrendsScreen extends StatefulWidget {
-  const StockTrendsScreen({super.key});
+class StockTrendsWidget extends StatefulWidget {
+  const StockTrendsWidget({super.key});
 
   @override
-  State<StockTrendsScreen> createState() => _StockTrendsScreenState();
+  State<StockTrendsWidget> createState() => _StockTrendsWidgetState();
 }
 
-class _StockTrendsScreenState extends State<StockTrendsScreen> {
+class _StockTrendsWidgetState extends State<StockTrendsWidget> {
   late StockTrendsBloc _stockTrendsBloc;
 
   @override
@@ -38,8 +38,9 @@ class _StockTrendsScreenState extends State<StockTrendsScreen> {
   Widget build(BuildContext context) {
     return BlocProvider<StockTrendsBloc>.value(
       value: _stockTrendsBloc,
-      child: BlocListener<StockTrendsBloc, StockTrendsState>(
-        listenWhen: (previous, current) => current.error != null && previous.error != current.error,
+      child: BlocConsumer<StockTrendsBloc, StockTrendsState>(
+        listenWhen: (previous, current) => 
+          current.error != null && previous.error != current.error,
         listener: (context, state) {
           if (state.error != null) {
             ErrorHandler.showErrorSnackBar(
@@ -49,48 +50,21 @@ class _StockTrendsScreenState extends State<StockTrendsScreen> {
             );
           }
         },
-        child: Scaffold(
-          body: RefreshIndicator(
-            onRefresh: () async {
-              // Preserve the current time period when refreshing
-              final currentState = context.read<StockTrendsBloc>().state;
-              context.read<StockTrendsBloc>().add(
-                LoadStockTrendsData(timePeriod: currentState.timePeriod)
-              );
-            },
-            child: _buildContent(),
-          ),
-        ),
+        builder: (context, state) {
+          return AnalyticsCard(
+            title: 'Stock Trends',
+            icon: Icons.trending_up,
+            titleChild: _buildTimePeriodSelector(context, state),
+            isLoading: state is StockTrendsLoading,
+            child: state is StockTrendsLoaded
+                ? StockTrendsChart(trendsData: state.data.trendData)
+                : const Center(
+                    heightFactor: 2,
+                    child: Text('No data available'),
+                  ),
+          );
+        },
       ),
-    );
-  }
-
-  Widget _buildContent() {
-    return BlocBuilder<StockTrendsBloc, StockTrendsState>(
-      builder: (context, state) {
-        return CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(ConfigService.tinyPadding),
-                child: AnalyticsCard(
-                  title: 'Stock Trends',
-                  icon: Icons.trending_up,
-                  titleChild: _buildTimePeriodSelector(context, state),
-                  child: state is StockTrendsLoading
-                      ? const StockTrendsChart(trendsData: [], isLoading: true)
-                      : state is StockTrendsLoaded
-                          ? StockTrendsChart(trendsData: state.data.trendData)
-                          : const Center(
-                              heightFactor: 2,
-                              child: Text('No data available'),
-                            ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 
