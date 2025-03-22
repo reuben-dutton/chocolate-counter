@@ -3,8 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
-import 'package:food_inventory/common/widgets/count_display_widget.dart';
-import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:food_inventory/common/widgets/section_header_widget.dart';
 import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/data/models/inventory_movement.dart';
@@ -17,6 +15,7 @@ import 'package:food_inventory/features/inventory/services/inventory_service.dar
 import 'package:food_inventory/features/inventory/widgets/inventory_movement_list.dart';
 import 'package:food_inventory/features/inventory/widgets/inventory_to_stock_bottom_sheet.dart';
 import 'package:food_inventory/features/inventory/widgets/item_expiration_list.dart';
+import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:provider/provider.dart';
 
 class ItemDetailScreen extends StatefulWidget {
@@ -137,11 +136,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   // Barcode (if available)
                   if (_currentItemDefinition.barcode != null)
                     Padding(
-                      padding: EdgeInsets.all(ConfigService.defaultPadding),
+                      padding: EdgeInsets.symmetric(vertical: ConfigService.smallPadding),
                       child: Row(
                         children: [
                           Icon(Icons.qr_code, size: ConfigService.mediumIconSize, color: theme.colorScheme.primary),
-                          SizedBox(height: ConfigService.smallPadding),
+                          SizedBox(width: ConfigService.smallPadding),
                           Text(
                             _currentItemDefinition.barcode!,
                             style: theme.textTheme.bodyMedium?.copyWith(
@@ -152,13 +151,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       ),
                     ),
                   
-                  // Item counts
-                  _buildCounts(theme, itemData.counts),
-                  
                   SizedBox(height: ConfigService.defaultPadding),
-
-                  // Actions
-                  _ItemActions(
+                  
+                  // Stock and Inventory counts + actions
+                  _ItemCountsAndActions(
                     itemDefinitionId: _currentItemDefinition.id!,
                     stockCount: itemData.counts['stock'] ?? 0,
                     inventoryCount: itemData.counts['inventory'] ?? 0,
@@ -183,38 +179,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     
     // Fallback if no data loaded yet
     return const Center(child: Text('Failed to load item details'));
-  }
-
-  Widget _buildCounts(ThemeData theme, Map<String, int> counts) {
-    final stockCount = counts['stock'] ?? 0;
-    final inventoryCount = counts['inventory'] ?? 0;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: ConfigService.smallPadding),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            // Stock count
-            CountDisplayWidget(
-              icon: Icons.shopping_cart,
-              label: 'Stock',
-              count: stockCount,
-              color: theme.colorScheme.primary,
-            ),
-            
-            // Inventory count
-            CountDisplayWidget(
-              icon: Icons.inventory_2,
-              label: 'Inventory',
-              count: inventoryCount,
-              color: theme.colorScheme.secondary,
-            ),
-          ],
-        ),
-      ],
-    );
   }
   
   Widget _buildExpirationDates(ThemeData theme, List<dynamic> instances) {
@@ -333,13 +297,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 }
 
-/// Extracted widget for item actions to prevent parent rebuilds
-class _ItemActions extends StatelessWidget {
+/// Extracted widget for item counts and actions
+class _ItemCountsAndActions extends StatelessWidget {
   final int itemDefinitionId;
   final int stockCount;
   final int inventoryCount;
   
-  const _ItemActions({
+  const _ItemCountsAndActions({
     required this.itemDefinitionId,
     required this.stockCount,
     required this.inventoryCount,
@@ -353,31 +317,124 @@ class _ItemActions extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Stock and Inventory counts in vertical layout
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: ConfigService.defaultPadding),
+          child: Column(
+            children: [
+              // Stock row
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      Icons.shopping_cart,
+                      color: theme.colorScheme.primary,
+                      size: ConfigService.defaultIconSize,
+                    ),
+                  ),
+                  SizedBox(width: ConfigService.defaultPadding),
+                  Text(
+                    'Stock',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const Spacer(),
+                  Text(
+                    '$stockCount',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+              
+              SizedBox(height: ConfigService.defaultPadding),
+              
+              // Inventory row
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.secondary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      Icons.inventory_2,
+                      color: theme.colorScheme.secondary,
+                      size: ConfigService.defaultIconSize,
+                    ),
+                  ),
+                  SizedBox(width: ConfigService.defaultPadding),
+                  Text(
+                    'Inventory',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const Spacer(),
+                  Text(
+                    '$inventoryCount',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        
+        SizedBox(height: ConfigService.largePadding),
+        
+        // Action buttons - full width and horizontal
         Row(
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                icon: Icon(Icons.remove_shopping_cart, size: ConfigService.mediumIconSize, color: theme.colorScheme.onSecondary),
+                icon: Icon(Icons.remove_shopping_cart, 
+                  size: ConfigService.smallIconSize,
+                  color: theme.colorScheme.onSecondary,
+                ),
                 label: const Text('Record Sale'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.secondary,
                   foregroundColor: theme.colorScheme.onSecondary,
                   padding: EdgeInsets.symmetric(vertical: ConfigService.mediumPadding),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
+                  ),
                 ),
-                onPressed: stockCount > 0 ? () => _updateStock(context, stockCount, dialogService) : null,
+                onPressed: stockCount > 0 
+                    ? () => _updateStock(context, stockCount, dialogService) 
+                    : null,
               ),
             ),
             SizedBox(width: ConfigService.mediumPadding),
             Expanded(
               child: ElevatedButton.icon(
-                icon: Icon(Icons.move_up, size: ConfigService.mediumIconSize, color: theme.colorScheme.onTertiary),
+                icon: Icon(Icons.move_up, 
+                  size: ConfigService.smallIconSize,
+                  color: theme.colorScheme.onTertiary,
+                ),
                 label: const Text('Move to Stock'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.tertiary,
                   foregroundColor: theme.colorScheme.onTertiary,
                   padding: EdgeInsets.symmetric(vertical: ConfigService.mediumPadding),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(ConfigService.borderRadiusSmall),
+                  ),
                 ),
-                onPressed: inventoryCount > 0 ? () => _moveToStock(context, inventoryCount) : null,
+                onPressed: inventoryCount > 0 
+                    ? () => _moveToStock(context, inventoryCount)
+                    : null,
               ),
             ),
           ],
