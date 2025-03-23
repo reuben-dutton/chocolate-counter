@@ -36,8 +36,8 @@ class ExpirationDateWidget extends StatelessWidget {
     final daysUntil = expirationDate!.difference(DateTime.now()).inDays;
     final String humanReadableText = _getHumanReadableTimespan(daysUntil);
     
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         if (showIcon) ...[
           Icon(
@@ -63,6 +63,7 @@ class ExpirationDateWidget extends StatelessWidget {
             color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
