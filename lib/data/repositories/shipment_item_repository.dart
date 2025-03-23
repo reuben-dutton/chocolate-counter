@@ -30,7 +30,7 @@ class ShipmentItemRepository extends BaseRepository<ShipmentItem> {
   
   /// Get all shipment items for a specific shipment with their item definitions
   Future<List<ShipmentItem>> getItemsForShipment(int shipmentId, {Transaction? txn}) async {
-    return _withTransactionIfNeeded(txn, (transaction) async {
+    return withTransactionIfNeeded(txn, (transaction) async {
       final items = await getWhere(
         where: 'shipmentId = ?',
         whereArgs: [shipmentId],
@@ -73,7 +73,7 @@ class ShipmentItemRepository extends BaseRepository<ShipmentItem> {
   
   /// Update the expiration date for a shipment item
   Future<int> updateExpirationDate(int id, DateTime? expirationDate, {Transaction? txn}) async {
-    return _withTransactionIfNeeded(txn, (db) async {
+    return withTransactionIfNeeded(txn, (db) async {
       return await db.update(
         tableName,
         {'expirationDate': expirationDate?.millisecondsSinceEpoch},
@@ -81,17 +81,5 @@ class ShipmentItemRepository extends BaseRepository<ShipmentItem> {
         whereArgs: [id],
       );
     });
-  }
-  
-  // Helper method for transaction management
-  Future<T> _withTransactionIfNeeded<T>(
-    Transaction? txn,
-    Future<T> Function(Transaction) operation
-  ) async {
-    if (txn != null) {
-      return await operation(txn);
-    } else {
-      return await withTransaction(operation);
-    }
   }
 }

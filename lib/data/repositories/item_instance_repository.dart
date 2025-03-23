@@ -41,7 +41,7 @@ class ItemInstanceRepository extends BaseRepository<ItemInstance> {
       return [];
     }
     
-    return _withTransactionIfNeeded(txn, (transaction) async {
+    return withTransactionIfNeeded(txn, (transaction) async {
       final itemDefinition = await _itemDefinitionRepository.getById(itemDefinitionId, txn: transaction);
       
       // Attach the item definition to each instance
@@ -61,7 +61,7 @@ class ItemInstanceRepository extends BaseRepository<ItemInstance> {
   
   /// Get summary counts for stock and inventory items
   Future<Map<String, int>> getItemCounts(int itemDefinitionId, {Transaction? txn}) async {
-    return _withTransactionIfNeeded(txn, (db) async {
+    return withTransactionIfNeeded(txn, (db) async {
       try {
         // Get stock count - items with isInStock = 1
         final stockResult = await db.rawQuery('''
@@ -110,7 +110,7 @@ class ItemInstanceRepository extends BaseRepository<ItemInstance> {
   
   /// Update expiration dates for items linked to a shipment item
   Future<int> updateExpirationDatesByShipmentItemId(int shipmentItemId, DateTime? expirationDate, {Transaction? txn}) async {
-    return _withTransactionIfNeeded(txn, (db) async {
+    return withTransactionIfNeeded(txn, (db) async {
       return await db.update(
         tableName,
         {'expirationDate': expirationDate?.millisecondsSinceEpoch},
@@ -118,17 +118,5 @@ class ItemInstanceRepository extends BaseRepository<ItemInstance> {
         whereArgs: [shipmentItemId],
       );
     });
-  }
-
-  // Helper method for transaction management
-  Future<T> _withTransactionIfNeeded<T>(
-    Transaction? txn,
-    Future<T> Function(Transaction) operation
-  ) async {
-    if (txn != null) {
-      return await operation(txn);
-    } else {
-      return await withTransaction(operation);
-    }
   }
 }

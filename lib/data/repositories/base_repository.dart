@@ -25,7 +25,7 @@ abstract class BaseRepository<T> {
 
   /// Get all entities with optional transaction
   Future<List<T>> getAll({String? orderBy, Transaction? txn}) async {
-    return _withTransactionIfNeeded(txn, (db) async {
+    return withTransactionIfNeeded(txn, (db) async {
       final List<Map<String, dynamic>> maps = await db.query(
         tableName,
         orderBy: orderBy,
@@ -37,7 +37,7 @@ abstract class BaseRepository<T> {
 
   /// Get entity by ID with optional transaction
   Future<T?> getById(int id, {Transaction? txn}) async {
-    return _withTransactionIfNeeded(txn, (db) async {
+    return withTransactionIfNeeded(txn, (db) async {
       final List<Map<String, dynamic>> maps = await db.query(
         tableName,
         where: 'id = ?',
@@ -55,7 +55,7 @@ abstract class BaseRepository<T> {
 
   /// Create new entity with optional transaction
   Future<int> create(T entity, {Transaction? txn}) async {
-    return _withTransactionIfNeeded(txn, (db) async {
+    return withTransactionIfNeeded(txn, (db) async {
       final map = toMap(entity);
       
       // Remove ID field if it's null (for auto-increment)
@@ -69,7 +69,7 @@ abstract class BaseRepository<T> {
 
   /// Update existing entity with optional transaction
   Future<int> update(T entity, {Transaction? txn}) async {
-    return _withTransactionIfNeeded(txn, (db) async {
+    return withTransactionIfNeeded(txn, (db) async {
       final id = getId(entity);
       
       if (id == null) {
@@ -87,7 +87,7 @@ abstract class BaseRepository<T> {
 
   /// Delete entity by ID with optional transaction
   Future<int> delete(int id, {Transaction? txn}) async {
-    return _withTransactionIfNeeded(txn, (db) async {
+    return withTransactionIfNeeded(txn, (db) async {
       return await db.delete(
         tableName,
         where: 'id = ?',
@@ -103,7 +103,7 @@ abstract class BaseRepository<T> {
     String? orderBy,
     Transaction? txn,
   }) async {
-    return _withTransactionIfNeeded(txn, (db) async {
+    return withTransactionIfNeeded(txn, (db) async {
       final List<Map<String, dynamic>> maps = await db.query(
         tableName,
         where: where,
@@ -117,7 +117,7 @@ abstract class BaseRepository<T> {
 
   /// Execute a raw query with optional transaction
   Future<List<T>> rawQuery(String query, [List<dynamic>? arguments, Transaction? txn]) async {
-    return _withTransactionIfNeeded(txn, (db) async {
+    return withTransactionIfNeeded(txn, (db) async {
       final List<Map<String, dynamic>> maps = await db.rawQuery(query, arguments);
       
       return List.generate(maps.length, (i) => fromMap(maps[i]));
@@ -131,9 +131,9 @@ abstract class BaseRepository<T> {
   }
   
   /// Helper to use existing transaction or create a new one if needed
-  Future<R> _withTransactionIfNeeded<R>(
+  Future<R> withTransactionIfNeeded<R>(
     Transaction? txn, 
-    Future<R> Function(DatabaseExecutor db) action
+    Future<R> Function(Transaction db) action
   ) async {
     if (txn != null) {
       return await action(txn);

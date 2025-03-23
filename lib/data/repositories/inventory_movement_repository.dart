@@ -41,7 +41,7 @@ class InventoryMovementRepository extends BaseRepository<InventoryMovement> {
       return [];
     }
     
-    return _withTransactionIfNeeded(txn, (transaction) async {
+    return withTransactionIfNeeded(txn, (transaction) async {
       // Get item definition using the same transaction
       final itemDefinition = await _itemDefinitionRepository.getById(itemDefinitionId, txn: transaction);
       
@@ -61,24 +61,12 @@ class InventoryMovementRepository extends BaseRepository<InventoryMovement> {
   
   /// Clear movement history for an item
   Future<int> clearMovementsForItem(int itemDefinitionId, {Transaction? txn}) async {
-    return _withTransactionIfNeeded(txn, (db) async {
+    return withTransactionIfNeeded(txn, (db) async {
       return await db.delete(
         tableName,
         where: 'itemDefinitionId = ?',
         whereArgs: [itemDefinitionId],
       );
     });
-  }
-
-  // Helper method for transaction management
-  Future<T> _withTransactionIfNeeded<T>(
-    Transaction? txn,
-    Future<T> Function(Transaction) operation
-  ) async {
-    if (txn != null) {
-      return await operation(txn);
-    } else {
-      return await withTransaction(operation);
-    }
   }
 }

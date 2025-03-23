@@ -29,7 +29,7 @@ class ShipmentRepository extends BaseRepository<Shipment> {
   
   /// Get all shipments with their items
   Future<List<Shipment>> getAllWithItems({Transaction? txn}) async {
-    return _withTransactionIfNeeded(txn, (transaction) async {
+    return withTransactionIfNeeded(txn, (transaction) async {
       final shipments = await getAll(orderBy: 'date DESC', txn: transaction);
       
       return Future.wait(
@@ -48,7 +48,7 @@ class ShipmentRepository extends BaseRepository<Shipment> {
   
   /// Get a shipment with its items
   Future<Shipment?> getWithItems(int id, {Transaction? txn}) async {
-    return _withTransactionIfNeeded(txn, (transaction) async {
+    return withTransactionIfNeeded(txn, (transaction) async {
       final shipment = await getById(id, txn: transaction);
       
       if (shipment == null) {
@@ -64,17 +64,5 @@ class ShipmentRepository extends BaseRepository<Shipment> {
         items: items,
       );
     });
-  }
-  
-  // Helper method for transaction management
-  Future<T> _withTransactionIfNeeded<T>(
-    Transaction? txn,
-    Future<T> Function(Transaction) operation
-  ) async {
-    if (txn != null) {
-      return await operation(txn);
-    } else {
-      return await withTransaction(operation);
-    }
   }
 }

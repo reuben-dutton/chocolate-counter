@@ -32,9 +32,7 @@ class ShipmentService {
   /// Get all shipments with their items
   Future<List<Shipment>> getAllShipments({Transaction? txn}) async {
     try {
-      return _withTransactionIfNeeded(txn, (transaction) async {
-        return await _shipmentRepository.getAllWithItems(txn: transaction);
-      });
+      return _shipmentRepository.getAllWithItems(txn: txn);
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to get all shipments', e, stackTrace, 'ShipmentService');
       rethrow;
@@ -44,12 +42,7 @@ class ShipmentService {
   /// Get a specific shipment with its items
   Future<Shipment?> getShipment(int id, {Transaction? txn}) async {
     try {
-      if (txn != null) {
-        // If transaction is provided, use it for all operations
-        return await _shipmentRepository.getWithItems(id, txn: txn);
-      } else {
-        return _shipmentRepository.getWithItems(id);
-      }
+      return _shipmentRepository.getWithItems(id, txn: txn);
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to get shipment', e, stackTrace, 'ShipmentService');
       rethrow;
@@ -69,7 +62,7 @@ class ShipmentService {
   /// Create a new shipment and add inventory items
   Future<int> createShipment(Shipment shipment, {Transaction? txn}) async {
     try {
-      return _withTransactionIfNeeded(txn, (transaction) async {
+      return withTransaction((transaction) async {
         return await _createShipmentInternal(shipment, transaction);
       });
     } catch (e, stackTrace) {
@@ -135,9 +128,7 @@ class ShipmentService {
   /// Delete a shipment (inventory items are not affected)
   Future<int> deleteShipment(int id, {Transaction? txn}) async {
     try {
-      return _withTransactionIfNeeded(txn, (transaction) async {
-        return await _shipmentRepository.delete(id, txn: transaction);
-      });
+      return _shipmentRepository.delete(id, txn: txn);
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to delete shipment', e, stackTrace, 'ShipmentService');
       rethrow;
@@ -147,7 +138,7 @@ class ShipmentService {
   /// Update the expiration date of a shipment item and linked inventory items
   Future<void> updateShipmentItemExpiration(int shipmentItemId, DateTime? expirationDate, {Transaction? txn}) async {
     try {
-      return _withTransactionIfNeeded(txn, (transaction) async {
+      return withTransaction((transaction) async {
         await _updateExpiration(shipmentItemId, expirationDate, transaction);
       });
     } catch (e, stackTrace) {
@@ -182,18 +173,6 @@ class ShipmentService {
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to get shipment item', e, stackTrace, 'ShipmentService');
       rethrow;
-    }
-  }
-
-  // Helper method for transaction management
-  Future<T> _withTransactionIfNeeded<T>(
-    Transaction? txn,
-    Future<T> Function(Transaction) operation
-  ) async {
-    if (txn != null) {
-      return await operation(txn);
-    } else {
-      return await _shipmentRepository.withTransaction(operation);
     }
   }
 }

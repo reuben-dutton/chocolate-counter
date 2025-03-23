@@ -131,7 +131,7 @@ class InventoryService {
     final actualTimestamp = timestamp ?? DateTime.now();
     
     try {
-      return _withTransactionIfNeeded(txn, (transaction) async {
+      return withTransaction((transaction) async {
         await _updateStock(itemDefinitionId, decreaseAmount, actualTimestamp, transaction);
       });
     } catch (e, stackTrace) {
@@ -190,7 +190,7 @@ class InventoryService {
     final actualTimestamp = timestamp ?? DateTime.now();
     
     try {
-      return _withTransactionIfNeeded(txn, (transaction) async {
+      return withTransaction((transaction) async {
         await _moveToStock(itemDefinitionId, moveAmount, actualTimestamp, transaction);
       });
     } catch (e, stackTrace) {
@@ -295,18 +295,6 @@ class InventoryService {
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to find item by barcode', e, stackTrace, 'InventoryService');
       rethrow;
-    }
-  }
-
-  // Helper method for transaction management
-  Future<T> _withTransactionIfNeeded<T>(
-    Transaction? txn,
-    Future<T> Function(Transaction) operation
-  ) async {
-    if (txn != null) {
-      return await operation(txn);
-    } else {
-      return await _itemDefinitionRepository.withTransaction(operation);
     }
   }
 }
