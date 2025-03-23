@@ -1,12 +1,12 @@
-// lib/features/inventory/screens/inventory_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/utils/navigation_utils.dart';
-import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
+import 'package:food_inventory/data/repositories/item_definition_repository.dart';
+import 'package:food_inventory/features/inventory/cubit/item_definition_cubit.dart';
+import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
 import 'package:food_inventory/features/inventory/screens/add_item_definition_screen.dart';
 import 'package:food_inventory/features/inventory/screens/item_detail_screen.dart';
-import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/inventory/widgets/inventory_list_item.dart';
 import 'package:provider/provider.dart';
 
@@ -20,7 +20,7 @@ class InventoryScreen extends StatefulWidget {
 class _InventoryScreenState extends State<InventoryScreen> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-  late InventoryBloc _inventoryBloc;
+  late ItemDefinitionCubit _itemDefinitionCubit;
 
   @override
   void initState() {
@@ -35,28 +35,39 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Initialize the bloc in didChangeDependencies to ensure context is ready
-    final inventoryService = Provider.of<InventoryService>(context, listen: false);
-    _inventoryBloc = InventoryBloc(inventoryService);
-    _inventoryBloc.add(const InitializeInventoryScreen());
+    
+    // Get dependencies from provider
+    final itemDefinitionRepository = Provider.of<ItemDefinitionRepository>(context, listen: false);
+    final inventoryEventBus = Provider.of<InventoryEventBus>(context, listen: false);
+    
+    // Initialize the cubit with dependencies from provider
+    _itemDefinitionCubit = ItemDefinitionCubit(
+      itemDefinitionRepository,
+      inventoryEventBus,
+    );
+    
+    // Load initial data
+    _itemDefinitionCubit.loadItems();
   }
   
   @override
   void dispose() {
     _searchController.dispose();
-    _inventoryBloc.close();
+    _itemDefinitionCubit.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
-      value: _inventoryBloc,
-      child: BlocListener<InventoryBloc, InventoryState>(
+      value: _itemDefinitionCubit,
+      child: BlocListener<ItemDefinitionCubit, ItemDefinitionState>(
         listenWhen: (previous, current) => current.error != null && previous.error != current.error,
         listener: (context, state) {
           if (state.error != null) {
-            _inventoryBloc.handleError(context, state.error!);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.error!.message)),
+            );
           }
         },
         child: Scaffold(
@@ -126,8 +137,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
       context,
       const AddItemDefinitionScreen(),
     ).then((_) {
-      // Use _inventoryBloc directly instead of context.read
-      _inventoryBloc.add(const LoadInventoryItems());
+      // Refresh data when returning from add screen
+      _itemDefinitionCubit.loadItems();
     });
   }
 }
@@ -139,17 +150,17 @@ class _InventoryListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<InventoryBloc, InventoryState>(
+    return BlocBuilder<ItemDefinitionCubit, ItemDefinitionState>(
       buildWhen: (previous, current) => 
-        (current is InventoryLoading && previous is! InventoryLoading) || 
-        (current is InventoryItemsLoaded && (previous is! InventoryItemsLoaded || 
+        (current is ItemDefinitionLoading && previous is! ItemDefinitionLoading) || 
+        (current is ItemDefinitionLoaded && (previous is! ItemDefinitionLoaded || 
             previous.items != (current).items)),
       builder: (context, state) {
-        if (state is InventoryLoading) {
+        if (state is ItemDefinitionLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (state is InventoryItemsLoaded) {
+        if (state is ItemDefinitionLoaded) {
           final allItems = state.items;
           
           if (allItems.isEmpty) {
@@ -188,7 +199,7 @@ class _InventoryListView extends StatelessWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-              context.read<InventoryBloc>().add(const LoadInventoryItems());
+              context.read<ItemDefinitionCubit>().loadItems();
             },
             child: ListView.builder(
               // needs to be 0 padding at the top as we have padding from the menu indicator
@@ -202,14 +213,14 @@ class _InventoryListView extends StatelessWidget {
                   stockCount: item.stockCount,
                   inventoryCount: item.inventoryCount,
                   isEmptyItem: item.isEmptyItem,
-                  earliestExpirationDate: item.earliestExpirationDate, // Pass expiration date
+                  earliestExpirationDate: item.earliestExpirationDate,
                   onTap: () {
                     NavigationUtils.navigateWithSlide(
                       context,
                       ItemDetailScreen(itemDefinition: item.itemDefinition),
                     ).then((_) {
                       // Refresh data when returning from details
-                      context.read<InventoryBloc>().add(const LoadInventoryItems());
+                      context.read<ItemDefinitionCubit>().loadItems();
                     });
                   },
                 );

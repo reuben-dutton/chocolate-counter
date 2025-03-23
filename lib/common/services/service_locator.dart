@@ -13,6 +13,7 @@ import 'package:food_inventory/common/services/preferences_service.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:food_inventory/common/services/expiration_event_bus.dart';
+import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
 import 'package:get_it/get_it.dart';
 
 /// A service locator for managing dependency injection of services and repositories
@@ -40,6 +41,7 @@ class ServiceLocator {
     instance.registerSingleton<ImageService>(ImageService());
     instance.registerSingleton<ConfigService>(configService);
     instance.registerSingleton<ExpirationEventBus>(ExpirationEventBus());
+    instance.registerSingleton<InventoryEventBus>(InventoryEventBus());
     
     // Register repositories
     instance.registerSingleton<ItemDefinitionRepository>(
@@ -105,7 +107,5 @@ class ServiceLocator {
         instance<InventoryMovementFactory>(),
       ),
     );
-    
-    // Note: BLoCs are now managed by Provider in the app.dart file
   }
 }

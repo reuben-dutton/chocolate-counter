@@ -10,10 +10,16 @@ import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/analytics/repositories/analytics_repository.dart';
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
+import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
 import 'package:food_inventory/features/settings/bloc/preferences_bloc.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:food_inventory/theme/material_theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:food_inventory/data/repositories/inventory_movement_repository.dart';
+import 'package:food_inventory/data/repositories/item_definition_repository.dart';
+import 'package:food_inventory/data/repositories/item_instance_repository.dart';
+import 'package:food_inventory/data/repositories/shipment_repository.dart';
+import 'package:food_inventory/data/repositories/shipment_item_repository.dart';
 
 class FoodInventoryApp extends StatelessWidget {
   const FoodInventoryApp({super.key});
@@ -28,6 +34,14 @@ class FoodInventoryApp extends StatelessWidget {
     final preferencesService = ServiceLocator.instance<PreferencesService>();
     final databaseService = ServiceLocator.instance<DatabaseService>();
     final configService = ServiceLocator.instance<ConfigService>();
+    final inventoryEventBus = ServiceLocator.instance<InventoryEventBus>();
+    
+    // Get repositories from service locator
+    final itemDefinitionRepository = ServiceLocator.instance<ItemDefinitionRepository>();
+    final itemInstanceRepository = ServiceLocator.instance<ItemInstanceRepository>();
+    final inventoryMovementRepository = ServiceLocator.instance<InventoryMovementRepository>();
+    final shipmentRepository = ServiceLocator.instance<ShipmentRepository>();
+    final shipmentItemRepository = ServiceLocator.instance<ShipmentItemRepository>();
     
     // Create analytics repository
     final analyticsRepository = AnalyticsRepository(databaseService);
@@ -49,6 +63,14 @@ class FoodInventoryApp extends StatelessWidget {
         Provider<InventoryService>.value(value: inventoryService),
         Provider<ShipmentService>.value(value: shipmentService),
         Provider<DatabaseService>.value(value: databaseService),
+        Provider<InventoryEventBus>.value(value: inventoryEventBus),
+        
+        // Repositories
+        Provider<ItemDefinitionRepository>.value(value: itemDefinitionRepository),
+        Provider<ItemInstanceRepository>.value(value: itemInstanceRepository),
+        Provider<InventoryMovementRepository>.value(value: inventoryMovementRepository),
+        Provider<ShipmentRepository>.value(value: shipmentRepository),
+        Provider<ShipmentItemRepository>.value(value: shipmentItemRepository),
         
         // Analytics providers
         Provider<AnalyticsRepository>.value(value: analyticsRepository),
