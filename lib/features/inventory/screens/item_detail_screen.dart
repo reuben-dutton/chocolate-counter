@@ -54,7 +54,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     
     // Initialize cubits with injected dependencies
     _itemDetailCubit = ItemDetailCubit(inventoryService, inventoryEventBus);
-    _stockManagementCubit = StockManagementCubit(inventoryService, inventoryEventBus);
+    _stockManagementCubit = StockManagementCubit(inventoryService);
     
     // Load initial data
     _itemDetailCubit.loadItemDetail(_currentItemDefinition.id!);
@@ -71,12 +71,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   Widget build(BuildContext context) {
     final dialogService = Provider.of<DialogService>(context);
     final imageService = Provider.of<ImageService>(context);
+    final inventoryService = Provider.of<InventoryService>(context, listen: false);
     final theme = Theme.of(context);
     
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _itemDetailCubit),
-        BlocProvider.value(value: _stockManagementCubit),
+        BlocProvider(
+          create: (context) => StockManagementCubit(inventoryService),
+        ),
       ],
       child: MultiBlocListener(
         listeners: [
@@ -359,6 +362,7 @@ class _ItemCountsAndActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dialogService = Provider.of<DialogService>(context);
+    final inventoryService = Provider.of<InventoryService>(context, listen: false);
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,7 +462,7 @@ class _ItemCountsAndActions extends StatelessWidget {
                   ),
                 ),
                 onPressed: stockCount > 0 
-                    ? () => _updateStock(context, stockCount, dialogService) 
+                    ? () => _updateStock(context, stockCount, dialogService, inventoryService) 
                     : null,
               ),
             ),
@@ -479,7 +483,7 @@ class _ItemCountsAndActions extends StatelessWidget {
                   ),
                 ),
                 onPressed: inventoryCount > 0 
-                    ? () => _moveToStock(context, inventoryCount)
+                    ? () => _moveToStock(context, inventoryCount, inventoryService)
                     : null,
               ),
             ),
@@ -489,7 +493,7 @@ class _ItemCountsAndActions extends StatelessWidget {
     );
   }
   
-  void _updateStock(BuildContext context, int currentStock, DialogService dialogService) async {
+  void _updateStock(BuildContext context, int currentStock, DialogService dialogService, InventoryService inventoryService) async {
     try {
       // Use the bottom sheet version of the quantity dialog
       final result = await dialogService.showQuantityBottomSheet(
@@ -512,7 +516,7 @@ class _ItemCountsAndActions extends StatelessWidget {
     }
   }
 
-  void _moveToStock(BuildContext context, int currentInventory) async {
+  void _moveToStock(BuildContext context, int currentInventory, InventoryService inventoryService) async {
     try {
       // Use the bottom sheet instead of dialog
       final result = await showInventoryToStockBottomSheet(

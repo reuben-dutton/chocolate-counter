@@ -1,8 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
-import 'package:food_inventory/data/models/inventory_movement.dart';
-import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 
 // States
@@ -52,11 +50,9 @@ class StockOperationFailure extends StockManagementState {
 // Cubit
 class StockManagementCubit extends Cubit<StockManagementState> {
   final InventoryService _inventoryService;
-  final InventoryEventBus _eventBus;
 
   StockManagementCubit(
     this._inventoryService,
-    this._eventBus
   ) : super(const StockManagementInitial());
 
   Future<void> recordStockSale(int itemDefinitionId, int decreaseAmount) async {
@@ -64,10 +60,8 @@ class StockManagementCubit extends Cubit<StockManagementState> {
       emit(const StockManagementLoading());
       
       // Transaction is managed inside the service method
+      // The service now handles both event bus notifications
       await _inventoryService.updateStockCount(itemDefinitionId, decreaseAmount);
-      
-      // Notify about inventory change
-      _eventBus.emit(InventoryDataChanged(itemDefinitionId: itemDefinitionId));
       
       emit(StockOperationSuccess(
         operationType: 'stockSale',
@@ -92,10 +86,8 @@ class StockManagementCubit extends Cubit<StockManagementState> {
       emit(const StockManagementLoading());
       
       // Transaction is managed inside the service method
+      // The service now handles both event bus notifications
       await _inventoryService.moveInventoryToStock(itemDefinitionId, moveAmount);
-      
-      // Notify about inventory change
-      _eventBus.emit(InventoryDataChanged(itemDefinitionId: itemDefinitionId));
       
       emit(StockOperationSuccess(
         operationType: 'moveToStock',

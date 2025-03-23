@@ -1,4 +1,5 @@
 import 'package:food_inventory/common/services/error_handler.dart';
+import 'package:food_inventory/common/services/expiration_event_bus.dart';
 import 'package:food_inventory/data/factories/inventory_movement_factory.dart';
 import 'package:food_inventory/data/factories/item_instance_factory.dart';
 import 'package:food_inventory/data/models/inventory_movement.dart';
@@ -7,6 +8,8 @@ import 'package:food_inventory/data/models/item_instance.dart';
 import 'package:food_inventory/data/repositories/inventory_movement_repository.dart';
 import 'package:food_inventory/data/repositories/item_definition_repository.dart';
 import 'package:food_inventory/data/repositories/item_instance_repository.dart';
+import 'package:food_inventory/common/services/service_locator.dart';
+import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// Service for managing inventory-related operations
@@ -16,6 +19,8 @@ class InventoryService {
   final InventoryMovementRepository _inventoryMovementRepository;
   final ItemInstanceFactory _itemInstanceFactory;
   final InventoryMovementFactory _movementFactory;
+  final ExpirationEventBus _expirationEventBus;
+  final InventoryEventBus _inventoryEventBus;
 
   InventoryService(
     this._itemDefinitionRepository,
@@ -23,7 +28,9 @@ class InventoryService {
     this._inventoryMovementRepository,
   ) : 
     _itemInstanceFactory = ItemInstanceFactory(_itemInstanceRepository, _itemDefinitionRepository),
-    _movementFactory = InventoryMovementFactory(_inventoryMovementRepository);
+    _movementFactory = InventoryMovementFactory(_inventoryMovementRepository),
+    _expirationEventBus = ServiceLocator.instance<ExpirationEventBus>(),
+    _inventoryEventBus = ServiceLocator.instance<InventoryEventBus>();
 
   /// Run a function within a transaction
   Future<R> withTransaction<R>(Future<R> Function(Transaction txn) action) async {
@@ -109,13 +116,23 @@ class InventoryService {
     Transaction? txn,
   }) async {
     try {
-      return _itemInstanceFactory.addToInventory(
+      final result = await _itemInstanceFactory.addToInventory(
         itemDefinitionId: itemDefinitionId,
         quantity: quantity,
         expirationDate: expirationDate,
         shipmentItemId: shipmentItemId,
         txn: txn,
       );
+      
+      // Notify event buses
+      _inventoryEventBus.emit(InventoryDataChanged(itemDefinitionId: itemDefinitionId));
+      
+      // Notify ExpirationEventBus when adding an item with expiration date
+      if (expirationDate != null) {
+        _expirationEventBus.emitExpirationChanged();
+      }
+      
+      return result;
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to add item to inventory', e, stackTrace, 'InventoryService');
       rethrow;
@@ -133,6 +150,10 @@ class InventoryService {
     try {
       return withTransaction((transaction) async {
         await _updateStock(itemDefinitionId, decreaseAmount, actualTimestamp, transaction);
+        
+        // Notify both event buses about the changes
+        _inventoryEventBus.emit(InventoryDataChanged(itemDefinitionId: itemDefinitionId));
+        _expirationEventBus.emitExpirationChanged();
       });
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to update stock count', e, stackTrace, 'InventoryService');
@@ -192,6 +213,10 @@ class InventoryService {
     try {
       return withTransaction((transaction) async {
         await _moveToStock(itemDefinitionId, moveAmount, actualTimestamp, transaction);
+        
+        // Notify both event buses about the changes
+        _inventoryEventBus.emit(InventoryDataChanged(itemDefinitionId: itemDefinitionId));
+        _expirationEventBus.emitExpirationChanged();
       });
     } catch (e, stackTrace) {
       ErrorHandler.logError('Failed to move inventory to stock', e, stackTrace, 'InventoryService');
