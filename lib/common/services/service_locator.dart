@@ -1,3 +1,4 @@
+// Update to lib/common/services/service_locator.dart to register the ExportService
 import 'package:food_inventory/data/factories/inventory_movement_factory.dart';
 import 'package:food_inventory/data/factories/item_instance_factory.dart';
 import 'package:food_inventory/data/repositories/inventory_movement_repository.dart';
@@ -14,6 +15,7 @@ import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:food_inventory/common/services/expiration_event_bus.dart';
 import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
+import 'package:food_inventory/features/export/services/export_service.dart';
 import 'package:get_it/get_it.dart';
 
 /// A service locator for managing dependency injection of services and repositories
@@ -105,6 +107,13 @@ class ServiceLocator {
         instance<ShipmentItemRepository>(),
         instance<ItemInstanceRepository>(),
         instance<InventoryMovementFactory>(),
+      ),
+    );
+    
+    // Register Export Service
+    instance.registerSingleton<ExportService>(
+      ExportService(
+        instance<DatabaseService>(),
       ),
     );
   }

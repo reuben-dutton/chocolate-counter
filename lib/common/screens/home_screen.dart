@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/analytics/screens/analytics_screen.dart';
+import 'package:food_inventory/features/export/screens/export_screen.dart';
 import 'package:food_inventory/features/inventory/screens/inventory_screen.dart';
 import 'package:food_inventory/features/shipments/screens/shipments_screen.dart';
 import 'package:food_inventory/features/settings/screens/settings_screen.dart';
@@ -23,14 +24,16 @@ class _HomeScreenState extends State<HomeScreen> {
     'Analytics',
     'Inventory',
     'Shipments',
+    'Export',
   ];
-  
+
   // Screen icons
   final List<IconData> _screenIcons = [
     Icons.settings,
     Icons.analytics,
     Icons.inventory_2,
     Icons.local_shipping,
+    Icons.download_rounded,
   ];
 
   // Define screens as lazy loading widgets to avoid premature BLoC creation
@@ -39,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const AnalyticsScreen(),
     const InventoryScreen(),
     const ShipmentsScreen(),
+    const ExportScreen(),
   ];
 
   @override
@@ -94,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 12),
                   // Page indicator dots
                   Row(
-                    children: List.generate(4, (index) {
+                    children: List.generate(5, (index) {
                       return Container(
                         width: 6,
                         height: 6,

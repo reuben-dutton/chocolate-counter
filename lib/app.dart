@@ -1,4 +1,6 @@
+// Update to lib/app.dart to add the Export screen
 import 'package:flutter/material.dart';
+import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:provider/provider.dart';
 import 'package:food_inventory/common/screens/home_screen.dart';
 import 'package:food_inventory/common/services/dialog_service.dart';
@@ -6,13 +8,13 @@ import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/common/services/preferences_service.dart';
 import 'package:food_inventory/common/services/database_service.dart';
 import 'package:food_inventory/common/services/config_service.dart';
+import 'package:food_inventory/features/export/services/export_service.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/analytics/repositories/analytics_repository.dart';
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
 import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
 import 'package:food_inventory/features/settings/bloc/preferences_bloc.dart';
-import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:food_inventory/theme/material_theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/data/repositories/inventory_movement_repository.dart';
@@ -35,6 +37,9 @@ class FoodInventoryApp extends StatelessWidget {
     final databaseService = ServiceLocator.instance<DatabaseService>();
     final configService = ServiceLocator.instance<ConfigService>();
     final inventoryEventBus = ServiceLocator.instance<InventoryEventBus>();
+    
+    // Register the ExportService
+    final exportService = ExportService(databaseService);
     
     // Get repositories from service locator
     final itemDefinitionRepository = ServiceLocator.instance<ItemDefinitionRepository>();
@@ -64,6 +69,7 @@ class FoodInventoryApp extends StatelessWidget {
         Provider<ShipmentService>.value(value: shipmentService),
         Provider<DatabaseService>.value(value: databaseService),
         Provider<InventoryEventBus>.value(value: inventoryEventBus),
+        Provider<ExportService>.value(value: exportService),
         
         // Repositories
         Provider<ItemDefinitionRepository>.value(value: itemDefinitionRepository),
