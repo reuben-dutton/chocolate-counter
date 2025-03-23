@@ -4,9 +4,11 @@ import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
-import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
+import 'package:food_inventory/data/repositories/item_definition_repository.dart';
+import 'package:food_inventory/data/repositories/item_instance_repository.dart';
+import 'package:food_inventory/features/inventory/cubit/item_definition_cubit.dart';
+import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 
@@ -30,6 +32,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   String? _existingImagePath;
   bool _isUpdating = false;
   late ImageService _imageService;
+  late ItemDefinitionCubit _itemDefinitionCubit;
 
   @override
   void initState() {
@@ -48,12 +51,25 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _imageService = Provider.of<ImageService>(context, listen: false);
+    
+    // Get repositories from Provider
+    final itemDefinitionRepository = Provider.of<ItemDefinitionRepository>(context, listen: false);
+    final itemInstanceRepository = Provider.of<ItemInstanceRepository>(context, listen: false);
+    final inventoryEventBus = Provider.of<InventoryEventBus>(context, listen: false);
+    
+    // Initialize cubit
+    _itemDefinitionCubit = ItemDefinitionCubit(
+      itemDefinitionRepository,
+      itemInstanceRepository,
+      inventoryEventBus,
+    );
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _barcodeController.dispose();
+    _itemDefinitionCubit.close();
     super.dispose();
   }
 
@@ -107,11 +123,9 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final inventoryService = Provider.of<InventoryService>(context, listen: false);
-    
-    return BlocProvider(
-      create: (context) => InventoryBloc(inventoryService),
-      child: BlocConsumer<InventoryBloc, InventoryState>(
+    return BlocProvider.value(
+      value: _itemDefinitionCubit,
+      child: BlocConsumer<ItemDefinitionCubit, ItemDefinitionState>(
         listenWhen: (previous, current) => 
           current.error != null && previous.error != current.error ||
           current is OperationResult,
@@ -284,8 +298,8 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
         imageUrl: imagePath, // This should explicitly be null when image is removed
       );
       
-      // Dispatch update event
-      context.read<InventoryBloc>().add(UpdateItemDefinition(updatedItem));
+      // Use the cubit to update the item
+      _itemDefinitionCubit.updateItemDefinition(updatedItem);
       
       // The listener will handle success and navigation
     } catch (e) {

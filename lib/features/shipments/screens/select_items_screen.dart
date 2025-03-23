@@ -8,10 +8,12 @@ import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
-import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart' as inventory;
+import 'package:food_inventory/data/repositories/item_definition_repository.dart';
+import 'package:food_inventory/data/repositories/item_instance_repository.dart';
+import 'package:food_inventory/features/inventory/cubit/item_definition_cubit.dart';
+import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
 import 'package:food_inventory/features/inventory/screens/add_item_definition_screen.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/shipments/widgets/add_item_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
@@ -27,7 +29,7 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
   String _searchQuery = '';
   List<ItemDefinition> _availableItems = [];
   bool _isLoading = true;
-  late inventory.InventoryBloc _inventoryBloc;
+  late ItemDefinitionCubit _itemDefinitionCubit;
 
   @override
   void initState() {
@@ -42,15 +44,27 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final inventoryService = Provider.of<InventoryService>(context, listen: false);
-    _inventoryBloc = inventory.InventoryBloc(inventoryService);
-    _inventoryBloc.add(const inventory.LoadInventoryItems());
+    
+    // Get dependencies from Provider
+    final itemDefinitionRepository = Provider.of<ItemDefinitionRepository>(context, listen: false);
+    final itemInstanceRepository = Provider.of<ItemInstanceRepository>(context, listen: false);
+    final inventoryEventBus = Provider.of<InventoryEventBus>(context, listen: false);
+    
+    // Initialize cubit
+    _itemDefinitionCubit = ItemDefinitionCubit(
+      itemDefinitionRepository,
+      itemInstanceRepository,
+      inventoryEventBus,
+    );
+    
+    // Load items
+    _itemDefinitionCubit.loadItems();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _inventoryBloc.close();
+    _itemDefinitionCubit.close();
     super.dispose();
   }
 
@@ -60,11 +74,11 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
     final theme = Theme.of(context);
 
     return BlocProvider.value(
-      value: _inventoryBloc,
-      child: BlocListener<inventory.InventoryBloc, inventory.InventoryState>(
+      value: _itemDefinitionCubit,
+      child: BlocListener<ItemDefinitionCubit, ItemDefinitionState>(
         listenWhen: (previous, current) =>
-            current is inventory.InventoryItemsLoaded ||
-            current is inventory.InventoryLoading ||
+            current is ItemDefinitionLoaded ||
+            current is ItemDefinitionLoading ||
             (current.error != null && previous.error != current.error),
         listener: (context, state) {
           if (state.error != null) {
@@ -75,11 +89,11 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
             );
           }
 
-          if (state is inventory.InventoryLoading) {
+          if (state is ItemDefinitionLoading) {
             setState(() {
               _isLoading = true;
             });
-          } else if (state is inventory.InventoryItemsLoaded) {
+          } else if (state is ItemDefinitionLoaded) {
             setState(() {
               _isLoading = false;
               _availableItems = state.items.map((item) => item.itemDefinition).toList();
@@ -100,7 +114,7 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
                   decoration: InputDecoration(
                     hintText: 'Search items...',
                     prefixIcon: const Icon(Icons.search, size: ConfigService.defaultIconSize),
-                    suffixIcon: _searchQuery.isNotEmpty
+                    suffixIcon: _searchQuery.isNotEmpty 
                         ? IconButton(
                             icon: const Icon(Icons.clear, size: ConfigService.mediumIconSize),
                             onPressed: () => _searchController.clear(),
@@ -199,7 +213,7 @@ class _SelectItemsScreenState extends State<SelectItemsScreen> {
       context,
       const AddItemDefinitionScreen(),
     ).then((_) {
-      _inventoryBloc.add(const inventory.LoadInventoryItems());
+      _itemDefinitionCubit.loadItems();
     });
   }
 

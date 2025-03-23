@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
-import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart';
+import 'package:food_inventory/data/repositories/item_definition_repository.dart';
+import 'package:food_inventory/data/repositories/item_instance_repository.dart';
+import 'package:food_inventory/features/inventory/cubit/item_definition_cubit.dart';
+import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 
@@ -22,11 +24,30 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
   final _barcodeController = TextEditingController();
   File? _imageFile;
   bool _isCreating = false;
+  late ItemDefinitionCubit _itemDefinitionCubit;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Get repositories from Provider
+    final itemDefinitionRepository = Provider.of<ItemDefinitionRepository>(context, listen: false);
+    final itemInstanceRepository = Provider.of<ItemInstanceRepository>(context, listen: false);
+    final inventoryEventBus = Provider.of<InventoryEventBus>(context, listen: false);
+    
+    // Initialize cubit
+    _itemDefinitionCubit = ItemDefinitionCubit(
+      itemDefinitionRepository,
+      itemInstanceRepository,
+      inventoryEventBus,
+    );
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _barcodeController.dispose();
+    _itemDefinitionCubit.close();
     super.dispose();
   }
 
@@ -74,14 +95,48 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
     }
   }
 
+  Future<void> _saveItem(BuildContext context, ImageService imageService) async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isCreating = true;
+    });
+
+    try {
+      // Save image to app directory and get the path
+      final imagePath = await imageService.saveImage(_imageFile);
+      
+      final itemDefinition = ItemDefinition(
+        name: _nameController.text,
+        barcode: _barcodeController.text.isEmpty ? null : _barcodeController.text,
+        imageUrl: imagePath, // Now stores local file path instead of URL
+      );
+      
+      // Use the cubit to create the item
+      _itemDefinitionCubit.createItemDefinition(itemDefinition);
+      
+      // The listener will handle success and navigation
+    } catch (e, stackTrace) {
+      ErrorHandler.handleServiceError(
+        context, 
+        e, 
+        service: 'Item',
+        operation: 'creation',
+        stackTrace: stackTrace
+      );
+      setState(() {
+        _isCreating = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final imageService = Provider.of<ImageService>(context);
-    final inventoryService = Provider.of<InventoryService>(context, listen: false);
     
-    return BlocProvider(
-      create: (context) => InventoryBloc(inventoryService),
-      child: BlocConsumer<InventoryBloc, InventoryState>(
+    return BlocProvider.value(
+      value: _itemDefinitionCubit,
+      child: BlocConsumer<ItemDefinitionCubit, ItemDefinitionState>(
         listenWhen: (previous, current) => 
           current.error != null && previous.error != current.error ||
           current is OperationResult,
@@ -207,41 +262,5 @@ class _AddItemDefinitionScreenState extends State<AddItemDefinitionScreen> {
         },
       ),
     );
-  }
-
-  Future<void> _saveItem(BuildContext context, ImageService imageService) async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isCreating = true;
-    });
-
-    try {
-      // Save image to app directory and get the path
-      final imagePath = await imageService.saveImage(_imageFile);
-      
-      final itemDefinition = ItemDefinition(
-        name: _nameController.text,
-        barcode: _barcodeController.text.isEmpty ? null : _barcodeController.text,
-        imageUrl: imagePath, // Now stores local file path instead of URL
-      );
-      
-      // Dispatch create event
-      context.read<InventoryBloc>().add(CreateItemDefinition(itemDefinition));
-      
-      
-      // The listener will handle success and navigation
-    } catch (e, stackTrace) {
-      ErrorHandler.handleServiceError(
-        context, 
-        e, 
-        service: 'Item',
-        operation: 'creation',
-        stackTrace: stackTrace
-      );
-      setState(() {
-        _isCreating = false;
-      });
-    }
   }
 }

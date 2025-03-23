@@ -8,6 +8,7 @@ import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/data/models/inventory_movement.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/models/item_instance.dart';
+import 'package:food_inventory/features/inventory/cubit/item_definition_cubit.dart';
 import 'package:food_inventory/features/inventory/cubit/item_detail_cubit.dart';
 import 'package:food_inventory/features/inventory/cubit/stock_management_cubit.dart';
 import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
@@ -332,8 +333,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       );
 
       if (confirm == true) {
-        // Note: This deletion would now be handled by the ItemDefinitionCubit, but would need
-        // to pass control to the parent screen. For now, we'll just navigate back.
+        // Delete using the cubit
+        context.read<ItemDefinitionCubit>().deleteItemDefinition(_currentItemDefinition.id!);
         Navigator.pop(context);
       }
     } catch (e) {
