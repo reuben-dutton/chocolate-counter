@@ -12,6 +12,7 @@ import 'package:food_inventory/features/inventory/services/inventory_service.dar
 import 'package:food_inventory/common/services/preferences_service.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
+import 'package:food_inventory/common/services/expiration_event_bus.dart';
 import 'package:get_it/get_it.dart';
 
 /// A service locator for managing dependency injection of services and repositories
@@ -38,6 +39,7 @@ class ServiceLocator {
     instance.registerSingleton<DialogService>(DialogService());
     instance.registerSingleton<ImageService>(ImageService());
     instance.registerSingleton<ConfigService>(configService);
+    instance.registerSingleton<ExpirationEventBus>(ExpirationEventBus());
     
     // Register repositories
     instance.registerSingleton<ItemDefinitionRepository>(

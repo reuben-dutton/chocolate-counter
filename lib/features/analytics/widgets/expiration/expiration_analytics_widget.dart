@@ -16,33 +16,19 @@ class ExpirationAnalyticsWidget extends StatefulWidget {
 }
 
 class _ExpirationAnalyticsWidgetState extends State<ExpirationAnalyticsWidget> with AutomaticKeepAliveClientMixin {
-  late ExpirationAnalyticsBloc _expirationAnalyticsBloc;
   bool _showDetailView = false;
 
   @override
   bool get wantKeepAlive => true;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final analyticsService = Provider.of<AnalyticsService>(context, listen: false);
-    _expirationAnalyticsBloc = ExpirationAnalyticsBloc(analyticsService);
-    _expirationAnalyticsBloc.add(const LoadExpirationAnalyticsData());
-  }
-
-  @override
-  void dispose() {
-    _expirationAnalyticsBloc.close();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     super.build(context);
     final theme = Theme.of(context);
+    final analyticsService = Provider.of<AnalyticsService>(context, listen: false);
     
-    return BlocProvider<ExpirationAnalyticsBloc>.value(
-      value: _expirationAnalyticsBloc,
+    return BlocProvider(
+      create: (context) => ExpirationAnalyticsBloc(analyticsService)..add(const LoadExpirationAnalyticsData()),
       child: BlocConsumer<ExpirationAnalyticsBloc, ExpirationAnalyticsState>(
         listenWhen: (previous, current) => 
           current.error != null && previous.error != current.error,
@@ -62,31 +48,31 @@ class _ExpirationAnalyticsWidgetState extends State<ExpirationAnalyticsWidget> w
             child: SegmentedButton<bool>(
               showSelectedIcon: false,
               style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                  (Set<MaterialState> states) {
-                    if (states.contains(MaterialState.selected)) {
-                      return theme.colorScheme.primary.withOpacity(0.1);
+                backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                  (Set<WidgetState> states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return theme.colorScheme.primary.withAlpha(ConfigService.alphaLight);
                     }
                     return Colors.transparent;
                   },
                 ),
-                foregroundColor: MaterialStateProperty.resolveWith<Color>(
-                  (Set<MaterialState> states) {
-                    if (states.contains(MaterialState.selected)) {
+                foregroundColor: WidgetStateProperty.resolveWith<Color>(
+                  (Set<WidgetState> states) {
+                    if (states.contains(WidgetState.selected)) {
                       return theme.colorScheme.primary;
                     }
-                    return theme.colorScheme.onSurface.withOpacity(0.6);
+                    return theme.colorScheme.onSurface.withAlpha(ConfigService.alphaModerate);
                   },
                 ),
-                padding: MaterialStateProperty.all(
+                padding: WidgetStateProperty.all(
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 0)
                 ),
                 visualDensity: VisualDensity.standard,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                minimumSize: MaterialStateProperty.all(const Size(0, 36)),
-                side: MaterialStateProperty.all(
+                minimumSize: WidgetStateProperty.all(const Size(0, 36)),
+                side: WidgetStateProperty.all(
                   BorderSide(
-                    color: theme.colorScheme.primary.withOpacity(0.2),
+                    color: theme.colorScheme.primary.withAlpha(ConfigService.alphaLight),
                     width: 1,
                   )
                 ),

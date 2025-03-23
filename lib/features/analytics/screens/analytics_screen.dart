@@ -25,11 +25,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   late AnalyticsBloc _analyticsBloc;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
     final analyticsService = Provider.of<AnalyticsService>(context, listen: false);
     _analyticsBloc = AnalyticsBloc(analyticsService);
-    _analyticsBloc.add(const LoadPopularItemsData());
+    _analyticsBloc.add(const InitializeAnalyticsScreen());
   }
 
   @override
@@ -40,12 +40,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return BlocProvider<AnalyticsBloc>.value(
+    return BlocProvider.value(
       value: _analyticsBloc,
       child: BlocListener<AnalyticsBloc, AnalyticsState>(
-        listenWhen: (previous, current) => current.error != null && previous.error != current.error,
+        listenWhen: (previous, current) => 
+          current.error != null && previous.error != current.error,
         listener: (context, state) {
           if (state.error != null) {
             ErrorHandler.showErrorSnackBar(
@@ -76,6 +75,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             child: Padding(
                               padding: EdgeInsets.all(ConfigService.tinyPadding),
                               child: BlocBuilder<AnalyticsBloc, AnalyticsState>(
+                                buildWhen: (previous, current) => 
+                                  previous.selectedType != current.selectedType || 
+                                  previous is! AnalyticsLoaded && current is AnalyticsLoaded || 
+                                  previous.timePeriod != current.timePeriod,
                                 builder: (context, state) {
                                   return IndexedStack(
                                     index: state.selectedType.index,
@@ -97,7 +100,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     // Analytics type selector at the bottom
                     Container(
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
+                        color: Theme.of(context).colorScheme.surface,
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withAlpha(13),
@@ -107,7 +110,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         ],
                       ),
                       padding: EdgeInsets.symmetric(vertical: ConfigService.smallPadding, horizontal: ConfigService.smallPadding),
-                      child: _buildAnalyticsTypeSelector(context, theme),
+                      child: _buildAnalyticsTypeSelector(context),
                     ),
                   ],
                 ),
@@ -119,7 +122,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildAnalyticsTypeSelector(BuildContext context, ThemeData theme) {
+  Widget _buildAnalyticsTypeSelector(BuildContext context) {
     return BlocBuilder<AnalyticsBloc, AnalyticsState>(
       builder: (context, state) {
         return Container(
@@ -139,17 +142,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     padding: EdgeInsets.symmetric(vertical: ConfigService.mediumPadding, horizontal: ConfigService.smallPadding),
                     decoration: BoxDecoration(
                       color: isSelected 
-                          ? theme.colorScheme.primary 
+                          ? Theme.of(context).colorScheme.primary 
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(ConfigService.borderRadiusLarge),
                     ),
                     child: Text(
                       _getAnalyticsTypeLabel(type),
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: isSelected 
-                            ? theme.colorScheme.onPrimary 
-                            : theme.colorScheme.onSurface,
+                            ? Theme.of(context).colorScheme.onPrimary 
+                            : Theme.of(context).colorScheme.onSurface,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),

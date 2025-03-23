@@ -2,8 +2,11 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
+import 'package:food_inventory/common/services/service_locator.dart';
+import 'package:food_inventory/common/services/expiration_event_bus.dart';
 import 'package:food_inventory/features/analytics/models/expiration_analytics_data.dart';
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
+import 'dart:async';
 
 /// State for operation results
 class OperationResult extends ExpirationAnalyticsState {
@@ -83,10 +86,18 @@ class ExpirationAnalyticsLoaded extends ExpirationAnalyticsState {
 /// BLoC for expiration analytics
 class ExpirationAnalyticsBloc extends Bloc<ExpirationAnalyticsEvent, ExpirationAnalyticsState> {
   final AnalyticsService _analyticsService;
+  late StreamSubscription _expirationChangesSubscription;
 
   ExpirationAnalyticsBloc(this._analyticsService) : super(const ExpirationAnalyticsInitial()) {
     on<LoadExpirationAnalyticsData>(_onLoadExpirationAnalyticsData);
     on<ClearOperationState>(_onClearOperationState);
+    
+    // Subscribe to expiration date changes via the event bus
+    _expirationChangesSubscription = 
+        ServiceLocator.instance<ExpirationEventBus>().stream.listen((_) {
+      // When an expiration date changes, reload the data
+      add(const LoadExpirationAnalyticsData());
+    });
   }
 
   Future<void> _onLoadExpirationAnalyticsData(
@@ -158,5 +169,12 @@ class ExpirationAnalyticsBloc extends Bloc<ExpirationAnalyticsEvent, ExpirationA
       error.message,
       error: error.error
     );
+  }
+  
+  @override
+  Future<void> close() {
+    // Don't forget to cancel the subscription when the bloc is closed
+    _expirationChangesSubscription.cancel();
+    return super.close();
   }
 }

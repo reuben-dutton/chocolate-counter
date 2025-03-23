@@ -2,9 +2,12 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
+import 'package:food_inventory/common/services/expiration_event_bus.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
+
+import '../../../common/services/service_locator.dart';
 
 // Define events
 abstract class ShipmentEvent extends Equatable {
@@ -296,7 +299,7 @@ class ShipmentBloc extends Bloc<ShipmentEvent, ShipmentState> {
     }
   }
 
-Future<void> _onUpdateShipmentItemExpiration(
+  Future<void> _onUpdateShipmentItemExpiration(
     UpdateShipmentItemExpiration event,
     Emitter<ShipmentState> emit,
   ) async {
@@ -317,6 +320,9 @@ Future<void> _onUpdateShipmentItemExpiration(
       
       // Then emit updated items
       emit(ShipmentItemsLoaded(items));
+      
+      // Notify the event bus about the expiration date change
+      ServiceLocator.instance<ExpirationEventBus>().emitExpirationChanged();
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error updating shipment item expiration', e, stackTrace, 'ShipmentBloc');
       emit(OperationResult(
