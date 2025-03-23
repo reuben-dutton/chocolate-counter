@@ -15,62 +15,71 @@ class SummaryMetrics extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Padding(
       padding: EdgeInsets.symmetric(
         vertical: ConfigService.largePadding,
-        horizontal: ConfigService.defaultPadding
+        horizontal: ConfigService.smallPadding
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildSimpleStatColumn(
-            context,
-            Icons.shopping_cart,
-            'Total Sales',
-            totalSales.toString(),
+          Expanded(
+            child: _buildMetricColumn(
+              context,
+              Icons.shopping_cart,
+              'Total Sales',
+              totalSales.toString(),
+            ),
           ),
-          _buildSimpleStatColumn(
-            context,
-            Icons.inventory_2,
-            'Total Stock',
-            totalStockCount.toString(),
+          Expanded(
+            child: _buildMetricColumn(
+              context,
+              Icons.inventory_2,
+              'Total Stock',
+              totalStockCount.toString(),
+            ),
           ),
-          _buildSimpleStatColumn(
-            context,
-            Icons.add_chart,
-            'Unique Items',
-            uniqueItemsCount.toString(),
+          Expanded(
+            child: _buildMetricColumn(
+              context,
+              Icons.add_chart,
+              'Unique Items',
+              uniqueItemsCount.toString(),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSimpleStatColumn(BuildContext context, IconData icon, String label, String value) {
+  Widget _buildMetricColumn(BuildContext context, IconData icon, String label, String value) {
     final theme = Theme.of(context);
 
     return Column(
       children: [
         Icon(
-          icon,
-          color: theme.colorScheme.primary,
-          size: 24,
+          icon, 
+          size: ConfigService.largeIconSize, 
+          color: theme.colorScheme.primary
         ),
         SizedBox(height: ConfigService.smallPadding),
         Text(
           label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaDefault),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface.withAlpha(ConfigService.alphaHigh),
           ),
+          textAlign: TextAlign.center,
         ),
-        SizedBox(height: ConfigService.smallPadding),
+        SizedBox(height: ConfigService.tinyPadding),
         Text(
           value,
-          style: theme.textTheme.bodyMedium?.copyWith(
+          style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
         ),
       ],
     );
