@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/data/repositories/item_definition_repository.dart';
+import 'package:food_inventory/data/repositories/item_instance_repository.dart';
 import 'package:food_inventory/features/inventory/cubit/item_definition_cubit.dart';
 import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
 import 'package:food_inventory/features/inventory/screens/add_item_definition_screen.dart';
@@ -38,18 +39,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
     
     // Get dependencies from provider
     final itemDefinitionRepository = Provider.of<ItemDefinitionRepository>(context, listen: false);
+    final itemInstanceRepository = Provider.of<ItemInstanceRepository>(context, listen: false);
     final inventoryEventBus = Provider.of<InventoryEventBus>(context, listen: false);
     
     // Initialize the cubit with dependencies from provider
     _itemDefinitionCubit = ItemDefinitionCubit(
       itemDefinitionRepository,
+      itemInstanceRepository,
       inventoryEventBus,
     );
     
     // Load initial data
     _itemDefinitionCubit.loadItems();
   }
-  
+    
   @override
   void dispose() {
     _searchController.dispose();

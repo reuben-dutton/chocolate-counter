@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/data/repositories/item_definition_repository.dart';
+import 'package:food_inventory/data/repositories/item_instance_repository.dart';
 import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
 
 // States
@@ -75,10 +76,12 @@ class InventoryItemWithCounts {
 // Cubit
 class ItemDefinitionCubit extends Cubit<ItemDefinitionState> {
   final ItemDefinitionRepository _itemDefinitionRepository;
+  final ItemInstanceRepository _itemInstanceRepository;
   final InventoryEventBus _eventBus;
 
   ItemDefinitionCubit(
     this._itemDefinitionRepository, 
+    this._itemInstanceRepository,
     this._eventBus
   ) : super(const ItemDefinitionInitial()) {
     // Listen for inventory changes to refresh data when needed
@@ -104,8 +107,8 @@ class ItemDefinitionCubit extends Cubit<ItemDefinitionState> {
         
         final List<InventoryItemWithCounts> itemsWithCounts = [];
         for (final item in allItems) {
-          final counts = await _getItemCounts(item.id!, txn);
-          final instances = await _getItemInstances(item.id!, txn);
+          final counts = await _itemInstanceRepository.getItemCounts(item.id!, txn: txn);
+          final instances = await _itemInstanceRepository.getInstancesForItem(item.id!, txn: txn);
           
           // Find earliest expiration date
           DateTime? earliestDate;
@@ -125,9 +128,8 @@ class ItemDefinitionCubit extends Cubit<ItemDefinitionState> {
           ));
         }
         
-        // Sort items - push items with 0 stock and 0 inventory to the bottom
+        // Sort items
         itemsWithCounts.sort((a, b) {
-          // If both items have zero counts or both have non-zero counts, sort alphabetically
           bool aIsEmpty = a.stockCount == 0 && a.inventoryCount == 0;
           bool bIsEmpty = b.stockCount == 0 && b.inventoryCount == 0;
           
@@ -135,7 +137,6 @@ class ItemDefinitionCubit extends Cubit<ItemDefinitionState> {
             return a.itemDefinition.name.compareTo(b.itemDefinition.name);
           }
           
-          // Empty items go to the bottom
           return aIsEmpty ? 1 : -1;
         });
         
@@ -261,18 +262,6 @@ class ItemDefinitionCubit extends Cubit<ItemDefinitionState> {
     if (state is OperationResult) {
       emit(const ItemDefinitionInitial());
     }
-  }
-
-  // Helper methods - these would typically come from a service but for compatibility we'll keep them here
-  Future<Map<String, int>> _getItemCounts(int itemDefinitionId, dynamic txn) async {
-    // Implementation would call the service
-    // For now, use the repository directly
-    return {'stock': 0, 'inventory': 0}; // Placeholder
-  }
-
-  Future<List<dynamic>> _getItemInstances(int itemDefinitionId, dynamic txn) async {
-    // Implementation would call the service
-    return []; // Placeholder
   }
 
   @override
