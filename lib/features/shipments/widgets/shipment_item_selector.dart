@@ -241,7 +241,7 @@ class _ShipmentItemSelectorState extends State<ShipmentItemSelector> {
     }
   }
   
-  void _addItem(ItemDefinition item, int quantity, DateTime? expirationDate, double unitPrice) {
+  void _addItem(ItemDefinition item, int quantity, DateTime? expirationDate, double? unitPrice) {
     final existingIndex = _selectedItems.indexWhere(
       (selected) => selected.itemDefinitionId == item.id,
     );

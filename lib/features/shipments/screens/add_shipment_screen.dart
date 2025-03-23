@@ -5,8 +5,10 @@ import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/common/utils/navigation_utils.dart';
 import 'package:food_inventory/data/models/shipment.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
-import 'package:food_inventory/features/inventory/bloc/inventory_bloc.dart' as inventory;
-import 'package:food_inventory/features/inventory/services/inventory_service.dart';
+import 'package:food_inventory/data/repositories/item_definition_repository.dart';
+import 'package:food_inventory/data/repositories/item_instance_repository.dart';
+import 'package:food_inventory/features/inventory/cubit/item_definition_cubit.dart' hide OperationResult;
+import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
 import 'package:food_inventory/features/shipments/bloc/shipment_bloc.dart';
 import 'package:food_inventory/features/shipments/screens/select_items_screen.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
@@ -34,63 +36,85 @@ class _AddShipmentScreenState extends State<AddShipmentScreen> {
   bool _isProcessing = false;
   
   int _currentStep = 0;
+  late ItemDefinitionCubit _itemDefinitionCubit;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Get repositories from Provider
+    final itemDefinitionRepository = Provider.of<ItemDefinitionRepository>(context, listen: false);
+    final itemInstanceRepository = Provider.of<ItemInstanceRepository>(context, listen: false);
+    final inventoryEventBus = Provider.of<InventoryEventBus>(context, listen: false);
+    
+    // Initialize cubit
+    _itemDefinitionCubit = ItemDefinitionCubit(
+      itemDefinitionRepository,
+      itemInstanceRepository,
+      inventoryEventBus,
+    );
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _itemDefinitionCubit.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final dialogService = Provider.of<DialogService>(context);
-    final inventoryService = Provider.of<InventoryService>(context, listen: false);
     final shipmentService = Provider.of<ShipmentService>(context, listen: false);
     
     return MultiBlocProvider(
       providers: [
-        BlocProvider(
-          create: (context) => inventory.InventoryBloc(inventoryService),
-        ),
+        BlocProvider.value(value: _itemDefinitionCubit),
         BlocProvider(
           create: (context) => ShipmentBloc(shipmentService),
         ),
       ],
-      child: BlocListener<inventory.InventoryBloc, inventory.InventoryState>(
-        listenWhen: (previous, current) => 
-          current.error != null && previous.error != current.error,
-        listener: (context, inventoryState) {
-          if (inventoryState.error != null) {
-            ErrorHandler.showErrorSnackBar(
-              context, 
-              inventoryState.error!.message, 
-              error: inventoryState.error!.error
-            );
-          }
-        },
-        child: BlocConsumer<ShipmentBloc, ShipmentState>(
-          listenWhen: (previous, current) => 
-            current.error != null && previous.error != current.error ||
-            current is OperationResult,
-          listener: (context, shipmentState) {
-            if (shipmentState.error != null) {
-              ErrorHandler.showErrorSnackBar(
-                context, 
-                shipmentState.error!.message, 
-                error: shipmentState.error!.error
-              );
-              setState(() {
-                _isProcessing = false;
-              });
-            }
-            
-            if (shipmentState is OperationResult && shipmentState.success) {
-              ErrorHandler.showSuccessSnackBar(context, 'Shipment added successfully');
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<ItemDefinitionCubit, ItemDefinitionState>(
+            listenWhen: (previous, current) => 
+              current.error != null && previous.error != current.error,
+            listener: (context, state) {
+              if (state.error != null) {
+                ErrorHandler.showErrorSnackBar(
+                  context, 
+                  state.error!.message, 
+                  error: state.error!.error
+                );
+              }
+            },
+          ),
+          BlocListener<ShipmentBloc, ShipmentState>(
+            listenWhen: (previous, current) => 
+              current.error != null && previous.error != current.error ||
+              current is OperationResult,
+            listener: (context, shipmentState) {
+              if (shipmentState.error != null) {
+                ErrorHandler.showErrorSnackBar(
+                  context, 
+                  shipmentState.error!.message, 
+                  error: shipmentState.error!.error
+                );
+                setState(() {
+                  _isProcessing = false;
+                });
+              }
               
-              // Return true to indicate success to the calling screen before we pop
-              Navigator.pop(context, true);
-            }
-          },
+              if (shipmentState is OperationResult && shipmentState.success) {
+                ErrorHandler.showSuccessSnackBar(context, 'Shipment added successfully');
+                
+                // Return true to indicate success to the calling screen before we pop
+                Navigator.pop(context, true);
+              }
+            },
+          ),
+        ],
+        child: BlocBuilder<ShipmentBloc, ShipmentState>(
           builder: (context, shipmentState) {
             final theme = Theme.of(context);
             
