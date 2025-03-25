@@ -52,6 +52,8 @@ dependencies:
   flutter_image_compress: ^2.1.0
   compute: ^1.0.2  # For compute() function
 
+  device_info_plus: ^9.1.1
+
   # data analytics
   fl_chart: ^0.70.2
 

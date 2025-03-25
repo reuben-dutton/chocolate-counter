@@ -12,6 +12,15 @@ abstract class ExportEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class SetCustomExportDirectory extends ExportEvent {
+  final String directoryPath;
+
+  const SetCustomExportDirectory(this.directoryPath);
+
+  @override
+  List<Object?> get props => [directoryPath];
+}
+
 class StartExport extends ExportEvent {
   final ExportFormat format;
 
@@ -53,15 +62,17 @@ abstract class ExportState extends Equatable {
   final bool includeImages;
   final bool includeHistory;
   final bool exportAllData;
+  final String? customExportDir;
 
   const ExportState({
     this.includeImages = false,
     this.includeHistory = true,
     this.exportAllData = false,
+    this.customExportDir,
   });
 
   @override
-  List<Object?> get props => [includeImages, includeHistory, exportAllData];
+  List<Object?> get props => [includeImages, includeHistory, exportAllData, customExportDir];
 }
 
 class ExportInitial extends ExportState {
@@ -69,6 +80,7 @@ class ExportInitial extends ExportState {
     super.includeImages,
     super.includeHistory,
     super.exportAllData,
+    super.customExportDir
   });
 }
 
@@ -80,10 +92,11 @@ class ExportLoading extends ExportState {
     super.includeImages,
     super.includeHistory,
     super.exportAllData,
+    super.customExportDir,
   });
 
   @override
-  List<Object?> get props => [format, includeImages, includeHistory, exportAllData];
+  List<Object?> get props => [format, includeImages, includeHistory, exportAllData, customExportDir];
 }
 
 class ExportSuccess extends ExportState {
@@ -96,10 +109,11 @@ class ExportSuccess extends ExportState {
     super.includeImages,
     super.includeHistory,
     super.exportAllData,
+    super.customExportDir,
   });
 
   @override
-  List<Object?> get props => [filePath, format, includeImages, includeHistory, exportAllData];
+  List<Object?> get props => [filePath, format, includeImages, includeHistory, exportAllData, customExportDir];
 }
 
 class ExportError extends ExportState {
@@ -110,10 +124,11 @@ class ExportError extends ExportState {
     super.includeImages,
     super.includeHistory,
     super.exportAllData,
+    super.customExportDir,
   });
 
   @override
-  List<Object?> get props => [error, includeImages, includeHistory, exportAllData];
+  List<Object?> get props => [error, includeImages, includeHistory, exportAllData, customExportDir];
 }
 
 // BLoC
@@ -125,6 +140,19 @@ class ExportBloc extends Bloc<ExportEvent, ExportState> {
     on<ToggleIncludeImages>(_onToggleIncludeImages);
     on<ToggleIncludeHistory>(_onToggleIncludeHistory);
     on<ToggleExportAllData>(_onToggleExportAllData);
+    on<SetCustomExportDirectory>(_onSetCustomExportDirectory);
+  }
+
+  void _onSetCustomExportDirectory(
+    SetCustomExportDirectory event,
+    Emitter<ExportState> emit,
+  ) {
+    emit(ExportInitial(
+      includeImages: state.includeImages,
+      includeHistory: state.includeHistory,
+      exportAllData: state.exportAllData,
+      customExportDir: event.directoryPath,
+    ));
   }
 
   Future<void> _onStartExport(
@@ -137,6 +165,7 @@ class ExportBloc extends Bloc<ExportEvent, ExportState> {
         includeImages: state.includeImages,
         includeHistory: state.includeHistory,
         exportAllData: state.exportAllData,
+        customExportDir: state.customExportDir,
       ));
 
       final filePath = await _performExport(event.format);
@@ -147,6 +176,7 @@ class ExportBloc extends Bloc<ExportEvent, ExportState> {
         includeImages: state.includeImages,
         includeHistory: state.includeHistory,
         exportAllData: state.exportAllData,
+        customExportDir: state.customExportDir,
       ));
     } catch (e, stackTrace) {
       final error = AppError(
@@ -163,6 +193,7 @@ class ExportBloc extends Bloc<ExportEvent, ExportState> {
         includeImages: state.includeImages,
         includeHistory: state.includeHistory,
         exportAllData: state.exportAllData,
+        customExportDir: state.customExportDir,
       ));
     }
   }
@@ -175,6 +206,7 @@ class ExportBloc extends Bloc<ExportEvent, ExportState> {
       includeImages: event.include,
       includeHistory: state.includeHistory,
       exportAllData: state.exportAllData,
+      customExportDir: state.customExportDir,
     ));
   }
 
@@ -186,6 +218,7 @@ class ExportBloc extends Bloc<ExportEvent, ExportState> {
       includeImages: state.includeImages,
       includeHistory: event.include,
       exportAllData: state.exportAllData,
+      customExportDir: state.customExportDir,
     ));
   }
 
@@ -197,6 +230,7 @@ class ExportBloc extends Bloc<ExportEvent, ExportState> {
       includeImages: state.includeImages,
       includeHistory: state.includeHistory,
       exportAllData: event.exportAll,
+      customExportDir: state.customExportDir,
     ));
   }
 
@@ -207,22 +241,26 @@ class ExportBloc extends Bloc<ExportEvent, ExportState> {
           includeImages: state.includeImages,
           includeHistory: state.includeHistory,
           exportAllData: state.exportAllData,
+          customExportDir: state.customExportDir,
         );
       case ExportFormat.json:
         return await _exportService.exportToJSON(
           includeImages: state.includeImages,
           includeHistory: state.includeHistory,
           exportAllData: state.exportAllData,
+          customExportDir: state.customExportDir,
         );
       case ExportFormat.sqlite:
         return await _exportService.exportDatabaseFile(
           includeImages: state.includeImages,
+          customExportDir: state.customExportDir,
         );
       case ExportFormat.excel:
         return await _exportService.exportToExcel(
           includeImages: state.includeImages,
           includeHistory: state.includeHistory,
           exportAllData: state.exportAllData,
+          customExportDir: state.customExportDir,
         );
     }
   }

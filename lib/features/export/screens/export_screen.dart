@@ -8,10 +8,13 @@ import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/features/export/bloc/export_bloc.dart';
 import 'package:food_inventory/features/export/services/export_service.dart';
 import 'package:food_inventory/features/export/widgets/export_format_card.dart';
+import 'package:food_inventory/features/export/widgets/sqlite_export_info_sheet.dart';
+import 'package:path/path.dart' as path;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class ExportScreen extends StatefulWidget {
   const ExportScreen({super.key});
@@ -51,9 +54,19 @@ class _ExportScreenState extends State<ExportScreen> {
               error: state.error.error,
             );
           } else if (state is ExportSuccess) {
+            final filePath = state.filePath;
+            final fileName = path.basename(filePath);
+            String locationMessage = '';
+
+            if (Platform.isAndroid && filePath.contains('/Download/')) {
+              locationMessage = 'Saved to Downloads folder';
+            } else {
+              locationMessage = 'Saved to app storage';
+            }
+
             ErrorHandler.showSuccessSnackBar(
               context, 
-              'Export complete: ${state.filePath}',
+              'Export complete: $fileName\n$locationMessage',
             );
             
             // Ask if user wants to share the file
@@ -112,7 +125,7 @@ class _ExportScreenState extends State<ExportScreen> {
                         ExportFormatCard(
                           icon: Icons.dataset,
                           title: 'SQLite',
-                          description: 'Export the full database file for backup',
+                          description: 'Export the full database file for backup or transfer',
                           onTap: () => _startExport(context, ExportFormat.sqlite),
                           isLoading: state is ExportLoading && state.format == ExportFormat.sqlite,
                         ),
@@ -216,6 +229,17 @@ class _ExportScreenState extends State<ExportScreen> {
                     context.read<ExportBloc>().add(ToggleExportAllData(value));
                   },
                 ),
+                const Divider(),
+                // Add directory selection button
+                ListTile(
+                  title: const Text('Export Location'),
+                  subtitle: Text(state.customExportDir ?? 'Default location'),
+                  trailing: ElevatedButton.icon(
+                    icon: const Icon(Icons.folder_open, size: ConfigService.smallIconSize),
+                    label: const Text('Choose'),
+                    onPressed: () => _selectExportDirectory(context),
+                  ),
+                ),
               ],
             ),
           ),
@@ -224,17 +248,116 @@ class _ExportScreenState extends State<ExportScreen> {
     );
   }
 
+  Future<void> _selectExportDirectory(BuildContext context) async {
+    final exportService = Provider.of<ExportService>(context, listen: false);
+    
+    // First, check if we have proper permissions
+    if (Platform.isAndroid) {
+      try {
+        final androidInfo = await DeviceInfoPlugin().androidInfo;
+        final sdkInt = androidInfo.version.sdkInt;
+        
+        if (sdkInt >= 30) { // Android 11+
+          final status = await Permission.manageExternalStorage.request();
+          if (!status.isGranted) {
+            if (context.mounted) {
+              ErrorHandler.showErrorSnackBar(
+                context, 
+                'Storage permission required to select a directory'
+              );
+            }
+            return;
+          }
+        } else {
+          final status = await Permission.storage.request();
+          if (!status.isGranted) {
+            if (context.mounted) {
+              ErrorHandler.showErrorSnackBar(
+                context, 
+                'Storage permission required to select a directory'
+              );
+            }
+            return;
+          }
+        }
+      } catch (e) {
+        // Continue anyway and let FilePicker handle permission issues
+      }
+    }
+    
+    // Now, let the user choose a directory
+    final selectedDir = await exportService.chooseExportDirectory();
+    
+    if (selectedDir != null && context.mounted) {
+      context.read<ExportBloc>().add(SetCustomExportDirectory(selectedDir.path));
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Directory set to: ${selectedDir.path}'),
+          duration: ConfigService.snackBarDuration,
+        ),
+      );
+    }
+  }
+
   void _startExport(BuildContext context, ExportFormat format) async {
-    // Check storage permissions
-    final permission = await Permission.storage.request();
-    if (permission.isDenied) {
-      if (context.mounted) {
+    // Check appropriate storage permissions based on Android version
+    try {
+      bool hasPermission = false;
+      
+      if (Platform.isAndroid) {
+        // Try to get Android version information
+        final androidInfo = await DeviceInfoPlugin().androidInfo;
+        final sdkInt = androidInfo.version.sdkInt;
+        
+        if (sdkInt >= 30) { // Android 11+
+          // For emulators, just proceed as if we have permission
+          if (androidInfo.isPhysicalDevice == false) {
+            hasPermission = true;
+          } else {
+            // Try requesting MANAGE_EXTERNAL_STORAGE
+            try {
+              final status = await Permission.manageExternalStorage.request();
+              hasPermission = status.isGranted;
+            } catch (e) {
+              // Fallback to storage permission if the above fails
+              final status = await Permission.storage.request();
+              hasPermission = status.isGranted;
+            }
+          }
+        } else { // Android 10 and below
+          final status = await Permission.storage.request();
+          hasPermission = status.isGranted;
+        }
+      } else {
+        // For iOS and other platforms, assume permissions are granted
+        hasPermission = true;
+      }
+      
+      if (!hasPermission && context.mounted) {
         ErrorHandler.showErrorSnackBar(
           context, 
           'Storage permission denied. Please enable in settings to export data.'
         );
+        return;
       }
-      return;
+    } catch (e) {
+      // Something went wrong with permission checking
+      if (context.mounted) {
+        ErrorHandler.showErrorSnackBar(
+          context, 
+          'Error checking permissions: ${e.toString()}. Attempting export anyway.'
+        );
+        // Continue with export attempt despite permission issues
+      }
+    }
+    
+    // For SQLite export, show additional info first
+    if (format == ExportFormat.sqlite) {
+      final proceed = await showSQLiteExportInfoSheet(context);
+      if (proceed != true || !context.mounted) {
+        return;
+      }
     }
     
     // Start export process

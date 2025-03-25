@@ -1,5 +1,6 @@
 // lib/features/export/services/export_service.dart
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:csv/csv.dart';
 import 'package:path_provider/path_provider.dart';
@@ -20,10 +21,14 @@ class ExportService {
     bool includeImages = false,
     bool includeHistory = true,
     bool exportAllData = false,
+    String? customExportDir = null,
   }) async {
     try {
       // Get app document directory
-      final dir = await _getExportDirectory();
+      final dir = await _getExportDirectory(
+        useExternalStorage: true,
+        customDir: customExportDir
+      );
       final timestamp = _getTimestamp();
       final exportDir = Directory(path.join(dir.path, 'export_$timestamp'));
       await exportDir.create(recursive: true);
@@ -73,10 +78,14 @@ class ExportService {
     bool includeImages = false,
     bool includeHistory = true,
     bool exportAllData = false,
+    String? customExportDir = null,
   }) async {
     try {
       // Get app document directory
-      final dir = await _getExportDirectory();
+      final dir = await _getExportDirectory(
+        useExternalStorage: true,
+        customDir: customExportDir
+      );
       final timestamp = _getTimestamp();
       final exportDir = Directory(path.join(dir.path, 'export_$timestamp'));
       await exportDir.create(recursive: true);
@@ -111,31 +120,43 @@ class ExportService {
 
   Future<String> exportDatabaseFile({
     bool includeImages = false,
+    String? customExportDir = null,
   }) async {
     try {
-      // Get app document directory
-      final dir = await _getExportDirectory();
+      // Get export directory (external storage for better user access or custom directory)
+      final dir = await _getExportDirectory(
+        useExternalStorage: true, 
+        customDir: customExportDir
+      );
       final timestamp = _getTimestamp();
       
       // Database file path
       final dbPath = _databaseService.database.path;
       final dbFile = File(dbPath);
       
-      // Copy the database file
+      // Copy the database file to exports directory with timestamp
       final exportFile = File(path.join(dir.path, 'food_inventory_$timestamp.db'));
       await dbFile.copy(exportFile.path);
       
       // Handle images if requested
       if (includeImages) {
-        final exportDir = Directory(path.join(dir.path, 'export_$timestamp'));
+        final exportDir = Directory(path.join(dir.path, 'export_images_$timestamp'));
         await exportDir.create(recursive: true);
         await _exportImages(exportDir.path);
         
-        // Create a zip file of the export directory and database (simulated here)
-        final zipPath = '${exportDir.path}.zip';
-        // In a real implementation, use a zip library to create the archive
-        
-        return zipPath;
+        // Create a temporary info file explaining the contents
+        final infoFile = File(path.join(exportDir.path, 'README.txt'));
+        await infoFile.writeAsString(
+          'Food Inventory Export\n'
+          'Date: ${DateTime.now().toString()}\n\n'
+          'This export contains:\n'
+          '- Database file (SQLite)\n'
+          '- Images folder with product images\n\n'
+          'To use this export, copy the database file to your device\'s application data folder.'
+        );
+          
+        // Return the path of the database file, which is what we'll share
+        return exportFile.path;
       }
       
       return exportFile.path;
@@ -149,10 +170,14 @@ class ExportService {
     bool includeImages = false,
     bool includeHistory = true,
     bool exportAllData = false,
+    String? customExportDir = null,
   }) async {
     try {
       // Get app document directory
-      final dir = await _getExportDirectory();
+      final dir = await _getExportDirectory(
+        useExternalStorage: true,
+        customDir: customExportDir
+      );
       final timestamp = _getTimestamp();
       
       // Define tables to export
@@ -175,15 +200,77 @@ class ExportService {
       rethrow;
     }
   }
+  
 
   // Helper Methods
-  Future<Directory> _getExportDirectory() async {
-    final documentsDir = await getApplicationDocumentsDirectory();
-    final exportDir = Directory(path.join(documentsDir.path, 'exports'));
+  Future<Directory> _getExportDirectory({bool useExternalStorage = true, String? customDir}) async {
+    // If a custom directory is provided, use it
+    if (customDir != null) {
+      final exportDir = Directory(customDir);
+      if (!await exportDir.exists()) {
+        await exportDir.create(recursive: true);
+      }
+      return exportDir;
+    }
+    
+    Directory exportDir;
+    
+    if (useExternalStorage && Platform.isAndroid) {
+      // Use Downloads folder for Android external storage
+      try {
+        // Get external storage directory
+        final externalDir = await getExternalStorageDirectory();
+        if (externalDir != null) {
+          // Navigate up to find the Download directory
+          // Usually /storage/emulated/0/Download
+          final String downloadPath = externalDir.path.split('/Android')[0] + '/Download/FoodInventoryExports';
+          exportDir = Directory(downloadPath);
+        } else {
+          // Fallback to app documents directory
+          final documentsDir = await getApplicationDocumentsDirectory();
+          exportDir = Directory(path.join(documentsDir.path, 'exports'));
+        }
+      } catch (e) {
+        // Fallback to app documents directory
+        final documentsDir = await getApplicationDocumentsDirectory();
+        exportDir = Directory(path.join(documentsDir.path, 'exports'));
+      }
+    } else {
+      // Use app documents directory for iOS or if external storage not requested
+      final documentsDir = await getApplicationDocumentsDirectory();
+      exportDir = Directory(path.join(documentsDir.path, 'exports'));
+    }
+    
+    // Create the directory if it doesn't exist
     if (!await exportDir.exists()) {
       await exportDir.create(recursive: true);
     }
+    
     return exportDir;
+  }
+
+  Future<Directory?> chooseExportDirectory() async {
+    try {
+      // Use file_picker to let the user select a directory
+      final result = await FilePicker.platform.getDirectoryPath();
+      
+      if (result != null) {
+        final selectedDir = Directory(result);
+        
+        // Create an exports subfolder inside the selected directory
+        final exportDir = Directory(path.join(selectedDir.path, 'FoodInventoryExports'));
+        if (!await exportDir.exists()) {
+          await exportDir.create(recursive: true);
+        }
+        
+        return exportDir;
+      }
+      
+      return null;
+    } catch (e) {
+      // If something goes wrong, return null and let the calling code handle it
+      return null;
+    }
   }
 
   String _getTimestamp() {
