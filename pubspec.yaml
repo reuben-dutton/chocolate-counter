@@ -57,6 +57,9 @@ dependencies:
   # data analytics
   fl_chart: ^0.70.2
 
+  # exports
+  excel: ^2.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
