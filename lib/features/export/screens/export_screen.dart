@@ -68,9 +68,6 @@ class _ExportScreenState extends State<ExportScreen> {
               context, 
               'Export complete: $fileName\n$locationMessage',
             );
-            
-            // Ask if user wants to share the file
-            _promptToShareFile(context, dialogService, state.filePath);
           }
         },
         builder: (context, state) {
@@ -250,138 +247,181 @@ class _ExportScreenState extends State<ExportScreen> {
 
   Future<void> _selectExportDirectory(BuildContext context) async {
     final exportService = Provider.of<ExportService>(context, listen: false);
+    final dialogService = Provider.of<DialogService>(context, listen: false);
     
-    // First, check if we have proper permissions
-    if (Platform.isAndroid) {
-      try {
+    try {
+      bool hasPermission = false;
+      String permissionMessage = '';
+      
+      if (Platform.isAndroid) {
+        // Check Android version and if it's an emulator
         final androidInfo = await DeviceInfoPlugin().androidInfo;
-        final sdkInt = androidInfo.version.sdkInt;
+        final isEmulator = !androidInfo.isPhysicalDevice;
         
-        if (sdkInt >= 30) { // Android 11+
-          final status = await Permission.manageExternalStorage.request();
-          if (!status.isGranted) {
-            if (context.mounted) {
-              ErrorHandler.showErrorSnackBar(
-                context, 
-                'Storage permission required to select a directory'
-              );
-            }
-            return;
-          }
+        // Skip permission check on emulators
+        if (isEmulator) {
+          hasPermission = true;
         } else {
-          final status = await Permission.storage.request();
-          if (!status.isGranted) {
-            if (context.mounted) {
-              ErrorHandler.showErrorSnackBar(
-                context, 
-                'Storage permission required to select a directory'
-              );
+          final sdkInt = androidInfo.version.sdkInt;
+          
+          if (sdkInt >= 30) { // Android 11+
+            // First try with storage permission
+            var storageStatus = await Permission.storage.status;
+            
+            if (!storageStatus.isGranted) {
+              storageStatus = await Permission.storage.request();
             }
-            return;
+            
+            // If regular storage permission isn't enough, try with manage external storage
+            if (!storageStatus.isGranted) {
+              var manageStatus = await Permission.manageExternalStorage.status;
+              
+              if (!manageStatus.isGranted) {
+                manageStatus = await Permission.manageExternalStorage.request();
+              }
+              
+              hasPermission = manageStatus.isGranted;
+              
+              if (!hasPermission) {
+                permissionMessage = 'Storage permission required for selecting a custom directory. Please grant the permission in app settings.';
+              }
+            } else {
+              hasPermission = true;
+            }
+          } else { // Android 10 and below
+            var status = await Permission.storage.status;
+            
+            if (!status.isGranted) {
+              status = await Permission.storage.request();
+            }
+            
+            hasPermission = status.isGranted;
+            
+            if (!hasPermission) {
+              permissionMessage = 'Storage permission required for selecting a custom directory. Please grant the permission in app settings.';
+            }
           }
         }
-      } catch (e) {
-        // Continue anyway and let FilePicker handle permission issues
+      } else {
+        // For iOS and other platforms, no special permissions needed
+        hasPermission = true;
       }
-    }
-    
-    // Now, let the user choose a directory
-    final selectedDir = await exportService.chooseExportDirectory();
-    
-    if (selectedDir != null && context.mounted) {
-      context.read<ExportBloc>().add(SetCustomExportDirectory(selectedDir.path));
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Directory set to: ${selectedDir.path}'),
-          duration: ConfigService.snackBarDuration,
-        ),
-      );
+      if (!hasPermission) {
+        if (context.mounted) {
+          // Show permission denied message
+          await dialogService.showMessageDialog(
+            context: context,
+            title: 'Permission Required',
+            message: permissionMessage,
+            buttonText: 'OK',
+          );
+          
+          return;
+        }
+      }
+      
+      // If we have permission, let user choose a directory
+      if (context.mounted) {
+        final selectedDir = await exportService.chooseExportDirectory();
+        
+        if (selectedDir != null && context.mounted) {
+          context.read<ExportBloc>().add(SetCustomExportDirectory(selectedDir.path));
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Export location set to: ${selectedDir.path}'),
+              duration: ConfigService.snackBarDuration,
+            ),
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      // Log and show error
+      ErrorHandler.logError('Error selecting export directory', e, stackTrace, 'ExportScreen');
+      
+      if (context.mounted) {
+        ErrorHandler.showErrorSnackBar(
+          context, 
+          'Error selecting export directory: ${e.toString()}',
+        );
+      }
     }
   }
 
   void _startExport(BuildContext context, ExportFormat format) async {
-    // Check appropriate storage permissions based on Android version
+    final dialogService = Provider.of<DialogService>(context, listen: false);
+    
     try {
+      // Check permissions before starting export
       bool hasPermission = false;
       
       if (Platform.isAndroid) {
-        // Try to get Android version information
+        // Check if it's an emulator
         final androidInfo = await DeviceInfoPlugin().androidInfo;
-        final sdkInt = androidInfo.version.sdkInt;
+        final isEmulator = !androidInfo.isPhysicalDevice;
         
-        if (sdkInt >= 30) { // Android 11+
-          // For emulators, just proceed as if we have permission
-          if (androidInfo.isPhysicalDevice == false) {
-            hasPermission = true;
-          } else {
-            // Try requesting MANAGE_EXTERNAL_STORAGE
-            try {
-              final status = await Permission.manageExternalStorage.request();
-              hasPermission = status.isGranted;
-            } catch (e) {
-              // Fallback to storage permission if the above fails
-              final status = await Permission.storage.request();
-              hasPermission = status.isGranted;
+        // Skip permission check on emulators
+        if (isEmulator) {
+          hasPermission = true;
+        } else {
+          final sdkInt = androidInfo.version.sdkInt;
+          
+          if (sdkInt >= 30) { // Android 11+
+            // For Android 11+, check both permissions
+            var storageStatus = await Permission.storage.status;
+            if (!storageStatus.isGranted) {
+              storageStatus = await Permission.storage.request();
             }
+            
+            if (storageStatus.isGranted) {
+              hasPermission = true;
+            } else {
+              // Try manage external storage as fallback
+              final manageStatus = await Permission.manageExternalStorage.request();
+              hasPermission = manageStatus.isGranted;
+            }
+          } else { // Android 10 and below
+            final status = await Permission.storage.request();
+            hasPermission = status.isGranted;
           }
-        } else { // Android 10 and below
-          final status = await Permission.storage.request();
-          hasPermission = status.isGranted;
         }
       } else {
-        // For iOS and other platforms, assume permissions are granted
+        // For iOS and other platforms, no special permissions needed
         hasPermission = true;
       }
       
       if (!hasPermission && context.mounted) {
-        ErrorHandler.showErrorSnackBar(
-          context, 
-          'Storage permission denied. Please enable in settings to export data.'
+        await dialogService.showMessageDialog(
+          context: context,
+          title: 'Permission Required',
+          message: 'Storage permission is required to export data. Please grant the permission in app settings.',
+          buttonText: 'OK',
         );
         return;
       }
-    } catch (e) {
-      // Something went wrong with permission checking
+      
+      // For SQLite export, show additional info first
+      if (format == ExportFormat.sqlite) {
+        final proceed = await showSQLiteExportInfoSheet(context);
+        if (proceed != true || !context.mounted) {
+          return;
+        }
+      }
+      
+      // Start export process
+      if (context.mounted) {
+        context.read<ExportBloc>().add(StartExport(format));
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error starting export', e, stackTrace, 'ExportScreen');
+      
       if (context.mounted) {
         ErrorHandler.showErrorSnackBar(
           context, 
-          'Error checking permissions: ${e.toString()}. Attempting export anyway.'
+          'Error starting export: ${e.toString()}',
         );
-        // Continue with export attempt despite permission issues
       }
-    }
-    
-    // For SQLite export, show additional info first
-    if (format == ExportFormat.sqlite) {
-      final proceed = await showSQLiteExportInfoSheet(context);
-      if (proceed != true || !context.mounted) {
-        return;
-      }
-    }
-    
-    // Start export process
-    if (context.mounted) {
-      context.read<ExportBloc>().add(StartExport(format));
-    }
-  }
-
-  void _promptToShareFile(BuildContext context, DialogService dialogService, String filePath) async {
-    final file = File(filePath);
-    if (!await file.exists()) return;
-    
-    final confirm = await dialogService.showConfirmBottomSheet(
-      context: context,
-      title: 'Share Export File',
-      content: 'Do you want to share the exported file?',
-      icon: Icons.share,
-    );
-    
-    if (confirm == true && context.mounted) {
-      await Share.shareXFiles(
-        [XFile(filePath)],
-        subject: 'Food Inventory Export',
-      );
     }
   }
 }

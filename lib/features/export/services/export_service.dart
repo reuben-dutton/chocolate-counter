@@ -9,6 +9,8 @@ import 'dart:convert';
 import 'package:food_inventory/common/services/database_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 enum ExportFormat { csv, json, sqlite, excel }
 
@@ -17,6 +19,56 @@ class ExportService {
 
   ExportService(this._databaseService);
 
+  // This method helps determine if we have proper storage permissions
+  Future<bool> checkAndRequestStoragePermissions() async {
+    try {
+      if (Platform.isAndroid) {
+        // Get Android version information
+        final androidInfo = await DeviceInfoPlugin().androidInfo;
+        
+        // Check if it's an emulator - skip permission checks for emulators
+        if (!androidInfo.isPhysicalDevice) {
+          return true;
+        }
+        
+        final sdkInt = androidInfo.version.sdkInt;
+        
+        if (sdkInt >= 30) { // Android 11+
+          // First try regular storage permission
+          var storageStatus = await Permission.storage.status;
+          if (!storageStatus.isGranted) {
+            storageStatus = await Permission.storage.request();
+          }
+          
+          if (storageStatus.isGranted) {
+            return true;
+          }
+          
+          // If regular permission isn't enough, try manage external storage
+          var manageStatus = await Permission.manageExternalStorage.status;
+          if (!manageStatus.isGranted) {
+            manageStatus = await Permission.manageExternalStorage.request();
+          }
+          
+          return manageStatus.isGranted;
+        } else { // Android 10 and below
+          var status = await Permission.storage.status;
+          if (!status.isGranted) {
+            status = await Permission.storage.request();
+          }
+          
+          return status.isGranted;
+        }
+      }
+      
+      // For iOS and other platforms, we don't need special permissions for app directories
+      return true;
+    } catch (e, stackTrace) {
+      ErrorHandler.logError('Error checking storage permissions', e, stackTrace, 'ExportService');
+      return false;
+    }
+  }
+
   Future<String> exportToCSV({
     bool includeImages = false,
     bool includeHistory = true,
@@ -24,6 +76,12 @@ class ExportService {
     String? customExportDir = null,
   }) async {
     try {
+      // Check permissions first
+      final hasPermission = await checkAndRequestStoragePermissions();
+      if (!hasPermission) {
+        throw Exception('Storage permission denied. Please enable in app settings.');
+      }
+      
       // Get app document directory
       final dir = await _getExportDirectory(
         useExternalStorage: true,
@@ -81,6 +139,12 @@ class ExportService {
     String? customExportDir = null,
   }) async {
     try {
+      // Check permissions first
+      final hasPermission = await checkAndRequestStoragePermissions();
+      if (!hasPermission) {
+        throw Exception('Storage permission denied. Please enable in app settings.');
+      }
+      
       // Get app document directory
       final dir = await _getExportDirectory(
         useExternalStorage: true,
@@ -123,6 +187,12 @@ class ExportService {
     String? customExportDir = null,
   }) async {
     try {
+      // Check permissions first
+      final hasPermission = await checkAndRequestStoragePermissions();
+      if (!hasPermission) {
+        throw Exception('Storage permission denied. Please enable in app settings.');
+      }
+      
       // Get export directory (external storage for better user access or custom directory)
       final dir = await _getExportDirectory(
         useExternalStorage: true, 
@@ -173,6 +243,12 @@ class ExportService {
     String? customExportDir = null,
   }) async {
     try {
+      // Check permissions first
+      final hasPermission = await checkAndRequestStoragePermissions();
+      if (!hasPermission) {
+        throw Exception('Storage permission denied. Please enable in app settings.');
+      }
+      
       // Get app document directory
       final dir = await _getExportDirectory(
         useExternalStorage: true,
@@ -251,6 +327,12 @@ class ExportService {
 
   Future<Directory?> chooseExportDirectory() async {
     try {
+      // Ensure we have permissions first
+      final hasPermission = await checkAndRequestStoragePermissions();
+      if (!hasPermission) {
+        throw Exception('Storage permission denied. Please enable in app settings.');
+      }
+      
       // Use file_picker to let the user select a directory
       final result = await FilePicker.platform.getDirectoryPath();
       
@@ -267,9 +349,10 @@ class ExportService {
       }
       
       return null;
-    } catch (e) {
-      // If something goes wrong, return null and let the calling code handle it
-      return null;
+    } catch (e, stackTrace) {
+      // Log the error and rethrow for better handling
+      ErrorHandler.logError('Error choosing export directory', e, stackTrace, 'ExportService');
+      rethrow;
     }
   }
 
