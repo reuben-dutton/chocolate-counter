@@ -11,6 +11,8 @@ import 'package:food_inventory/features/export/widgets/export_format_card.dart';
 import 'package:food_inventory/features/export/widgets/sqlite_export_info_sheet.dart';
 import 'package:path/path.dart' as path;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:food_inventory/features/export/widgets/export_progress_bottom_sheet.dart';
+import 'package:food_inventory/features/export/widgets/share_export_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -350,77 +352,126 @@ class _ExportScreenState extends State<ExportScreen> {
   }
 
   void _startExport(BuildContext context, ExportFormat format) async {
-    final dialogService = Provider.of<DialogService>(context, listen: false);
-    
+    // Check appropriate storage permissions based on Android version
     try {
-      // Check permissions before starting export
       bool hasPermission = false;
       
       if (Platform.isAndroid) {
-        // Check if it's an emulator
+        // Try to get Android version information
         final androidInfo = await DeviceInfoPlugin().androidInfo;
-        final isEmulator = !androidInfo.isPhysicalDevice;
+        final sdkInt = androidInfo.version.sdkInt;
         
-        // Skip permission check on emulators
-        if (isEmulator) {
-          hasPermission = true;
-        } else {
-          final sdkInt = androidInfo.version.sdkInt;
-          
-          if (sdkInt >= 30) { // Android 11+
-            // For Android 11+, check both permissions
-            var storageStatus = await Permission.storage.status;
-            if (!storageStatus.isGranted) {
-              storageStatus = await Permission.storage.request();
+        if (sdkInt >= 30) { // Android 11+
+          // For emulators, just proceed as if we have permission
+          if (androidInfo.isPhysicalDevice == false) {
+            hasPermission = true;
+          } else {
+            // Try requesting MANAGE_EXTERNAL_STORAGE
+            try {
+              final status = await Permission.manageExternalStorage.request();
+              hasPermission = status.isGranted;
+            } catch (e) {
+              // Fallback to storage permission if the above fails
+              final status = await Permission.storage.request();
+              hasPermission = status.isGranted;
             }
-            
-            if (storageStatus.isGranted) {
-              hasPermission = true;
-            } else {
-              // Try manage external storage as fallback
-              final manageStatus = await Permission.manageExternalStorage.request();
-              hasPermission = manageStatus.isGranted;
-            }
-          } else { // Android 10 and below
-            final status = await Permission.storage.request();
-            hasPermission = status.isGranted;
           }
+        } else { // Android 10 and below
+          final status = await Permission.storage.request();
+          hasPermission = status.isGranted;
         }
       } else {
-        // For iOS and other platforms, no special permissions needed
+        // For iOS and other platforms, assume permissions are granted
         hasPermission = true;
       }
       
       if (!hasPermission && context.mounted) {
-        await dialogService.showMessageDialog(
-          context: context,
-          title: 'Permission Required',
-          message: 'Storage permission is required to export data. Please grant the permission in app settings.',
-          buttonText: 'OK',
+        ErrorHandler.showErrorSnackBar(
+          context, 
+          'Storage permission denied. Please enable in settings to export data.'
         );
         return;
       }
-      
-      // For SQLite export, show additional info first
-      if (format == ExportFormat.sqlite) {
-        final proceed = await showSQLiteExportInfoSheet(context);
-        if (proceed != true || !context.mounted) {
-          return;
-        }
-      }
-      
-      // Start export process
-      if (context.mounted) {
-        context.read<ExportBloc>().add(StartExport(format));
-      }
     } catch (e, stackTrace) {
-      ErrorHandler.logError('Error starting export', e, stackTrace, 'ExportScreen');
-      
+      // Something went wrong with permission checking
       if (context.mounted) {
         ErrorHandler.showErrorSnackBar(
           context, 
-          'Error starting export: ${e.toString()}',
+          'Error checking permissions: ${e.toString()}. Attempting export anyway.'
         );
+        // Continue with export attempt despite permission issues
+      }
+    }
+    
+    // For SQLite export, show additional info first
+    if (format == ExportFormat.sqlite) {
+      final proceed = await showSQLiteExportInfoSheet(context);
+      if (proceed != true || !context.mounted) {
+        return;
+      }
+    }
+    
+    // Show export progress
+    if (context.mounted) {
+      await showExportProgressBottomSheet(context, format);
+    }
+    
+    try {
+      // Start export process based on format
+      String filePath;
+      
+      switch (format) {
+        case ExportFormat.csv:
+          filePath = await Provider.of<ExportService>(context, listen: false).exportToCSV(
+            includeImages: context.read<ExportBloc>().state.includeImages,
+            includeHistory: context.read<ExportBloc>().state.includeHistory,
+            exportAllData: context.read<ExportBloc>().state.exportAllData,
+            customExportDir: context.read<ExportBloc>().state.customExportDir,
+          );
+          break;
+        case ExportFormat.json:
+          filePath = await Provider.of<ExportService>(context, listen: false).exportToJSON(
+            includeImages: context.read<ExportBloc>().state.includeImages,
+            includeHistory: context.read<ExportBloc>().state.includeHistory,
+            exportAllData: context.read<ExportBloc>().state.exportAllData,
+            customExportDir: context.read<ExportBloc>().state.customExportDir,
+          );
+          break;
+        case ExportFormat.sqlite:
+          filePath = await Provider.of<ExportService>(context, listen: false).exportDatabaseFile(
+            includeImages: context.read<ExportBloc>().state.includeImages,
+            customExportDir: context.read<ExportBloc>().state.customExportDir,
+          );
+          break;
+        case ExportFormat.excel:
+          filePath = await Provider.of<ExportService>(context, listen: false).exportToExcel(
+            includeImages: context.read<ExportBloc>().state.includeImages,
+            includeHistory: context.read<ExportBloc>().state.includeHistory,
+            exportAllData: context.read<ExportBloc>().state.exportAllData,
+            customExportDir: context.read<ExportBloc>().state.customExportDir,
+          );
+          break;
+      }
+      
+      // Close the progress sheet
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        
+        // Show completion sheet with sharing option
+        await showShareExportBottomSheet(context, filePath, format);
+        
+        // Dispatch event to update bloc state
+        context.read<ExportBloc>().add(StartExport(format));
+      }
+    } catch (e, stackTrace) {
+      // Close the progress sheet if still showing
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ErrorHandler.showErrorSnackBar(
+          context, 
+          'Export failed: ${e.toString()}'
+        );
+        ErrorHandler.logError('Export failed', e, stackTrace, 'ExportScreen');
       }
     }
   }
