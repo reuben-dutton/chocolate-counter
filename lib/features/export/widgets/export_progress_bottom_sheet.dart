@@ -1,5 +1,4 @@
-// lib/features/export/widgets/export_progress_bottom_sheet.dart - Updated with export progress tracking
-
+// lib/features/export/widgets/export_progress_bottom_sheet.dart
 import 'package:flutter/material.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/widgets/modal_bottom_sheet.dart';
@@ -110,8 +109,8 @@ class _ExportProgressBottomSheetState extends State<ExportProgressBottomSheet> {
   Widget _buildExportSteps(ThemeData theme) {
     final steps = [
       ExportStep('Preparing data', ExportStage.preparing),
-      ExportStep('Exporting files', ExportStage.exporting),
-      ExportStep('Creating export package', ExportStage.packaging),
+      ExportStep('Processing files', ExportStage.exporting),
+      ExportStep('Creating ZIP archive', ExportStage.packaging),
       ExportStep('Finalizing export', ExportStage.finalizing),
     ];
     
@@ -258,10 +257,10 @@ class ExportProgressController extends ChangeNotifier {
           _statusMessage = 'Preparing export data...';
           break;
         case ExportStage.exporting:
-          _statusMessage = 'Exporting files...';
+          _statusMessage = 'Processing files...';
           break;
         case ExportStage.packaging:
-          _statusMessage = 'Creating export package...';
+          _statusMessage = 'Creating ZIP archive...';
           break;
         case ExportStage.finalizing:
           _statusMessage = 'Finalizing export...';

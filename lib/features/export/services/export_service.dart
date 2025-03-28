@@ -12,6 +12,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:excel/excel.dart';
+import 'package:food_inventory/data/models/inventory_movement.dart';
 
 enum ExportFormat { csv, json, sqlite, excel }
 
@@ -83,9 +84,12 @@ class ExportService {
         customDir: customExportDir
       );
       final timestamp = _getTimestamp();
-      final exportDir = Directory(path.join(dir.path, 'export_$timestamp'));
-      await exportDir.create(recursive: true);
-
+      final zipFileName = 'inventoryexport_csv_$timestamp.zip';
+      final zipPath = path.join(dir.path, zipFileName);
+      
+      // Create a temporary directory to store CSV files before zipping
+      final tempDir = await Directory.systemTemp.createTemp('export_temp');
+      
       // Define tables to export
       final tables = _getTablesToExport(includeHistory, exportAllData);
 
@@ -107,24 +111,23 @@ class ExportService {
         }
 
         final csv = const ListToCsvConverter().convert(rows);
-        final file = File(path.join(exportDir.path, '$table.csv'));
+        final file = File(path.join(tempDir.path, '$table.csv'));
         await file.writeAsString(csv);
       }
 
+      // Create a README file with enum interpretations
+      await _createEnumReadmeFile(tempDir.path);
+
       // Handle images if requested
       if (includeImages) {
-        await _exportImages(exportDir.path);
+        await _exportImages(tempDir.path);
       }
 
-      // Create a zip file of the export directory
-      final zipFileName = 'inventory_export_$timestamp.zip';
-      final zipPath = path.join(dir.path, zipFileName);
-      
       // Create the ZIP file using a basic implementation
-      await _createZipFile(exportDir.path, zipPath);
+      await _createZipFile(tempDir.path, zipPath);
       
       // Clean up the temporary export directory
-      await exportDir.delete(recursive: true);
+      await tempDir.delete(recursive: true);
       
       return zipPath;
     } catch (e, stackTrace) {
@@ -152,8 +155,11 @@ class ExportService {
         customDir: customExportDir
       );
       final timestamp = _getTimestamp();
-      final exportDir = Directory(path.join(dir.path, 'export_$timestamp'));
-      await exportDir.create(recursive: true);
+      final zipFileName = 'inventoryexport_json_$timestamp.zip';
+      final zipPath = path.join(dir.path, zipFileName);
+      
+      // Create a temporary directory to store JSON files before zipping
+      final tempDir = await Directory.systemTemp.createTemp('export_temp');
 
       // Define tables to export
       final tables = _getTablesToExport(includeHistory, exportAllData);
@@ -167,16 +173,25 @@ class ExportService {
         exportData[table] = data;
       }
 
+      // Add enum interpretations to the JSON
+      exportData['_enums'] = _getEnumInterpretations();
+
       // Write the JSON file
-      final file = File(path.join(exportDir.path, 'inventory_data.json'));
+      final file = File(path.join(tempDir.path, 'inventory_data.json'));
       await file.writeAsString(jsonEncode(exportData));
 
       // Handle images if requested
       if (includeImages) {
-        await _exportImages(exportDir.path);
+        await _exportImages(tempDir.path);
       }
+      
+      // Create the ZIP file
+      await _createZipFile(tempDir.path, zipPath);
+      
+      // Clean up the temporary directory
+      await tempDir.delete(recursive: true);
 
-      return file.path;
+      return zipPath;
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error exporting to JSON', e, stackTrace, 'ExportService');
       rethrow;
@@ -200,37 +215,35 @@ class ExportService {
         customDir: customExportDir
       );
       final timestamp = _getTimestamp();
+      final zipFileName = 'inventoryexport_sqlite_$timestamp.zip';
+      final zipPath = path.join(dir.path, zipFileName);
+      
+      // Create a temporary directory for files before zipping
+      final tempDir = await Directory.systemTemp.createTemp('export_temp');
       
       // Database file path
       final dbPath = _databaseService.database.path;
       final dbFile = File(dbPath);
       
-      // Copy the database file to exports directory with timestamp
-      final exportFile = File(path.join(dir.path, 'food_inventory_$timestamp.db'));
-      await dbFile.copy(exportFile.path);
+      // Copy the database file to temp directory
+      final databaseFilePath = path.join(tempDir.path, 'food_inventory.db');
+      await dbFile.copy(databaseFilePath);
+
+      // Create a README file with enum interpretations
+      await _createEnumReadmeFile(tempDir.path);
       
       // Handle images if requested
       if (includeImages) {
-        final exportDir = Directory(path.join(dir.path, 'export_images_$timestamp'));
-        await exportDir.create(recursive: true);
-        await _exportImages(exportDir.path);
-        
-        // Create a temporary info file explaining the contents
-        final infoFile = File(path.join(exportDir.path, 'README.txt'));
-        await infoFile.writeAsString(
-          'Food Inventory Export\n'
-          'Date: ${DateTime.now().toString()}\n\n'
-          'This export contains:\n'
-          '- Database file (SQLite)\n'
-          '- Images folder with product images\n\n'
-          'To use this export, copy the database file to your device\'s application data folder.'
-        );
-          
-        // Return the path of the database file, which is what we'll share
-        return exportFile.path;
+        await _exportImages(tempDir.path);
       }
       
-      return exportFile.path;
+      // Create the ZIP file
+      await _createZipFile(tempDir.path, zipPath);
+      
+      // Clean up the temporary directory
+      await tempDir.delete(recursive: true);
+      
+      return zipPath;
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error exporting database file', e, stackTrace, 'ExportService');
       rethrow;
@@ -250,6 +263,11 @@ class ExportService {
         customDir: customExportDir
       );
       final timestamp = _getTimestamp();
+      final zipFileName = 'inventoryexport_excel_$timestamp.zip';
+      final zipPath = path.join(dir.path, zipFileName);
+      
+      // Create a temporary directory for files before zipping
+      final tempDir = await Directory.systemTemp.createTemp('export_temp');
       
       // Define tables to export
       final tables = _getTablesToExport(includeHistory, exportAllData);
@@ -327,20 +345,143 @@ class ExportService {
         }
       }
       
+      // Add an Enums sheet with interpretations
+      _addEnumSheet(excel);
+      
       // Save Excel file
-      final excelPath = path.join(dir.path, 'inventory_export_$timestamp.xlsx');
+      final excelPath = path.join(tempDir.path, 'inventory_export.xlsx');
       final excelBytes = excel.save();
       if (excelBytes != null) {
         final excelFile = File(excelPath);
         await excelFile.writeAsBytes(excelBytes);
-        return excelPath;
       } else {
         throw Exception('Failed to create Excel file');
       }
+
+      // Create a README file with enum interpretations
+      await _createEnumReadmeFile(tempDir.path);
+      
+      // Handle images if requested
+      if (includeImages) {
+        await _exportImages(tempDir.path);
+      }
+      
+      // Create the ZIP file
+      await _createZipFile(tempDir.path, zipPath);
+      
+      // Clean up the temporary directory
+      await tempDir.delete(recursive: true);
+      
+      return zipPath;
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error exporting to Excel', e, stackTrace, 'ExportService');
       rethrow;
     }
+  }
+
+  // Add a sheet with enum values to Excel
+  void _addEnumSheet(Excel excel) {
+    // Create a new sheet for enums
+    excel.copy('Sheet1', 'Enums'); 
+    final sheet = excel['Enums'];
+    
+    // Headers
+    final headers = ['Enum Name', 'Index', 'Value', 'Description'];
+    for (var i = 0; i < headers.length; i++) {
+      sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0)).value = headers[i];
+    }
+    
+    // Get enum interpretations
+    final enumsMap = _getEnumInterpretations();
+    
+    int rowIndex = 1;
+    
+    // Add each enum with its values
+    enumsMap.forEach((enumName, values) {
+      for (var entry in values.entries) {
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex)).value = enumName;
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex)).value = entry.key;
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex)).value = entry.value;
+        
+        // Add description if available
+        String description = _getEnumDescription(enumName, entry.value);
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex)).value = description;
+        
+        rowIndex++;
+      }
+      // Add an empty row between enums
+      rowIndex++;
+    });
+    
+    // Auto-fit columns
+    for (var i = 0; i < headers.length; i++) {
+      sheet.setColWidth(i, 20.0);
+    }
+  }
+
+  // Get descriptions for enum values
+  String _getEnumDescription(String enumName, String value) {
+    switch (enumName) {
+      case 'MovementType':
+        switch (value) {
+          case 'stockSale': return 'Decrease in stock from customer purchase';
+          case 'inventoryToStock': return 'Movement from inventory to stock';
+          case 'shipmentToInventory': return 'Addition from a new shipment';
+          default: return '';
+        }
+      default:
+        return '';
+    }
+  }
+
+  // Create a README file with enum interpretations
+  Future<void> _createEnumReadmeFile(String directoryPath) async {
+    final readmeContent = StringBuffer();
+    readmeContent.writeln('# Food Inventory Export - Enum Interpretations');
+    readmeContent.writeln('Generated: ${DateTime.now()}\n');
+    
+    final enumsMap = _getEnumInterpretations();
+    
+    enumsMap.forEach((enumName, values) {
+      readmeContent.writeln('## $enumName');
+      readmeContent.writeln('| Index | Value | Description |');
+      readmeContent.writeln('| ----- | ----- | ----------- |');
+      
+      values.forEach((index, value) {
+        String description = _getEnumDescription(enumName, value);
+        readmeContent.writeln('| $index | $value | $description |');
+      });
+      
+      readmeContent.writeln('\n');
+    });
+    
+    // Add database structure information
+    readmeContent.writeln('## Database Structure');
+    readmeContent.writeln('The database contains the following tables:');
+    readmeContent.writeln('- item_definitions: Parent table for inventory items');
+    readmeContent.writeln('- item_instances: Actual inventory/stock items');
+    readmeContent.writeln('- inventory_movements: Tracks stock changes');
+    readmeContent.writeln('- shipments: Parent table for shipment items');
+    readmeContent.writeln('- shipment_items: Links shipments to item definitions');
+    
+    final readmeFile = File(path.join(directoryPath, 'README.md'));
+    await readmeFile.writeAsString(readmeContent.toString());
+  }
+
+  // Get a map of all enum interpretations
+  Map<String, Map<int, String>> _getEnumInterpretations() {
+    final enums = <String, Map<int, String>>{};
+    
+    // Movement Types
+    final movementTypes = <int, String>{};
+    for (var i = 0; i < MovementType.values.length; i++) {
+      movementTypes[i] = MovementType.values[i].toString().split('.').last;
+    }
+    enums['MovementType'] = movementTypes;
+    
+    // Add any other enums that might be important for data interpretation
+    
+    return enums;
   }
 
   String _formatSheetName(String tableName) {
@@ -383,22 +524,22 @@ class ExportService {
         if (externalDir != null) {
           // Navigate up to find the Download directory
           // Usually /storage/emulated/0/Download
-          final String downloadPath = externalDir.path.split('/Android')[0] + '/Download/FoodInventoryExports';
+          final String downloadPath = externalDir.path.split('/Android')[0] + '/Download';
           exportDir = Directory(downloadPath);
         } else {
           // Fallback to app documents directory
           final documentsDir = await getApplicationDocumentsDirectory();
-          exportDir = Directory(path.join(documentsDir.path, 'exports'));
+          exportDir = Directory(documentsDir.path);
         }
       } catch (e) {
         // Fallback to app documents directory
         final documentsDir = await getApplicationDocumentsDirectory();
-        exportDir = Directory(path.join(documentsDir.path, 'exports'));
+        exportDir = Directory(documentsDir.path);
       }
     } else {
       // Use app documents directory for iOS or if external storage not requested
       final documentsDir = await getApplicationDocumentsDirectory();
-      exportDir = Directory(path.join(documentsDir.path, 'exports'));
+      exportDir = Directory(documentsDir.path);
     }
     
     // Create the directory if it doesn't exist
@@ -422,14 +563,7 @@ class ExportService {
       
       if (result != null) {
         final selectedDir = Directory(result);
-        
-        // Create an exports subfolder inside the selected directory
-        final exportDir = Directory(path.join(selectedDir.path, 'FoodInventoryExports'));
-        if (!await exportDir.exists()) {
-          await exportDir.create(recursive: true);
-        }
-        
-        return exportDir;
+        return selectedDir;
       }
       
       return null;
@@ -549,22 +683,22 @@ class ExportService {
           await zipFile.delete();
         }
         
-        // Create a simple manifest file listing the CSV files
+        // Create a simple manifest file listing the files
         final manifestContent = StringBuffer();
         manifestContent.writeln('# Food Inventory Export');
         manifestContent.writeln('# Generated: ${DateTime.now()}');
         manifestContent.writeln('');
         
         // List all files in the export directory
-        await for (final entity in sourceDir.list()) {
+        await for (final entity in sourceDir.list(recursive: true)) {
           if (entity is File) {
             final relativePath = path.relative(entity.path, from: sourceDirPath);
             manifestContent.writeln(relativePath);
             
             // Copy each file to the zip path with a modified name
-            final targetFile = File(path.join(path.dirname(zipFilePath), 
-              'export_${path.basename(entity.path)}'));
-            await entity.copy(targetFile.path);
+            final targetFilePath = path.join(path.dirname(zipFilePath), 
+              'export_${path.basename(entity.path)}');
+            await entity.copy(targetFilePath);
           }
         }
         

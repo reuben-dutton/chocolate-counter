@@ -33,22 +33,22 @@ class ShareExportBottomSheet extends StatelessWidget {
       case ExportFormat.csv:
         formatIcon = Icons.view_list;
         formatName = 'CSV';
-        description = 'Your inventory data has been exported to CSV files, which can be opened in spreadsheet applications like Excel, Google Sheets, or LibreOffice Calc.';
+        description = 'Your inventory data has been exported to a ZIP archive containing CSV files, which can be opened in spreadsheet applications like Excel, Google Sheets, or LibreOffice Calc. The archive also includes a README file explaining enum values used in the database.';
         break;
       case ExportFormat.json:
         formatIcon = Icons.description;
         formatName = 'JSON';
-        description = 'Your inventory data has been exported to JSON format, which is ideal for data processing or importing into other applications.';
+        description = 'Your inventory data has been exported to a ZIP archive containing JSON format, which is ideal for data processing or importing into other applications. The archive includes enum interpretations to help understand the data structure.';
         break;
       case ExportFormat.sqlite:
         formatIcon = Icons.dataset;
         formatName = 'SQLite';
-        description = 'Your inventory database has been exported as a SQLite file, which can be opened with SQLite browser applications or used as a backup.';
+        description = 'Your inventory database has been exported as a ZIP archive containing the SQLite file, which can be opened with SQLite browser applications or used as a backup. A README file explaining enum values is included.';
         break;
       case ExportFormat.excel:
         formatIcon = Icons.horizontal_split;
         formatName = 'Excel';
-        description = 'Your inventory data has been exported as an Excel spreadsheet with multiple tabs for different data categories.';
+        description = 'Your inventory data has been exported as a ZIP archive containing an Excel spreadsheet with multiple tabs for different data categories. A dedicated Enums sheet is included to explain numeric values in the data.';
         break;
     }
     
