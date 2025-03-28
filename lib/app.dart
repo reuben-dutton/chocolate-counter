@@ -8,7 +8,6 @@ import 'package:food_inventory/common/services/service_locator.dart';
 import 'package:food_inventory/common/services/preferences_service.dart';
 import 'package:food_inventory/common/services/database_service.dart';
 import 'package:food_inventory/common/services/config_service.dart';
-import 'package:food_inventory/features/export/services/export_service.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/features/analytics/repositories/analytics_repository.dart';
@@ -38,9 +37,6 @@ class FoodInventoryApp extends StatelessWidget {
     final configService = ServiceLocator.instance<ConfigService>();
     final inventoryEventBus = ServiceLocator.instance<InventoryEventBus>();
     
-    // Register the ExportService
-    final exportService = ExportService(databaseService);
-    
     // Get repositories from service locator
     final itemDefinitionRepository = ServiceLocator.instance<ItemDefinitionRepository>();
     final itemInstanceRepository = ServiceLocator.instance<ItemInstanceRepository>();
@@ -69,7 +65,6 @@ class FoodInventoryApp extends StatelessWidget {
         Provider<ShipmentService>.value(value: shipmentService),
         Provider<DatabaseService>.value(value: databaseService),
         Provider<InventoryEventBus>.value(value: inventoryEventBus),
-        Provider<ExportService>.value(value: exportService),
         
         // Repositories
         Provider<ItemDefinitionRepository>.value(value: itemDefinitionRepository),
