@@ -39,6 +39,7 @@ dependencies:
   share_plus: ^10.1.4    # Sharing files
   file_picker: ^9.0.2    # File picker
   permission_handler: ^11.4.0  # Handle permissions
+  archive: ^3.4.10 # zip files
 
   # Dependency Injection
   provider: ^6.0.0
