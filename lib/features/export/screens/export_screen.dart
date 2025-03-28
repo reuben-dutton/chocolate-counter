@@ -351,6 +351,7 @@ class _ExportScreenState extends State<ExportScreen> {
     }
   }
 
+  // Updated _startExport method with better error handling and user feedback
   void _startExport(BuildContext context, ExportFormat format) async {
     // Check appropriate storage permissions based on Android version
     try {
@@ -370,6 +371,18 @@ class _ExportScreenState extends State<ExportScreen> {
             try {
               final status = await Permission.manageExternalStorage.request();
               hasPermission = status.isGranted;
+              
+              // If still not granted, try storage permission
+              if (!hasPermission) {
+                final storageStatus = await Permission.storage.request();
+                hasPermission = storageStatus.isGranted;
+                
+                // Try media library as a last resort
+                if (!hasPermission) {
+                  final mediaStatus = await Permission.mediaLibrary.request();
+                  hasPermission = mediaStatus.isGranted;
+                }
+              }
             } catch (e) {
               // Fallback to storage permission if the above fails
               final status = await Permission.storage.request();
@@ -457,6 +470,19 @@ class _ExportScreenState extends State<ExportScreen> {
       if (context.mounted) {
         Navigator.of(context).pop();
         
+        // Determine if this was a zip file or a directory (fallback)
+        final bool isDirectory = filePath.endsWith('_files') && await Directory(filePath).exists();
+        
+        // Show different message based on whether it was exported as a zip or fallback directory
+        if (isDirectory) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Export completed to individual files (zip creation failed)'),
+              duration: ConfigService.snackBarDuration,
+            ),
+          );
+        }
+        
         // Show completion sheet with sharing option
         await showShareExportBottomSheet(context, filePath, format);
         
@@ -467,10 +493,27 @@ class _ExportScreenState extends State<ExportScreen> {
       // Close the progress sheet if still showing
       if (context.mounted) {
         Navigator.of(context).pop();
-        ErrorHandler.showErrorSnackBar(
-          context, 
-          'Export failed: ${e.toString()}'
-        );
+        
+        // Check if this is a known permissions error
+        if (e.toString().contains('Permission denied') || 
+            e.toString().contains('Cannot write to the selected directory')) {
+          // Show a more helpful error message
+          ErrorHandler.showErrorDialog(
+            context,
+            'Export Permission Error',
+            'The app does not have permission to write to the selected location. Please try the following:\n\n'
+            '1. Choose a different export location in the settings\n'
+            '2. Enable storage permissions for the app in device settings\n'
+            '3. For Android 11+ users: grant "Allow management of all files"',
+          );
+        } else {
+          // Generic error message
+          ErrorHandler.showErrorSnackBar(
+            context, 
+            'Export failed: ${e.toString()}'
+          );
+        }
+        
         ErrorHandler.logError('Export failed', e, stackTrace, 'ExportScreen');
       }
     }

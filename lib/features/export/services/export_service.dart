@@ -22,43 +22,53 @@ class ExportService {
   ExportService(this._databaseService);
 
   // This method helps determine if we have proper storage permissions
+  // Improved checkAndRequestStoragePermissions method
   Future<bool> checkAndRequestStoragePermissions() async {
     try {
       if (Platform.isAndroid) {
         // Get Android version information
         final androidInfo = await DeviceInfoPlugin().androidInfo;
-        
-        // Check if it's an emulator - skip permission checks for emulators
-        if (!androidInfo.isPhysicalDevice) {
-          return true;
-        }
-        
         final sdkInt = androidInfo.version.sdkInt;
+        final isEmulator = !androidInfo.isPhysicalDevice;
         
+        // Try more aggressively for permissions
         if (sdkInt >= 30) { // Android 11+
-          // First try regular storage permission
-          var storageStatus = await Permission.storage.status;
-          if (!storageStatus.isGranted) {
-            storageStatus = await Permission.storage.request();
-          }
-          
-          if (storageStatus.isGranted) {
+          // For emulators, just proceed as if we have permission
+          if (isEmulator) {
             return true;
           }
           
-          // If regular permission isn't enough, try manage external storage
-          var manageStatus = await Permission.manageExternalStorage.status;
-          if (!manageStatus.isGranted) {
-            manageStatus = await Permission.manageExternalStorage.request();
+          // Try all possible permissions
+          try {
+            // First try storage permission
+            var storageStatus = await Permission.storage.request();
+            if (storageStatus.isGranted) {
+              return true;
+            }
+            
+            // If that fails, try external storage permission
+            var externalStorageStatus = await Permission.manageExternalStorage.request();
+            if (externalStorageStatus.isGranted) {
+              return true;
+            }
+            
+            // Try other relevant permissions
+            var mediaStatus = await Permission.mediaLibrary.request();
+            if (mediaStatus.isGranted) {
+              return true;
+            }
+            
+            // Last resort: check if we at least have some form of storage access
+            return await Permission.storage.isGranted || 
+                  await Permission.manageExternalStorage.isGranted || 
+                  await Permission.mediaLibrary.isGranted;
+          } catch (e) {
+            print('Error requesting permissions: $e');
+            // Attempt without checking permissions as a fallback
+            return true;
           }
-          
-          return manageStatus.isGranted;
         } else { // Android 10 and below
-          var status = await Permission.storage.status;
-          if (!status.isGranted) {
-            status = await Permission.storage.request();
-          }
-          
+          var status = await Permission.storage.request();
           return status.isGranted;
         }
       }
@@ -67,7 +77,8 @@ class ExportService {
       return true;
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error checking storage permissions', e, stackTrace, 'ExportService');
-      return false;
+      // Fallback to assuming we have permissions in case of errors
+      return true;
     }
   }
 
@@ -257,122 +268,152 @@ class ExportService {
     String? customExportDir = null,
   }) async {
     try {
+      // First check permissions
+      bool hasPermission = await checkAndRequestStoragePermissions();
+      if (!hasPermission) {
+        throw Exception('Storage permission denied. Please enable in app settings.');
+      }
+      
       // Get app document directory
       final dir = await _getExportDirectory(
         useExternalStorage: true,
         customDir: customExportDir
       );
+      
       final timestamp = _getTimestamp();
-      final zipFileName = 'inventoryexport_excel_$timestamp.zip';
+      String fileName = 'inventoryexport_excel_$timestamp';
+      final zipFileName = '$fileName.zip';
       final zipPath = path.join(dir.path, zipFileName);
       
       // Create a temporary directory for files before zipping
       final tempDir = await Directory.systemTemp.createTemp('export_temp');
       
-      // Define tables to export
-      final tables = _getTablesToExport(includeHistory, exportAllData);
-      
-      // Create Excel file using the excel package
-      final excel = Excel.createExcel();
-      
-      // Remove the default sheet
-      if (excel.sheets.containsKey('Sheet1')) {
-        excel.delete('Sheet1');
-      }
-      
-      // For each table, create a separate sheet
-      for (final table in tables) {
-        // Get data for this table
-        final data = await _getTableData(table);
-        if (data.isEmpty) continue;
+      try {
+        // Define tables to export
+        final tables = _getTablesToExport(includeHistory, exportAllData);
         
-        // Create a sheet for this table
-        final sheetName = _formatSheetName(table);
-        excel.copy('Sheet1', sheetName); // Create a new sheet (even if Sheet1 doesn't exist)
-        final sheet = excel[sheetName];
+        // Create Excel file using the excel package
+        final excel = Excel.createExcel();
         
-        // Add headers
-        final headers = data.first.keys.toList();
-        for (var i = 0; i < headers.length; i++) {
-          sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0)).value = headers[i];
+        // Remove the default sheet
+        if (excel.sheets.containsKey('Sheet1')) {
+          excel.delete('Sheet1');
         }
         
-        // Add data rows
-        for (var rowIndex = 0; rowIndex < data.length; rowIndex++) {
-          final rowData = data[rowIndex];
+        // For each table, create a separate sheet
+        for (final table in tables) {
+          // Get data for this table
+          final data = await _getTableData(table);
+          if (data.isEmpty) continue;
           
-          for (var colIndex = 0; colIndex < headers.length; colIndex++) {
-            final header = headers[colIndex];
-            final value = rowData[header];
+          // Create a sheet for this table
+          final sheetName = _formatSheetName(table);
+          excel.copy('Sheet1', sheetName); // Create a new sheet
+          final sheet = excel[sheetName];
+          
+          // Add headers
+          final headers = data.first.keys.toList();
+          for (var i = 0; i < headers.length; i++) {
+            sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0)).value = headers[i];
+          }
+          
+          // Add data rows
+          for (var rowIndex = 0; rowIndex < data.length; rowIndex++) {
+            final rowData = data[rowIndex];
             
-            final cell = sheet.cell(CellIndex.indexByColumnRow(
-              columnIndex: colIndex, 
-              rowIndex: rowIndex + 1
-            ));
-            
-            if (value == null) {
-              cell.value = '';
-            }
-            // Convert timestamps to dates
-            else if (header.toLowerCase().contains('date') && value is String) {
-              try {
-                // Try to parse the string as a date
-                final date = DateTime.parse(value);
-                cell.value = date;
-                // Set date format - use the format method directly
-                cell.cellStyle = CellStyle();
-                cell.cellStyle?.horizontalAlignment = HorizontalAlign.Center;
-              } catch (e) {
-                // If it can't be parsed as a date, just use the string
+            for (var colIndex = 0; colIndex < headers.length; colIndex++) {
+              final header = headers[colIndex];
+              final value = rowData[header];
+              
+              final cell = sheet.cell(CellIndex.indexByColumnRow(
+                columnIndex: colIndex, 
+                rowIndex: rowIndex + 1
+              ));
+              
+              if (value == null) {
+                cell.value = '';
+              }
+              // Convert timestamps to dates
+              else if (header.toLowerCase().contains('date') && value is String) {
+                try {
+                  // Try to parse the string as a date
+                  final date = DateTime.parse(value);
+                  cell.value = date;
+                  // Set date format
+                  cell.cellStyle = CellStyle();
+                  cell.cellStyle?.horizontalAlignment = HorizontalAlign.Center;
+                } catch (e) {
+                  // If it can't be parsed as a date, just use the string
+                  cell.value = value;
+                }
+              }
+              else if (value is int) {
                 cell.value = value;
               }
+              else if (value is double) {
+                cell.value = value;
+              }
+              else {
+                cell.value = value.toString();
+              }
             }
-            else if (value is int) {
-              cell.value = value;
-            }
-            else if (value is double) {
-              cell.value = value;
-            }
-            else {
-              cell.value = value.toString();
-            }
+          }
+          
+          // Auto-fit columns for better readability
+          for (var i = 0; i < headers.length; i++) {
+            sheet.setColWidth(i, 15.0);
           }
         }
         
-        // Auto-fit columns for better readability
-        for (var i = 0; i < headers.length; i++) {
-          sheet.setColWidth(i, 15.0); // Using correct method name
+        // Add an Enums sheet with interpretations
+        _addEnumSheet(excel);
+        
+        // Save Excel file
+        final excelPath = path.join(tempDir.path, 'inventory_export.xlsx');
+        final excelBytes = excel.save();
+        if (excelBytes != null) {
+          final excelFile = File(excelPath);
+          await excelFile.writeAsBytes(excelBytes);
+        } else {
+          throw Exception('Failed to create Excel file');
         }
-      }
-      
-      // Add an Enums sheet with interpretations
-      _addEnumSheet(excel);
-      
-      // Save Excel file
-      final excelPath = path.join(tempDir.path, 'inventory_export.xlsx');
-      final excelBytes = excel.save();
-      if (excelBytes != null) {
-        final excelFile = File(excelPath);
-        await excelFile.writeAsBytes(excelBytes);
-      } else {
-        throw Exception('Failed to create Excel file');
-      }
 
-      // Create a README file with enum interpretations
-      await _createEnumReadmeFile(tempDir.path);
-      
-      // Handle images if requested
-      if (includeImages) {
-        await _exportImages(tempDir.path);
+        // Create a README file with enum interpretations
+        await _createEnumReadmeFile(tempDir.path);
+        
+        // Handle images if requested
+        if (includeImages) {
+          await _exportImages(tempDir.path);
+        }
+        
+        // Create the ZIP file
+        try {
+          await _createZipFile(tempDir.path, zipPath);
+        } catch (e) {
+          if (e is Exception && e.toString().contains('files were exported to')) {
+            // This is our fallback case where files were exported individually
+            // Extract the path from the exception message
+            final match = RegExp(r'files were exported to (.+)').firstMatch(e.toString());
+            if (match != null && match.groupCount >= 1) {
+              final fallbackPath = match.group(1)!;
+              return fallbackPath; // Return the fallback directory path
+            }
+          }
+          // If it's not our fallback exception, rethrow it
+          rethrow;
+        }
+        
+        // Clean up the temporary directory
+        await tempDir.delete(recursive: true);
+        
+        return zipPath;
+      } catch (e) {
+        // Make sure to clean up the temporary directory if an error occurs
+        try {
+          await tempDir.delete(recursive: true);
+        } catch (_) {}
+        rethrow;
       }
-      
-      // Create the ZIP file
-      await _createZipFile(tempDir.path, zipPath);
-      
-      // Clean up the temporary directory
-      await tempDir.delete(recursive: true);
-      
-      return zipPath;
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error exporting to Excel', e, stackTrace, 'ExportService');
       rethrow;
@@ -504,51 +545,95 @@ class ExportService {
   
 
   // Helper Methods
+  // Alternative export directory selection that defaults to app directory if external fails
   Future<Directory> _getExportDirectory({bool useExternalStorage = true, String? customDir}) async {
     // If a custom directory is provided, use it
     if (customDir != null) {
       final exportDir = Directory(customDir);
-      if (!await exportDir.exists()) {
-        await exportDir.create(recursive: true);
+      try {
+        if (!await exportDir.exists()) {
+          await exportDir.create(recursive: true);
+        }
+        // Verify we can write to this directory
+        final testFile = File('${exportDir.path}/test_write.tmp');
+        await testFile.writeAsString('test');
+        await testFile.delete();
+        return exportDir;
+      } catch (e) {
+        print('Error using custom directory: $e, falling back to app directory');
+        // Fall through to default directory if custom directory fails
       }
-      return exportDir;
     }
     
     Directory exportDir;
     
     if (useExternalStorage && Platform.isAndroid) {
-      // Use Downloads folder for Android external storage
       try {
-        // Get external storage directory
-        final externalDir = await getExternalStorageDirectory();
-        if (externalDir != null) {
-          // Navigate up to find the Download directory
-          // Usually /storage/emulated/0/Download
-          final String downloadPath = externalDir.path.split('/Android')[0] + '/Download';
-          exportDir = Directory(downloadPath);
-        } else {
-          // Fallback to app documents directory
+        // Try multiple approaches to get a writable directory
+        
+        // First try: Get the download directory
+        try {
+          final externalDir = await getExternalStorageDirectory();
+          if (externalDir != null) {
+            // Navigate up to find the Download directory
+            final String downloadPath = externalDir.path.split('/Android')[0] + '/Download';
+            exportDir = Directory(downloadPath);
+            
+            // Test if we can write to this directory
+            if (await _canWriteToDirectory(exportDir)) {
+              return exportDir;
+            }
+          }
+        } catch (e) {
+          print('Error accessing download directory: $e');
+        }
+        
+        // Second try: Use application documents directory
+        try {
           final documentsDir = await getApplicationDocumentsDirectory();
           exportDir = Directory(documentsDir.path);
+          if (await _canWriteToDirectory(exportDir)) {
+            return exportDir;
+          }
+        } catch (e) {
+          print('Error accessing application documents directory: $e');
         }
+        
+        // Third try: Use temporary directory as last resort
+        final tempDir = await getTemporaryDirectory();
+        return tempDir;
+        
       } catch (e) {
-        // Fallback to app documents directory
+        // Fallback to application documents directory in case of any errors
         final documentsDir = await getApplicationDocumentsDirectory();
-        exportDir = Directory(documentsDir.path);
+        return Directory(documentsDir.path);
       }
     } else {
       // Use app documents directory for iOS or if external storage not requested
       final documentsDir = await getApplicationDocumentsDirectory();
-      exportDir = Directory(documentsDir.path);
+      return Directory(documentsDir.path);
     }
-    
-    // Create the directory if it doesn't exist
-    if (!await exportDir.exists()) {
-      await exportDir.create(recursive: true);
-    }
-    
-    return exportDir;
   }
+
+  // Helper method to check if we can write to a directory
+  Future<bool> _canWriteToDirectory(Directory dir) async {
+    try {
+      // Create the directory if it doesn't exist
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+      
+      // Try to write a test file
+      final testFile = File('${dir.path}/test_write.tmp');
+      await testFile.writeAsString('test');
+      await testFile.delete();
+      return true;
+    } catch (e) {
+      print('Cannot write to directory ${dir.path}: $e');
+      return false;
+    }
+  }
+
 
   Future<Directory?> chooseExportDirectory() async {
     try {
@@ -669,46 +754,93 @@ class ExportService {
   }
 
   // Helper method to create a ZIP file
+  // Updated _createZipFile method with enhanced error handling and fallback
   Future<void> _createZipFile(String sourceDirPath, String zipFilePath) async {
     try {
-      // Get the Dart process executable
-      final process = await Process.run('zip', ['-r', zipFilePath, '.'], 
-        workingDirectory: sourceDirPath);
-      
-      if (process.exitCode != 0) {
-        // If zip command fails, use a fallback method (just copy directory in this case)
-        final sourceDir = Directory(sourceDirPath);
-        final zipFile = File(zipFilePath);
-        if (await zipFile.exists()) {
-          await zipFile.delete();
-        }
-        
-        // Create a simple manifest file listing the files
-        final manifestContent = StringBuffer();
-        manifestContent.writeln('# Food Inventory Export');
-        manifestContent.writeln('# Generated: ${DateTime.now()}');
-        manifestContent.writeln('');
-        
-        // List all files in the export directory
-        await for (final entity in sourceDir.list(recursive: true)) {
-          if (entity is File) {
-            final relativePath = path.relative(entity.path, from: sourceDirPath);
-            manifestContent.writeln(relativePath);
-            
-            // Copy each file to the zip path with a modified name
-            final targetFilePath = path.join(path.dirname(zipFilePath), 
-              'export_${path.basename(entity.path)}');
-            await entity.copy(targetFilePath);
-          }
-        }
-        
-        // Create manifest
-        final manifestFile = File(path.join(path.dirname(zipFilePath), 'export_manifest.txt'));
-        await manifestFile.writeAsString(manifestContent.toString());
+      // Ensure we have proper permissions first
+      bool hasPermission = await checkAndRequestStoragePermissions();
+      if (!hasPermission) {
+        throw Exception('Storage permission denied. Please enable in app settings.');
       }
+      
+      // Create parent directory if it doesn't exist
+      final zipDir = Directory(path.dirname(zipFilePath));
+      if (!await zipDir.exists()) {
+        await zipDir.create(recursive: true);
+      }
+      
+      // Check if we can write to the target directory
+      try {
+        final testFile = File('${path.dirname(zipFilePath)}/test_write_permission.tmp');
+        await testFile.writeAsString('test');
+        await testFile.delete();
+      } catch (e) {
+        throw Exception('Cannot write to the selected directory. Please choose another location.');
+      }
+      
+      // Attempt to use the zip command first
+      try {
+        final process = await Process.run('zip', ['-r', zipFilePath, '.'], 
+          workingDirectory: sourceDirPath);
+        
+        if (process.exitCode != 0) {
+          throw Exception('Zip command failed: ${process.stderr}');
+        }
+        
+        // Verify the zip file was created
+        final zipFile = File(zipFilePath);
+        if (!await zipFile.exists()) {
+          throw Exception('Zip file was not created');
+        }
+        
+        return; // Zip was successful, exit early
+      } catch (e) {
+        print('Native zip failed, falling back to manual copy: $e');
+        // Continue to fallback method
+      }
+      
+      // Fallback method: copy files individually to a directory with "_files" suffix
+      final fallbackDirName = zipFilePath.replaceAll('.zip', '_files');
+      final fallbackDir = Directory(fallbackDirName);
+      if (await fallbackDir.exists()) {
+        await fallbackDir.delete(recursive: true);
+      }
+      await fallbackDir.create(recursive: true);
+      
+      // Create a manifest file
+      final manifestContent = StringBuffer();
+      manifestContent.writeln('# Food Inventory Export');
+      manifestContent.writeln('# Generated: ${DateTime.now()}');
+      manifestContent.writeln('# Note: Zip creation failed, files exported individually');
+      manifestContent.writeln('');
+      
+      // Copy all files from the source directory
+      final sourceDir = Directory(sourceDirPath);
+      await for (final entity in sourceDir.list(recursive: true)) {
+        if (entity is File) {
+          final relativePath = path.relative(entity.path, from: sourceDirPath);
+          manifestContent.writeln(relativePath);
+          
+          // Create subdirectories if needed
+          final targetPath = path.join(fallbackDirName, relativePath);
+          final targetDir = Directory(path.dirname(targetPath));
+          if (!await targetDir.exists()) {
+            await targetDir.create(recursive: true);
+          }
+          
+          // Copy the file
+          await entity.copy(targetPath);
+        }
+      }
+      
+      // Write manifest file
+      final manifestFile = File(path.join(fallbackDirName, 'export_manifest.txt'));
+      await manifestFile.writeAsString(manifestContent.toString());
+      
+      // Return the fallback directory instead of a zip file
+      throw Exception('Zip creation failed, but files were exported to $fallbackDirName');
     } catch (e, stackTrace) {
       ErrorHandler.logError('Error creating zip file', e, stackTrace, 'ExportService');
-      // If zipping fails, we'll just return the export directory path
       throw Exception('Failed to create zip file: $e');
     }
   }
