@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/features/analytics/screens/analytics_screen.dart';
+import 'package:food_inventory/features/export/screens/export_screen.dart';
 import 'package:food_inventory/features/inventory/screens/inventory_screen.dart';
 import 'package:food_inventory/features/shipments/screens/shipments_screen.dart';
 import 'package:food_inventory/features/settings/screens/settings_screen.dart';
@@ -41,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const AnalyticsScreen(),
     const InventoryScreen(),
     const ShipmentsScreen(),
+    const ExportScreen(),
   ];
 
   @override

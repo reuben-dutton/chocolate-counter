@@ -1,5 +1,6 @@
 // Update to lib/app.dart to add the Export screen
 import 'package:flutter/material.dart';
+import 'package:food_inventory/features/export/services/export_service.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:provider/provider.dart';
 import 'package:food_inventory/common/screens/home_screen.dart';
@@ -36,6 +37,7 @@ class FoodInventoryApp extends StatelessWidget {
     final databaseService = ServiceLocator.instance<DatabaseService>();
     final configService = ServiceLocator.instance<ConfigService>();
     final inventoryEventBus = ServiceLocator.instance<InventoryEventBus>();
+    final exportService = ServiceLocator.instance<ExportService>();
     
     // Get repositories from service locator
     final itemDefinitionRepository = ServiceLocator.instance<ItemDefinitionRepository>();
@@ -65,6 +67,7 @@ class FoodInventoryApp extends StatelessWidget {
         Provider<ShipmentService>.value(value: shipmentService),
         Provider<DatabaseService>.value(value: databaseService),
         Provider<InventoryEventBus>.value(value: inventoryEventBus),
+        Provider<ExportService>.value(value: exportService),
         
         // Repositories
         Provider<ItemDefinitionRepository>.value(value: itemDefinitionRepository),

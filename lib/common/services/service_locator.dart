@@ -12,6 +12,7 @@ import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:food_inventory/features/inventory/services/inventory_service.dart';
 import 'package:food_inventory/common/services/preferences_service.dart';
 import 'package:food_inventory/common/services/config_service.dart';
+import 'package:food_inventory/features/export/services/export_service.dart';
 import 'package:food_inventory/features/shipments/services/shipment_service.dart';
 import 'package:food_inventory/common/services/expiration_event_bus.dart';
 import 'package:food_inventory/features/inventory/event_bus/inventory_event_bus.dart';
@@ -106,6 +107,14 @@ class ServiceLocator {
         instance<ShipmentItemRepository>(),
         instance<ItemInstanceRepository>(),
         instance<InventoryMovementFactory>(),
+      ),
+    );
+    
+    // Register export service
+    instance.registerSingleton<ExportService>(
+      ExportService(
+        instance<DatabaseService>(),
+        instance<ImageService>(),
       ),
     );
   }
