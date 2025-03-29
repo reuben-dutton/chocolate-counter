@@ -14,7 +14,7 @@ class ExportOptions extends StatelessWidget {
       buildWhen: (previous, current) => 
         previous is! ExportConfigured || 
         current is! ExportConfigured || 
-        (previous as ExportConfigured).includeImages != (current as ExportConfigured).includeImages,
+        previous.includeImages != current.includeImages,
       builder: (context, state) {
         final includeImages = state is ExportConfigured ? state.includeImages : false;
         

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,7 +17,7 @@ class FolderSelector extends StatelessWidget {
       buildWhen: (previous, current) => 
         previous is! ExportConfigured || 
         current is! ExportConfigured || 
-        (previous as ExportConfigured).outputDirectory != (current as ExportConfigured).outputDirectory,
+        previous.outputDirectory != current.outputDirectory,
       builder: (context, state) {
         final outputDir = state is ExportConfigured ? state.outputDirectory : null;
         final hasSelectedDir = outputDir != null;

@@ -15,7 +15,7 @@ class ExportModeSelector extends StatelessWidget {
       buildWhen: (previous, current) => 
         previous is! ExportConfigured || 
         current is! ExportConfigured || 
-        (previous as ExportConfigured).mode != (current as ExportConfigured).mode,
+        previous.mode != current.mode,
       builder: (context, state) {
         final currentMode = state is ExportConfigured ? state.mode : null;
         

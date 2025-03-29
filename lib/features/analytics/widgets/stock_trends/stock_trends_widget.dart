@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/features/analytics/bloc/stock_trends_bloc.dart';
-import 'package:food_inventory/features/analytics/models/time_period.dart';
 import 'package:food_inventory/features/analytics/services/analytics_service.dart';
 import 'package:food_inventory/features/analytics/widgets/analytics_card.dart';
 import 'package:food_inventory/features/analytics/widgets/stock_trends/stock_trends_chart.dart';
-import 'package:food_inventory/features/analytics/widgets/time_period_selectors.dart';
 import 'package:provider/provider.dart';
 
 class StockTrendsWidget extends StatefulWidget {
@@ -65,20 +62,6 @@ class _StockTrendsWidgetState extends State<StockTrendsWidget> {
           );
         },
       ),
-    );
-  }
-
-  Widget _buildTimePeriodSelector(BuildContext context, StockTrendsState state) {
-    return BlocBuilder<StockTrendsBloc, StockTrendsState>(
-      buildWhen: (previous, current) => previous.timePeriod != current.timePeriod,
-      builder: (context, state) {
-        return CompactTimePeriodSelector(
-          selectedPeriod: state.timePeriod,
-          onPeriodChanged: (period) {
-            context.read<StockTrendsBloc>().add(ChangeTimePeriod(period));
-          },
-        );
-      },
     );
   }
 }

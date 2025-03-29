@@ -104,9 +104,9 @@ class _ExportSummaryState extends State<ExportSummary> {
       buildWhen: (previous, current) => 
         previous is! ExportConfigured || 
         current is! ExportConfigured ||
-        (previous as ExportConfigured).mode != (current as ExportConfigured).mode ||
-        (previous as ExportConfigured).includeImages != (current as ExportConfigured).includeImages ||
-        (previous as ExportConfigured).outputDirectory != (current as ExportConfigured).outputDirectory,
+        previous.mode != current.mode ||
+        previous.includeImages != current.includeImages ||
+        previous.outputDirectory != current.outputDirectory,
       builder: (context, state) {
         // Get export configuration from bloc state
         final exportMode = state is ExportConfigured ? state.mode : null;

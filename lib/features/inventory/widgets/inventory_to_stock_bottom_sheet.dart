@@ -36,7 +36,6 @@ class _InventoryToStockBottomSheetState extends State<InventoryToStockBottomShee
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
-    final theme = Theme.of(context);
     
     return Column(
       mainAxisSize: MainAxisSize.min,

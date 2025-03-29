@@ -12,7 +12,6 @@ class ThemeTypeSelector extends StatelessWidget {
     return BlocBuilder<PreferencesBloc, PreferencesState>(
       buildWhen: (previous, current) => previous.themeType != current.themeType,
       builder: (context, state) {
-        final theme = Theme.of(context);
         final availableThemes = ThemeLoader.themes;
         
         return Padding(

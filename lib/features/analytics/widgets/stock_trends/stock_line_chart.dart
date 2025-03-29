@@ -106,7 +106,6 @@ class StockLineChart extends StatelessWidget {
             return touchedBarSpots.map((barSpot) {
               final index = barSpot.x.toInt();
               if (index >= 0 && index < trendsData.length) {
-                final data = trendsData[index];
                 
                 final isStock = barSpot.barIndex == 0;
                 return LineTooltipItem(

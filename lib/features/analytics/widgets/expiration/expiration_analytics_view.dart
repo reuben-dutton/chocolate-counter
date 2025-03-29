@@ -75,7 +75,6 @@ class ExpirationAnalyticsView extends StatelessWidget {
   }
 
   Widget _buildAlignedSummaryMetrics(BuildContext context) {
-    final theme = Theme.of(context);
     
     // Calculate items for each category
     final criticalItems = data!.thisWeekItems.length;

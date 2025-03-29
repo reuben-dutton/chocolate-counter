@@ -11,7 +11,6 @@ class ThemeModeSelector extends StatelessWidget {
     return BlocBuilder<PreferencesBloc, PreferencesState>(
       buildWhen: (previous, current) => previous.themeMode != current.themeMode,
       builder: (context, state) {
-        final theme = Theme.of(context);
         
         return Padding(
           padding: EdgeInsets.symmetric(
@@ -63,15 +62,12 @@ class ThemeModeSelector extends StatelessWidget {
       case ThemeMode.system:
         icon = Icons.brightness_auto;
         label = 'System';
-        break;
       case ThemeMode.light:
         icon = Icons.light_mode;
         label = 'Light';
-        break;
       case ThemeMode.dark:
         icon = Icons.dark_mode;
         label = 'Dark';
-        break;
     }
     
     return GestureDetector(

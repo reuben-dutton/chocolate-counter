@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
 import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
+import 'package:food_inventory/common/widgets/item_image_widget.dart';
 import 'package:food_inventory/common/widgets/expiration_indicator.dart';
 import 'package:provider/provider.dart';
 
@@ -84,12 +84,10 @@ class InventoryListItem extends StatelessWidget {
     
     return Stack(
       children: [
-        ItemImageWidget(
+        ItemImageWidget.circle(
           imagePath: itemDefinition.imageUrl,
           itemName: itemDefinition.name,
           radius: ConfigService.avatarRadiusMedium,
-          imageService: imageService,
-          memoryEfficient: true,
         ),
         if (indicatorColor != null)
           Positioned(

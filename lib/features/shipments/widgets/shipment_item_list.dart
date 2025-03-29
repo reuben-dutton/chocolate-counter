@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:food_inventory/data/models/shipment_item.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/common/widgets/expiration_date_widget.dart';
-import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
-import 'package:food_inventory/features/inventory/services/image_service.dart';
+import 'package:food_inventory/common/widgets/item_image_widget.dart';
 import 'package:food_inventory/features/shipments/widgets/expiration_edit_bottom_sheet.dart';
-import 'package:provider/provider.dart';
 
 class ShipmentItemList extends StatelessWidget {
   final List<dynamic> items;
@@ -19,8 +17,6 @@ class ShipmentItemList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageService = Provider.of<ImageService>(context, listen: false);
-    final theme = Theme.of(context);
     
     return ListView.builder(
       shrinkWrap: true,
@@ -31,12 +27,10 @@ class ShipmentItemList extends StatelessWidget {
         return ListTile(
           dense: true,
           contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.tinyPadding, vertical: ConfigService.tinyPadding),
-          leading: ItemImageWidget(
+          leading: ItemImageWidget.circle(
             imagePath: item.itemDefinition?.imageUrl,
             itemName: item.itemDefinition?.name ?? 'Unknown Item',
             radius: 18,
-            imageService: imageService,
-            memoryEfficient: true,
           ),
           title: Text(
             item.itemDefinition?.name ?? 'Unknown Item',

@@ -114,7 +114,6 @@ class ServiceLocator {
     instance.registerSingleton<ExportService>(
       ExportService(
         instance<DatabaseService>(),
-        instance<ImageService>(),
       ),
     );
   }

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:food_inventory/common/services/config_service.dart';
-import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/features/analytics/bloc/analytics_bloc.dart';
-import 'package:food_inventory/features/analytics/models/time_period.dart';
 import 'package:food_inventory/features/analytics/widgets/analytics_card.dart';
 import 'package:food_inventory/features/analytics/widgets/popular_items/popular_items_chart.dart';
 import 'package:food_inventory/features/analytics/widgets/popular_items/popular_items_skeleton.dart';

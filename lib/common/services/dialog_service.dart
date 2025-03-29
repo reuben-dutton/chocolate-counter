@@ -226,7 +226,6 @@ class DialogService {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            final theme = Theme.of(context);
             
             return Column(
               mainAxisSize: MainAxisSize.min,

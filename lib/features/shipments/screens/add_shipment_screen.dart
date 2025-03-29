@@ -27,7 +27,6 @@ class AddShipmentScreen extends StatefulWidget {
 class _AddShipmentScreenState extends State<AddShipmentScreen> {
   // Selected items
   final List<ShipmentItem> _selectedItems = [];
-  bool _isLoading = false;
   
   // Shipment details
   final _formKey = GlobalKey<FormState>();

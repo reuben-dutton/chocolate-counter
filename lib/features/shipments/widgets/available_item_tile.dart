@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_inventory/common/services/config_service.dart';
 import 'package:food_inventory/data/models/item_definition.dart';
-import 'package:food_inventory/features/inventory/services/image_service.dart';
-import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
-import 'package:provider/provider.dart';
+import 'package:food_inventory/common/widgets/item_image_widget.dart';
 
 // Extracted widget for available items to prevent parent rebuilds
 class AvailableItemTile extends StatelessWidget {
@@ -18,17 +16,14 @@ class AvailableItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageService = Provider.of<ImageService>(context, listen: false);
     
     return ListTile(
       dense: true,
       contentPadding: EdgeInsets.symmetric(horizontal: ConfigService.smallPadding, vertical: 0),
-      leading: ItemImageWidget(
+      leading: ItemImageWidget.circle(
         imagePath: item.imageUrl,
         itemName: item.name,
         radius: 16,
-        imageService: imageService,
-        memoryEfficient: true,
       ),
       title: Text(
         item.name,

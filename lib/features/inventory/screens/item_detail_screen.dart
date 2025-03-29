@@ -18,7 +18,7 @@ import 'package:food_inventory/features/inventory/services/inventory_service.dar
 import 'package:food_inventory/features/inventory/widgets/inventory_movement_list.dart';
 import 'package:food_inventory/features/inventory/widgets/inventory_to_stock_bottom_sheet.dart';
 import 'package:food_inventory/features/inventory/widgets/item_expiration_list.dart';
-import 'package:food_inventory/common/widgets/cached_image_widgets.dart';
+import 'package:food_inventory/common/widgets/item_image_widget.dart';
 import 'package:provider/provider.dart';
 
 class ItemDetailScreen extends StatefulWidget {
@@ -158,13 +158,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Item image at the top
-                FullItemImageWidget(
+                ItemImageWidget.full(
                   imagePath: _currentItemDefinition.imageUrl,
                   itemName: _currentItemDefinition.name,
-                  imageService: imageService,
-                  memoryEfficient: true,
                 ),
-                
                 Padding(
                   padding: EdgeInsets.all(ConfigService.defaultPadding),
                   child: Column(

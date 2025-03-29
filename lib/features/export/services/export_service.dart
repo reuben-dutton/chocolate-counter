@@ -6,7 +6,6 @@ import 'package:food_inventory/common/services/database_service.dart';
 import 'package:food_inventory/common/services/error_handler.dart';
 import 'package:food_inventory/data/models/inventory_movement.dart';
 import 'package:food_inventory/features/export/models/export_mode.dart';
-import 'package:food_inventory/features/inventory/services/image_service.dart';
 import 'package:path/path.dart' as path;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
@@ -16,10 +15,9 @@ import 'dart:convert';
 /// Service for exporting the app's data
 class ExportService {
   final DatabaseService _databaseService;
-  final ImageService _imageService;
   final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
 
-  ExportService(this._databaseService, this._imageService);
+  ExportService(this._databaseService);
 
   /// Request storage permissions based on platform
   Future<bool> requestPermissions() async {
@@ -69,16 +67,12 @@ class ExportService {
       switch (mode) {
         case ExportMode.csv:
           await _exportToCsv(exportDir.path);
-          break;
         case ExportMode.excel:
           await _exportToExcel(exportDir.path);
-          break;
         case ExportMode.sqlite:
           await _exportToSqlite(exportDir.path);
-          break;
         case ExportMode.json:
           await _exportToJson(exportDir.path);
-          break;
       }
       
       // Add README
@@ -387,7 +381,6 @@ class ExportService {
           manifest.writeln('  - $table.csv: Data from the $table table');
         }
         manifest.writeln('  - movement_types.csv: Enum values for movement types');
-        break;
       case ExportMode.excel:
         manifest.writeln('- inventory_data.xlsx: Excel file containing all data');
         manifest.writeln('  - Sheets:');
@@ -395,19 +388,16 @@ class ExportService {
           manifest.writeln('    - $table: Data from the $table table');
         }
         manifest.writeln('    - enums: Reference for enum values');
-        break;
       case ExportMode.sqlite:
         manifest.writeln('- sqlite/: Directory containing SQLite database');
         manifest.writeln('  - inventory_data.db: SQLite database file');
         manifest.writeln('  - enum_references/: Directory containing enum reference files');
-        break;
       case ExportMode.json:
         manifest.writeln('- json/: Directory containing JSON files');
         for (final table in tables) {
           manifest.writeln('  - $table.json: Data from the $table table');
         }
         manifest.writeln('  - enums.json: Reference for enum values');
-        break;
     }
     
     manifest.writeln('');
